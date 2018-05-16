@@ -1,0 +1,8 @@
+.vs
+/Bin
+/Work
+/Source/Engine/Lib
+/Source/Engine/Output
+/Source/Game/Output
+
+*.user
