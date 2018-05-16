@@ -1,0 +1,286 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="1. Include">
+      <UniqueIdentifier>{e4ebbeaf-1cf7-4362-84f3-597075c1b0a2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="2. Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="3. Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="1. Include\Core">
+      <UniqueIdentifier>{a4e72539-d3c1-4e8a-8e8f-5f078aae31ea}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="1. Include\Engine">
+      <UniqueIdentifier>{9941a766-678d-4f72-887c-fd1eeeb010c1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="3. Source Files\Core">
+      <UniqueIdentifier>{ed9380fe-f339-47ff-8c01-6ad113a1fa30}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="3. Source Files\Engine">
+      <UniqueIdentifier>{8275562b-739b-4926-b32c-7c6ef7e81e01}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Source\InternalHelper.h">
+      <Filter>2. Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\WICTextureLoader.h">
+      <Filter>2. Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Core.h">
+      <Filter>1. Include\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\CoreMath.h">
+      <Filter>1. Include\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Text.h">
+      <Filter>1. Include\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Engine.h">
+      <Filter>1. Include\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\EngineCore.h">
+      <Filter>1. Include\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\GameHandler.h">
+      <Filter>1. Include\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Input.h">
+      <Filter>1. Include\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Key.h">
+      <Filter>1. Include\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Render.h">
+      <Filter>1. Include\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Resource.h">
+      <Filter>1. Include\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ResourceManager.h">
+      <Filter>1. Include\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Scene.h">
+      <Filter>1. Include\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Window.h">
+      <Filter>1. Include\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Containers.h">
+      <Filter>1. Include\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\QmshLoader.h">
+      <Filter>2. Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Texture.h">
+      <Filter>1. Include\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Mesh.h">
+      <Filter>1. Include\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\TextureLoader.h">
+      <Filter>2. Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\CoreMemory.h">
+      <Filter>1. Include\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\File.h">
+      <Filter>1. Include\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\SceneNode.h">
+      <Filter>1. Include\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Camera.h">
+      <Filter>1. Include\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\MeshShader.h">
+      <Filter>2. Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Shader.h">
+      <Filter>2. Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Timer.h">
+      <Filter>1. Include\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Logger.h">
+      <Filter>1. Include\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\MeshInstance.h">
+      <Filter>1. Include\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\AnimatedShader.h">
+      <Filter>2. Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Gui.h">
+      <Filter>1. Include\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Font.h">
+      <Filter>1. Include\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\FontLoader.h">
+      <Filter>2. Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\GuiShader.h">
+      <Filter>2. Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Vertex.h">
+      <Filter>1. Include\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\GuiControls.h">
+      <Filter>1. Include\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Color.h">
+      <Filter>1. Include\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Control.h">
+      <Filter>1. Include\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ParticleEmitter.h">
+      <Filter>1. Include\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ParticleShader.h">
+      <Filter>2. Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\QuadTree.h">
+      <Filter>1. Include\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\FastFunc.h">
+      <Filter>1. Include\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ScenePart.h">
+      <Filter>1. Include\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\SoundManager.h">
+      <Filter>1. Include\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Sound.h">
+      <Filter>1. Include\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SoundLoader.h">
+      <Filter>2. Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Source\Text.cpp">
+      <Filter>3. Source Files\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Window.cpp">
+      <Filter>3. Source Files\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine.cpp">
+      <Filter>3. Source Files\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Input.cpp">
+      <Filter>3. Source Files\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Render.cpp">
+      <Filter>3. Source Files\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ResourceManager.cpp">
+      <Filter>3. Source Files\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Scene.cpp">
+      <Filter>3. Source Files\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\WICTextureLoader.cpp">
+      <Filter>3. Source Files\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Texture.cpp">
+      <Filter>3. Source Files\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\TextureLoader.cpp">
+      <Filter>3. Source Files\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\QmshLoader.cpp">
+      <Filter>3. Source Files\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\File.cpp">
+      <Filter>3. Source Files\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Mesh.cpp">
+      <Filter>3. Source Files\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\MeshShader.cpp">
+      <Filter>3. Source Files\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Shader.cpp">
+      <Filter>3. Source Files\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\CoreMath.cpp">
+      <Filter>3. Source Files\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Timer.cpp">
+      <Filter>3. Source Files\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Camera.cpp">
+      <Filter>3. Source Files\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Logger.cpp">
+      <Filter>3. Source Files\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\MeshInstance.cpp">
+      <Filter>3. Source Files\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\AnimatedShader.cpp">
+      <Filter>3. Source Files\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SceneNode.cpp">
+      <Filter>3. Source Files\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\FontLoader.cpp">
+      <Filter>3. Source Files\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Font.cpp">
+      <Filter>3. Source Files\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Gui.cpp">
+      <Filter>3. Source Files\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\GuiShader.cpp">
+      <Filter>3. Source Files\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\GuiControls.cpp">
+      <Filter>3. Source Files\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Color.cpp">
+      <Filter>3. Source Files\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Control.cpp">
+      <Filter>3. Source Files\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\CoreMemory.cpp">
+      <Filter>3. Source Files\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ParticleEmitter.cpp">
+      <Filter>3. Source Files\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ParticleShader.cpp">
+      <Filter>3. Source Files\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\QuadTree.cpp">
+      <Filter>3. Source Files\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ScenePart.cpp">
+      <Filter>3. Source Files\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SoundManager.cpp">
+      <Filter>3. Source Files\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SoundLoader.cpp">
+      <Filter>3. Source Files\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Sound.cpp">
+      <Filter>3. Source Files\Engine</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Include\CoreMath.inl">
+      <Filter>1. Include\Core</Filter>
+    </None>
+  </ItemGroup>
+</Project>

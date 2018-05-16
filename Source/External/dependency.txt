@@ -1,0 +1,3 @@
+DirectXMath 3.11
+FMod - 4.44.61
+Visual Leak Detector 2.5.0
