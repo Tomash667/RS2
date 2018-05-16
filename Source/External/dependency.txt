@@ -1,0 +1,2 @@
+DirectXMath 3.11
+Visual Leak Detector 2.5.0
