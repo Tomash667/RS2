@@ -42,9 +42,12 @@ void Gui::Draw(const Matrix& mat_view_proj)
 
 void Gui::Update()
 {
-	cursor_pos += input->GetMouseDif();
-	cursor_pos.x = Clamp(cursor_pos.x, 0, wnd_size.x - 1);
-	cursor_pos.y = Clamp(cursor_pos.y, 0, wnd_size.y - 1);
+	if(cursor_visible)
+	{
+		cursor_pos += input->GetMouseDif();
+		cursor_pos.x = Clamp(cursor_pos.x, 0, wnd_size.x - 1);
+		cursor_pos.y = Clamp(cursor_pos.y, 0, wnd_size.y - 1);
+	}
 }
 
 void Gui::DrawSprite(Texture* image, const Int2& pos, const Int2& size, Color color)

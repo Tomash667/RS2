@@ -71,6 +71,7 @@ void Engine::Run()
 		render->EndScene();
 
 		input->Update();
+		gui->Update();
 	}
 }
 

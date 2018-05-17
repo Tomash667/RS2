@@ -69,11 +69,11 @@ void GameGui::Init(Engine* engine, Player* player)
 
 	gui->SetCursorTexture(res_mgr->GetTexture("cursor.png"));
 
-	Sprite* sprite = new Sprite;
-	sprite->image = res_mgr->GetTexture("crosshair_dot.png");
-	sprite->size = Int2(16, 16);
-	sprite->pos = (wnd_size - sprite->size) / 2;
-	Add(sprite);
+	sprite_crosshair = new Sprite;
+	sprite_crosshair->image = res_mgr->GetTexture("crosshair_dot.png");
+	sprite_crosshair->size = Int2(16, 16);
+	sprite_crosshair->pos = (wnd_size - sprite_crosshair->size) / 2;
+	Add(sprite_crosshair);
 
 	hp_bar = new ProgressBar;
 	hp_bar->image = res_mgr->GetTexture("hp_bar.png");
@@ -82,7 +82,7 @@ void GameGui::Init(Engine* engine, Player* player)
 	hp_bar->pos.y = wnd_size.y - hp_bar->size.y;
 	Add(hp_bar);
 
-	sprite = new Sprite;
+	Sprite* sprite = new Sprite;
 	sprite->image = res_mgr->GetTexture("medkit_icon.png");
 	sprite->size = Int2(32, 32);
 	sprite->pos = Int2(256 + 4, wnd_size.y - 32);
@@ -165,7 +165,12 @@ void GameGui::Update()
 	label_medkits->text = Format("%d", player->medkits);
 
 	if(input->Pressed(Key::I))
-		inventory->Show(inventory->visible);
+		inventory->Show(!inventory->visible);
+
+	sprite_crosshair->visible = !inventory->visible;
+
+	if(inventory->visible)
+		inventory->Update();
 }
 
 bool GameGui::IsInventoryOpen()

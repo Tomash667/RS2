@@ -20,6 +20,15 @@ public:
 	void ReleaseKeys();
 
 	bool Pressed(Key key) const { return keystate[(int)key] == IS_PRESSED; }
+	bool PressedOnce(Key key)
+	{
+		if(Pressed(key))
+		{
+			keystate[(int)key] = IS_UP;
+			return true;
+		}
+		return false;
+	}
 	bool Released(Key key) const { return keystate[(int)key] == IS_RELEASED; }
 	bool Down(Key key) const { return keystate[(int)key] >= IS_DOWN; }
 	bool Up(Key key) const { return keystate[(int)key] <= IS_RELEASED; }

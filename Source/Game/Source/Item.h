@@ -2,7 +2,7 @@
 
 struct Item
 {
-	string id, name;
+	cstring id, name, icon_id;
 	Texture* icon;
 
 	static Item* Get(cstring id);

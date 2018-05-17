@@ -18,6 +18,9 @@ Inventory::Inventory(ResourceManager* res_mgr, Player* player)
 	size = Int2(grid_size * SLOT_MAX + 16, grid_size + 40);
 	corners = Int2(6, 32);
 	color = Color(255, 255, 255, 200);
+	visible = false;
+
+	tex_grid = res_mgr->GetTexture("grid.png");
 }
 
 void Inventory::Show(bool show)
@@ -31,11 +34,9 @@ void Inventory::Draw()
 {
 	Panel::Draw();
 
-	Color text_color = Color::Black;
+	gui->DrawText("Inventory", nullptr, Color(0, 255, 33), Font::Center | Font::VCenter, Rect(pos.x, pos.y + 4, pos.x + size.x, pos.y + 24));
 
-	gui->DrawText("Inventory", nullptr, text_color, Font::Center | Font::VCenter, Rect(pos.x, pos.y, pos.x + size.x, pos.y + 20));
-
-	Int2 offset = pos + Int2(8, 20);
+	Int2 offset = pos + Int2(8, 30);
 	Int2 s(grid_size, grid_size);
 
 	for(int i = 0; i < SLOT_MAX; ++i)
@@ -46,7 +47,7 @@ void Inventory::Draw()
 		{
 			gui->DrawSprite(slot.item->icon, offset, s);
 			if(slot.count != 0)
-				gui->DrawText(Format("%u", slot.count), nullptr, text_color, Font::Bottom, Rect::Create(offset, s));
+				gui->DrawText(Format("%u", slot.count), nullptr, Color(0, 255, 33), Font::Bottom, Rect::Create(offset + Int2(4, 0), s));
 		}
 		offset.x += grid_size;
 	}
@@ -75,14 +76,15 @@ void Inventory::Draw()
 void Inventory::Update()
 {
 	PrepareSlots();
+	tooltip_index = -1;
 
 	Input* input = gui->GetInput();
-	Int2 offset = pos + Int2(8, 20);
+	Int2 offset = pos + Int2(8, 30);
 	Int2 s(grid_size, grid_size);
 	const Int2& cursor_pos = gui->GetCursorPos();
 
 	if(input->Pressed(Key::Escape)
-		|| (!Rect::IsInside(pos, size, cursor_pos) && input->Pressed(Key::LeftButton)))
+		|| (!Rect::IsInside(pos, size, cursor_pos) && input->PressedOnce(Key::LeftButton)))
 	{
 		Show(false);
 		return;
@@ -94,7 +96,7 @@ void Inventory::Update()
 		{
 			Slot& slot = slots[i];
 			if(!slot.item)
-				continue;
+				break;
 			tooltip_index = i;
 			if(gui->GetInput()->Pressed(Key::LeftButton))
 			{
@@ -123,7 +125,7 @@ cstring Inventory::GetTooltipText()
 {
 	Slot& slot = slots[tooltip_index];
 	if(slot.count != 0u)
-		return Format("%s (%u)", slot.item->name.c_str(), slot.count);
+		return Format("%s (%u)", slot.item->name, slot.count);
 	else
-		return slot.item->name.c_str();
+		return slot.item->name;
 }
