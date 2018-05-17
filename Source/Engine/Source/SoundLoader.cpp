@@ -24,9 +24,9 @@ FMOD::Sound* SoundLoader::Load(cstring path, bool is_music)
 {
 	int flags = FMOD_HARDWARE | FMOD_LOWMEM;
 	if(is_music)
-		flags |= FMOD_2D;
+		flags |= FMOD_2D | FMOD_LOOP_NORMAL;
 	else
-		flags |= FMOD_3D | FMOD_LOOP_OFF;
+		flags |= FMOD_3D;
 	FMOD::Sound* sound;
 	FMOD_RESULT result = system->createStream(path, flags, nullptr, &sound);
 	if(result != FMOD_OK)

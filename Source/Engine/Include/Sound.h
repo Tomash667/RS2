@@ -4,7 +4,7 @@
 
 struct Sound : public Resource
 {
-	Sound(cstring name, FMOD::Sound* snd) : Resource(name, Type::Sound) {}
+	Sound(cstring name, FMOD::Sound* snd) : Resource(name, Type::Sound), snd(snd) {}
 	~Sound();
 
 	FMOD::Sound* snd;
@@ -12,7 +12,7 @@ struct Sound : public Resource
 
 struct Music : public Resource
 {
-	Music(cstring name, FMOD::Sound* snd) : Resource(name, Type::Music) {}
+	Music(cstring name, FMOD::Sound* snd) : Resource(name, Type::Music), snd(snd) {}
 	~Music();
 
 	FMOD::Sound* snd;

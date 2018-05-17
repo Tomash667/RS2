@@ -14,6 +14,7 @@ void Player::UseMedkit()
 	if(action == A_NONE && hp != 100 && medkits != 0)
 	{
 		action = A_USE_MEDKIT;
+		action_state = 0;
 		node->mesh_inst->Play("use", PLAY_ONCE | PLAY_CLEAR_FRAME_END_INFO, 1);
 	}
 }

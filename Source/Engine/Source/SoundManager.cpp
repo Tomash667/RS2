@@ -97,7 +97,9 @@ void SoundManager::PlaySound2d(Sound* sound)
 		return;
 
 	FMOD::Channel* channel;
-	system->playSound(FMOD_CHANNEL_FREE, sound->snd, false, &channel);
+	system->playSound(FMOD_CHANNEL_FREE, sound->snd, true, &channel);
+	channel->setMode(FMOD_2D);
+	channel->setPaused(false);
 	channel->setChannelGroup(group_sounds);
 }
 
@@ -109,6 +111,7 @@ void SoundManager::PlaySound3d(Sound* sound, const Vec3& pos, float smin)
 
 	FMOD::Channel* channel;
 	system->playSound(FMOD_CHANNEL_FREE, sound->snd, true, &channel);
+	channel->setMode(FMOD_3D);
 	channel->set3DAttributes((const FMOD_VECTOR*)&pos, nullptr);
 	channel->set3DMinMaxDistance(smin, 10000.f);
 	channel->setPaused(false);
