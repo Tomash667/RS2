@@ -18,6 +18,7 @@
 #include "GroundItem.h"
 #include "Level.h"
 #include "Item.h"
+#include "Version.h"
 
 
 const float Player::walk_speed = 2.5f;
@@ -98,13 +99,13 @@ void Game::InitLogger()
 	time_t t = time(0);
 	tm t2;
 	localtime_s(&t2, &t);
-	Info("RS v0");
+	Info("RS v" VERSION_STR);
 	Info("Date: %04d-%02d-%02d", t2.tm_year + 1900, t2.tm_mon + 1, t2.tm_mday);
 }
 
 void Game::InitEngine()
 {
-	engine->GetWindow()->SetTitle("Rouge Savior V0");
+	engine->GetWindow()->SetTitle("Rouge Savior v" VERSION_STR);
 	engine->Init(this);
 
 	scene = engine->GetScene();
