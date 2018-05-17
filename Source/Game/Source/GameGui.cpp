@@ -8,6 +8,7 @@
 #include <Input.h>
 #include <SceneNode.h>
 #include "GroundItem.h"
+#include "Inventory.h"
 #include <Font.h>
 
 
@@ -64,8 +65,9 @@ void GameGui::Init(Engine* engine, Player* player)
 	this->player = player;
 
 	const Int2& wnd_size = gui->GetWindowSize();
-
 	ResourceManager* res_mgr = engine->GetResourceManager();
+
+	gui->SetCursorTexture(res_mgr->GetTexture("cursor.png"));
 
 	Sprite* sprite = new Sprite;
 	sprite->image = res_mgr->GetTexture("crosshair_dot.png");
@@ -101,6 +103,10 @@ void GameGui::Init(Engine* engine, Player* player)
 	panel_fps->visible = false;
 	panel_fps->Add(label_fps);
 	Add(panel_fps);
+
+	inventory = new Inventory(res_mgr, player);
+	inventory->pos = Int2(wnd_size.x - inventory->size.x, wnd_size.y - inventory->size.y);
+	Add(inventory);
 
 	engine->GetGui()->Add(this);
 }
@@ -140,7 +146,9 @@ void GameGui::Draw()
 
 void GameGui::Update()
 {
-	if(engine->GetInput()->Pressed(Key::F1))
+	Input* input = gui->GetInput();
+
+	if(input->Pressed(Key::F1))
 		panel_fps->visible = !panel_fps->visible;
 	if(panel_fps->visible)
 	{
@@ -155,4 +163,12 @@ void GameGui::Update()
 
 	hp_bar->progress = player->GetHpp();
 	label_medkits->text = Format("%d", player->medkits);
+
+	if(input->Pressed(Key::I))
+		inventory->Show(inventory->visible);
+}
+
+bool GameGui::IsInventoryOpen()
+{
+	return inventory->visible;
 }

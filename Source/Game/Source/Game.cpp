@@ -17,6 +17,7 @@
 #include "CityGenerator.h"
 #include "GroundItem.h"
 #include "Level.h"
+#include "Item.h"
 
 
 const float Player::walk_speed = 2.5f;
@@ -117,6 +118,8 @@ void Game::InitGame()
 	Srand();
 	engine->GetWindow()->SetCursorLock(true);
 
+	Item::LoadData(res_mgr);
+
 	level.reset(new Level);
 	level->Init(scene, res_mgr, CityGenerator::tile_size * level_size);
 
@@ -153,11 +156,14 @@ void Game::GenerateCity()
 
 bool Game::OnTick(float dt)
 {
-	if(input->Pressed(Key::Escape) || (input->Down(Key::Alt) && input->Pressed(Key::F4)))
+	if((input->Pressed(Key::Escape) && !game_gui->IsInventoryOpen())
+		|| (input->Down(Key::Alt) && input->Pressed(Key::F4)))
 		return false;
 
 	if(input->Pressed(Key::U))
 		engine->GetWindow()->SetCursorLock(!engine->GetWindow()->IsCursorLocked());
+
+	allow_mouse = !game_gui->IsInventoryOpen();
 
 	UpdatePlayer(dt);
 	UpdateZombies(dt);
@@ -214,21 +220,15 @@ void Game::UpdatePlayer(float dt)
 		}
 	}
 
-	if(player->action == A_NONE)
+	if(input->Pressed(Key::H))
+		player->UseMedkit();
+
+	if(player->action == A_NONE && allow_mouse && input->Down(Key::LeftButton))
 	{
-		if(player->hp != 100 && input->Pressed(Key::H) && player->medkits != 0)
-		{
-			// use medkit
-			player->action = A_USE_MEDKIT;
-			player->node->mesh_inst->Play("use", PLAY_ONCE | PLAY_CLEAR_FRAME_END_INFO, 1);
-		}
-		else if(input->Down(Key::LeftButton))
-		{
-			// attack
-			player->action = A_ATTACK;
-			player->action_state = 0;
-			player->node->mesh_inst->Play("atak1", PLAY_ONCE | PLAY_CLEAR_FRAME_END_INFO, 1);
-		}
+		// attack
+		player->action = A_ATTACK;
+		player->action_state = 0;
+		player->node->mesh_inst->Play("atak1", PLAY_ONCE | PLAY_CLEAR_FRAME_END_INFO, 1);
 	}
 
 	bool can_run = true, can_move = true;
@@ -299,7 +299,7 @@ void Game::UpdatePlayer(float dt)
 			mov += 1;
 
 		int mouse_x = input->GetMouseDif().x;
-		if(mouse_x != 0)
+		if(mouse_x != 0 && allow_mouse)
 		{
 			float value = float(mouse_x) / 400;
 			player->rot_buf -= value;
@@ -531,20 +531,23 @@ void Game::UpdateCamera()
 	//if(input->Down(Key::Shift))
 	//	cam_shift += 0.25f * input->GetMouseWheel();
 
-	cam_dist -= 0.25f * input->GetMouseWheel();
-	if(cam_dist < 0.25f)
-		cam_dist = 0.25f;
-	else if(cam_dist > 5.f)
-		cam_dist = 5.f;
-	if(input->Down(Key::MiddleButton))
+	if(allow_mouse)
 	{
-		cam_dist = 1.5f;
-		cam_rot.y = 4.47908592f;
-	}
+		cam_dist -= 0.25f * input->GetMouseWheel();
+		if(cam_dist < 0.25f)
+			cam_dist = 0.25f;
+		else if(cam_dist > 5.f)
+			cam_dist = 5.f;
+		if(input->Down(Key::MiddleButton))
+		{
+			cam_dist = 1.5f;
+			cam_rot.y = 4.47908592f;
+		}
 
-	const Vec2 c_cam_angle = Vec2(PI + 0.1f, PI * 1.8f - 0.1f);
-	cam_rot.x = player->node->rot.y;
-	cam_rot.y = c_cam_angle.Clamp(cam_rot.y - float(input->GetMouseDif().y) / 400);
+		const Vec2 c_cam_angle = Vec2(PI + 0.1f, PI * 1.8f - 0.1f);
+		cam_rot.x = player->node->rot.y;
+		cam_rot.y = c_cam_angle.Clamp(cam_rot.y - float(input->GetMouseDif().y) / 400);
+	}
 
 	const float cam_h = 1.7f;
 

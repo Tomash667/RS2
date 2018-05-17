@@ -4,8 +4,9 @@
 #include "GuiControls.h"
 #include "ResourceManager.h"
 #include "Font.h"
+#include "Input.h"
 
-Gui::Gui() : v(nullptr)
+Gui::Gui() : v(nullptr), cursor_visible(false), tex_cursor(nullptr)
 {
 }
 
@@ -13,9 +14,10 @@ Gui::~Gui()
 {
 }
 
-void Gui::Init(Render* render, ResourceManager* res_mgr)
+void Gui::Init(Render* render, ResourceManager* res_mgr, Input* input)
 {
-	assert(render && res_mgr);
+	assert(render && res_mgr && input);
+	this->input = input;
 
 	gui_shader.reset(new GuiShader(render));
 	gui_shader->SetWindowSize(wnd_size);
@@ -33,6 +35,16 @@ void Gui::Draw(const Matrix& mat_view_proj)
 	gui_shader->Prepare();
 
 	Container::Draw();
+
+	if(cursor_visible && tex_cursor)
+		DrawSprite(tex_cursor, cursor_pos, Int2(32, 32));
+}
+
+void Gui::Update()
+{
+	cursor_pos += input->GetMouseDif();
+	cursor_pos.x = Clamp(cursor_pos.x, 0, wnd_size.x - 1);
+	cursor_pos.y = Clamp(cursor_pos.y, 0, wnd_size.y - 1);
 }
 
 void Gui::DrawSprite(Texture* image, const Int2& pos, const Int2& size, Color color)
@@ -312,4 +324,5 @@ void Gui::SetWindowSize(const Int2& wnd_size)
 	this->wnd_size = wnd_size;
 	if(gui_shader)
 		gui_shader->SetWindowSize(wnd_size);
+	cursor_pos = wnd_size / 2;
 }
