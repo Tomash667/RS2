@@ -33,6 +33,7 @@ private:
 	GameGui* game_gui;
 	unique_ptr<Level> level;
 	unique_ptr<CityGenerator> city_generator;
+	bool allow_mouse;
 
 	// resources
 	Texture* tex_blood, *tex_zombie_blood;

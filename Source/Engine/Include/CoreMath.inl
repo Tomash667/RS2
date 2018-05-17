@@ -404,6 +404,14 @@ inline bool Rect::Intersect(const Rect& r1, const Rect& r2, Rect& result)
 		return false;
 }
 
+inline bool Rect::IsInside(const Int2& pos, const Int2& size, const Int2& pt)
+{
+	return pt.x >= pos.x
+		&& pt.y >= pos.y
+		&& pt.x <= pos.x + size.x
+		&& pt.y <= pos.y + size.y;
+}
+
 //*************************************************************************************************
 //
 // 2D float point

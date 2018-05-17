@@ -8,8 +8,9 @@ class Gui : public Container
 public:
 	Gui();
 	~Gui();
-	void Init(Render* render, ResourceManager* res_mgr);
+	void Init(Render* render, ResourceManager* res_mgr, Input* input);
 	void Draw(const Matrix& mat_view_proj);
+	void Update();
 	bool To2dPoint(const Vec3& pos, Int2& pt);
 
 	void DrawSprite(Texture* image, const Int2& pos, const Int2& size, Color color = Color::White);
@@ -17,10 +18,15 @@ public:
 	void DrawSpriteGrid(Texture* image, Color color, const GridF& pos, const GridF& uv);
 	void DrawSpriteGrid(Texture* image, Color color, int image_size, int corner_size, const Int2& pos, const Int2& size);
 	bool DrawText(Cstring text, Font* font, Color color, int flags, const Rect& rect, const Rect* clip = nullptr);
-	
+
+	void SetCursorTexture(Texture* tex) { tex_cursor = tex; }
+	void SetCursorVisible(bool visible) { cursor_visible = visible; }
 	void SetWindowSize(const Int2& wnd_size);
 
+	bool IsCursorVisible() { return cursor_visible; }
+	const Int2& GetCursorPos() { return cursor_pos; }
 	Font* GetDefaultFont() { return default_font; }
+	Input* GetInput() { return input; }
 	const Int2& GetWindowSize() { return wnd_size; }
 
 private:
@@ -49,11 +55,14 @@ private:
 	ClipResult Clip(int x, int y, int w, int h, const Rect* clip);
 	void DrawTextLine(Font* font, cstring text, uint line_begin, uint line_end, const Vec4& color, int x, int y, const Rect* clip);
 
+	Input* input;
 	std::unique_ptr<GuiShader> gui_shader;
 	Font* default_font;
 	GuiVertex* v;
 	uint in_buffer;
 	vector<TextLine> lines;
-	Int2 wnd_size;
+	Int2 wnd_size, cursor_pos;
 	Matrix mat_view_proj;
+	Texture* tex_cursor;
+	bool cursor_visible;
 };
