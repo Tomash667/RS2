@@ -19,6 +19,7 @@
 #include "Level.h"
 #include "Item.h"
 #include "Version.h"
+#include <SoundManager.h>
 
 
 const float Player::walk_speed = 2.5f;
@@ -111,6 +112,7 @@ void Game::InitEngine()
 	scene = engine->GetScene();
 	input = engine->GetInput();
 	res_mgr = engine->GetResourceManager();
+	sound_mgr = engine->GetSoundManager();
 	camera = scene->GetCamera();
 }
 
@@ -118,7 +120,7 @@ void Game::InitGame()
 {
 	Srand();
 	engine->GetWindow()->SetCursorLock(true);
-
+	
 	Item::LoadData(res_mgr);
 
 	level.reset(new Level);
@@ -146,6 +148,16 @@ void Game::LoadResources()
 	// particle texture
 	tex_blood = res_mgr->GetTexture("blood.png");
 	tex_zombie_blood = res_mgr->GetTexture("zombie_blood.png");
+
+	// sounds
+	sound_player_hurt = res_mgr->GetSound("player_hurt.mp3");
+	sound_player_die = res_mgr->GetSound("player_die.mp3");
+	sound_zombie_hurt = res_mgr->GetSound("zombie_hurt.mp3");
+	sound_zombie_die = res_mgr->GetSound("zombie_die.mp3");
+	sound_zombie_attack = res_mgr->GetSound("zombie attack.wav");
+	sound_zombie_alert = res_mgr->GetSound("zombie alert.wav");
+	sound_hit = res_mgr->GetSound("hit.mp3");
+	sound_medkit = res_mgr->GetSound("medkit.mp3");
 }
 
 void Game::GenerateCity()
@@ -179,6 +191,8 @@ void Game::UpdatePlayer(float dt)
 	Player* player = level->player;
 	if(player->hp <= 0)
 		return;
+
+	player->last_damage -= dt;
 
 	Animation animation = ANI_STAND;
 
@@ -239,6 +253,11 @@ void Game::UpdatePlayer(float dt)
 		break;
 	case A_USE_MEDKIT:
 		can_run = false;
+		if(player->action_state == 0)
+		{
+			sound_mgr->PlaySound3d(sound_medkit, player->GetSoundPos(), 2.f);
+			player->action_state = 1;
+		}
 		if(player->node->mesh_inst->GetEndResult(1))
 		{
 			player->hp = min(player->hp + 50, 100);
@@ -410,6 +429,8 @@ void Game::UpdatePlayer(float dt)
 		animation = player->animation;
 
 	player->Update(animation);
+	engine->GetSoundManager()->SetListenerPosition(player->GetSoundPos(),
+		Vec3(sin(-player->node->rot.y + PI / 2), 0, cos(-player->node->rot.y + PI / 2)));
 }
 
 void Game::UpdateZombies(float dt)
@@ -426,12 +447,17 @@ void Game::UpdateZombies(float dt)
 			continue;
 		}
 
+		zombie->last_damage -= dt;
+
 		// search for player
 		float dist = Vec3::Distance2d(zombie->node->pos, player->node->pos);
 		if(!zombie->active)
 		{
 			if(dist <= 5.f)
+			{
 				zombie->active = true;
+				sound_mgr->PlaySound3d(sound_zombie_alert, zombie->GetSoundPos(), 2.f);
+			}
 			else
 				continue;
 		}
@@ -477,6 +503,8 @@ void Game::UpdateZombies(float dt)
 				zombie->next_attack = Random(1.5f, 2.5f);
 				zombie->attack_index = Rand() % 2 == 0 ? 0 : 1;
 				zombie->node->mesh_inst->Play(zombie->attack_index == 0 ? "atak1" : "atak2", PLAY_ONCE | PLAY_CLEAR_FRAME_END_INFO, 0);
+				if(Rand() % 4)
+					sound_mgr->PlaySound3d(sound_zombie_attack, zombie->GetSoundPos(), 2.f);
 			}
 		}
 
@@ -659,12 +687,17 @@ bool Game::CheckForHit(Unit& unit, MeshPoint& mhitbox, MeshPoint* mbone, Unit*& 
 
 void Game::HitUnit(Unit& unit, int dmg, const Vec3& hitpoint)
 {
+	sound_mgr->PlaySound3d(sound_hit, hitpoint, 2.f);
+
 	unit.hp -= dmg;
 	if(unit.hp <= 0)
 	{
 		unit.animation = ANI_DIE;
 		unit.node->mesh_inst->Play("umiera", PLAY_ONCE | PLAY_STOP_AT_END | PLAY_PRIO3, 0);
+		sound_mgr->PlaySound3d(unit.is_zombie ? sound_zombie_die : sound_player_die, unit.GetSoundPos(), 2.f);
 	}
+	else if(unit.last_damage <= 0.f && Rand() % 3 == 0)
+		sound_mgr->PlaySound3d(unit.is_zombie ? sound_zombie_hurt : sound_player_hurt, unit.GetSoundPos(), 2.f);
 
 	// add blood particle
 	ParticleEmitter* pe = ParticleEmitter::Get();

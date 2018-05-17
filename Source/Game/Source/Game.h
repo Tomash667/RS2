@@ -29,6 +29,7 @@ private:
 	Scene* scene;
 	Input* input;
 	ResourceManager* res_mgr;
+	SoundManager* sound_mgr;
 	Camera* camera;
 	GameGui* game_gui;
 	unique_ptr<Level> level;
@@ -37,6 +38,7 @@ private:
 
 	// resources
 	Texture* tex_blood, *tex_zombie_blood;
+	Sound* sound_player_hurt, *sound_player_die, *sound_zombie_hurt, *sound_zombie_die, *sound_zombie_attack, *sound_zombie_alert, *sound_hit, *sound_medkit;
 
 	// camera
 	Vec2 cam_rot;

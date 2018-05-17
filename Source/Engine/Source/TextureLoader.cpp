@@ -14,6 +14,6 @@ Texture* TextureLoader::Load(cstring name, cstring path)
 	const wchar_t* wpath = ToWString(path);
 	HRESULT result = CreateWICTextureFromFile(device, device_context, wpath, nullptr, &view);
 	if(FAILED(result))
-		throw Format("Failed to load texture '%s' (%u).", name, result);
+		throw Format("Failed to load texture '%s' (%u).", path, result);
 	return new Texture(name, view);
 }

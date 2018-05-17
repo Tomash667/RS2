@@ -155,6 +155,15 @@
     <ClInclude Include="Include\ScenePart.h">
       <Filter>1. Include\Engine</Filter>
     </ClInclude>
+    <ClInclude Include="Include\SoundManager.h">
+      <Filter>1. Include\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Sound.h">
+      <Filter>1. Include\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SoundLoader.h">
+      <Filter>2. Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Text.cpp">
@@ -257,6 +266,15 @@
       <Filter>3. Source Files\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\ScenePart.cpp">
+      <Filter>3. Source Files\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SoundManager.cpp">
+      <Filter>3. Source Files\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SoundLoader.cpp">
+      <Filter>3. Source Files\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Sound.cpp">
       <Filter>3. Source Files\Engine</Filter>
     </ClCompile>
   </ItemGroup>

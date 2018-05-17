@@ -95,7 +95,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)Include;$(SolutionDIr)External\DirectXMath;$(SolutionDIr)External\Visual Leak Detector\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)Include;$(SolutionDIr)External\DirectXMath;$(SolutionDIr)External\FMod\inc;$(SolutionDIr)External\Visual Leak Detector\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -104,7 +104,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)Include;$(SolutionDIr)External\DirectXMath;$(SolutionDIr)External\Visual Leak Detector\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)Include;$(SolutionDIr)External\DirectXMath;$(SolutionDIr)External\FMod\inc;$(SolutionDIr)External\Visual Leak Detector\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -115,7 +115,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)Include;$(SolutionDIr)External\DirectXMath;$(SolutionDIr)External\Visual Leak Detector\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)Include;$(SolutionDIr)External\DirectXMath;$(SolutionDIr)External\FMod\inc;$(SolutionDIr)External\Visual Leak Detector\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -131,7 +131,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)Include;$(SolutionDIr)External\DirectXMath;$(SolutionDIr)External\Visual Leak Detector\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)Include;$(SolutionDIr)External\DirectXMath;$(SolutionDIr)External\FMod\inc;$(SolutionDIr)External\Visual Leak Detector\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -168,6 +168,8 @@
     <ClInclude Include="Include\Scene.h" />
     <ClInclude Include="Include\SceneNode.h" />
     <ClInclude Include="Include\ScenePart.h" />
+    <ClInclude Include="Include\Sound.h" />
+    <ClInclude Include="Include\SoundManager.h" />
     <ClInclude Include="Include\Text.h" />
     <ClInclude Include="Include\Texture.h" />
     <ClInclude Include="Include\Timer.h" />
@@ -181,6 +183,7 @@
     <ClInclude Include="Source\ParticleShader.h" />
     <ClInclude Include="Source\QmshLoader.h" />
     <ClInclude Include="Source\Shader.h" />
+    <ClInclude Include="Source\SoundLoader.h" />
     <ClInclude Include="Source\TextureLoader.h" />
     <ClInclude Include="Source\WICTextureLoader.h" />
   </ItemGroup>
@@ -213,6 +216,9 @@
     <ClCompile Include="Source\SceneNode.cpp" />
     <ClCompile Include="Source\ScenePart.cpp" />
     <ClCompile Include="Source\Shader.cpp" />
+    <ClCompile Include="Source\Sound.cpp" />
+    <ClCompile Include="Source\SoundLoader.cpp" />
+    <ClCompile Include="Source\SoundManager.cpp" />
     <ClCompile Include="Source\Text.cpp" />
     <ClCompile Include="Source\Texture.cpp" />
     <ClCompile Include="Source\TextureLoader.cpp" />
