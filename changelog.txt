@@ -2,3 +2,4 @@ Rouge Survival Changelog
 ======================================================
 v1 (2018-05-??):
 + simple inventory
++ playing sounds
