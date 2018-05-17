@@ -33,7 +33,7 @@ void Engine::Init(GameHandler* handler)
 	res_mgr->Init(render.get());
 	scene->Init(render.get());
 	gui->SetWindowSize(window->GetSize());
-	gui->Init(render.get(), res_mgr.get());
+	gui->Init(render.get(), res_mgr.get(), input.get());
 }
 
 void Engine::Run()
@@ -71,6 +71,7 @@ void Engine::Run()
 		render->EndScene();
 
 		input->Update();
+		gui->Update();
 	}
 }
 

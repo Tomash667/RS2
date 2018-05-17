@@ -8,6 +8,7 @@
 #include <Input.h>
 #include <SceneNode.h>
 #include "GroundItem.h"
+#include "Inventory.h"
 #include <Font.h>
 
 
@@ -64,14 +65,15 @@ void GameGui::Init(Engine* engine, Player* player)
 	this->player = player;
 
 	const Int2& wnd_size = gui->GetWindowSize();
-
 	ResourceManager* res_mgr = engine->GetResourceManager();
 
-	Sprite* sprite = new Sprite;
-	sprite->image = res_mgr->GetTexture("crosshair_dot.png");
-	sprite->size = Int2(16, 16);
-	sprite->pos = (wnd_size - sprite->size) / 2;
-	Add(sprite);
+	gui->SetCursorTexture(res_mgr->GetTexture("cursor.png"));
+
+	sprite_crosshair = new Sprite;
+	sprite_crosshair->image = res_mgr->GetTexture("crosshair_dot.png");
+	sprite_crosshair->size = Int2(16, 16);
+	sprite_crosshair->pos = (wnd_size - sprite_crosshair->size) / 2;
+	Add(sprite_crosshair);
 
 	hp_bar = new ProgressBar;
 	hp_bar->image = res_mgr->GetTexture("hp_bar.png");
@@ -80,7 +82,7 @@ void GameGui::Init(Engine* engine, Player* player)
 	hp_bar->pos.y = wnd_size.y - hp_bar->size.y;
 	Add(hp_bar);
 
-	sprite = new Sprite;
+	Sprite* sprite = new Sprite;
 	sprite->image = res_mgr->GetTexture("medkit_icon.png");
 	sprite->size = Int2(32, 32);
 	sprite->pos = Int2(256 + 4, wnd_size.y - 32);
@@ -101,6 +103,10 @@ void GameGui::Init(Engine* engine, Player* player)
 	panel_fps->visible = false;
 	panel_fps->Add(label_fps);
 	Add(panel_fps);
+
+	inventory = new Inventory(res_mgr, player);
+	inventory->pos = Int2(wnd_size.x - inventory->size.x, wnd_size.y - inventory->size.y);
+	Add(inventory);
 
 	engine->GetGui()->Add(this);
 }
@@ -140,7 +146,9 @@ void GameGui::Draw()
 
 void GameGui::Update()
 {
-	if(engine->GetInput()->Pressed(Key::F1))
+	Input* input = gui->GetInput();
+
+	if(input->Pressed(Key::F1))
 		panel_fps->visible = !panel_fps->visible;
 	if(panel_fps->visible)
 	{
@@ -155,4 +163,17 @@ void GameGui::Update()
 
 	hp_bar->progress = player->GetHpp();
 	label_medkits->text = Format("%d", player->medkits);
+
+	if(input->Pressed(Key::I))
+		inventory->Show(!inventory->visible);
+
+	sprite_crosshair->visible = !inventory->visible;
+
+	if(inventory->visible)
+		inventory->Update();
+}
+
+bool GameGui::IsInventoryOpen()
+{
+	return inventory->visible;
 }
