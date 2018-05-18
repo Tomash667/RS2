@@ -4,11 +4,13 @@
 #include "TextureLoader.h"
 #include "QmshLoader.h"
 #include "FontLoader.h"
+#include "SoundLoader.h"
 #include "Texture.h"
 #include "Mesh.h"
 #include "Font.h"
+#include "Sound.h"
 
-ResourceManager::ResourceManager() : render(nullptr)
+ResourceManager::ResourceManager()
 {
 }
 
@@ -17,16 +19,16 @@ ResourceManager::~ResourceManager()
 	DeleteElements(resources);
 }
 
-void ResourceManager::Init(Render* render)
+void ResourceManager::Init(Render* render, SoundManager* sound_mgr)
 {
-	assert(render);
-	this->render = render;
+	assert(render && sound_mgr);
 
 	ID3D11Device* device = render->GetDevice();
 	ID3D11DeviceContext* device_context = render->GetDeviceContext();
 	tex_loader.reset(new TextureLoader(device, device_context));
 	qmsh_loader.reset(new QmshLoader(this, device, device_context));
 	font_loader.reset(new FontLoader(device));
+	sound_loader.reset(new SoundLoader(sound_mgr));
 }
 
 Resource* ResourceManager::Get(cstring name, Resource::Type type)
@@ -43,6 +45,19 @@ Resource* ResourceManager::Get(cstring name, Resource::Type type)
 	return *it;
 }
 
+Font* ResourceManager::GetFont(Cstring name, int size)
+{
+	assert(size >= 1);
+	cstring resource_name = Format("%s;%d", name, size);
+	Font* font = (Font*)Get(resource_name, Resource::Type::Font);
+	if(!font)
+	{
+		font = font_loader->Load(name, size);
+		resources.insert(font);
+	}
+	return font;
+}
+
 Mesh* ResourceManager::GetMesh(Cstring name)
 {
 	Mesh* mesh = (Mesh*)Get(name, Resource::Type::Mesh);
@@ -55,6 +70,30 @@ Mesh* ResourceManager::GetMesh(Cstring name)
 	return mesh;
 }
 
+Music* ResourceManager::GetMusic(Cstring name)
+{
+	Music* music = (Music*)Get(name, Resource::Type::Music);
+	if(!music)
+	{
+		cstring path = Format("Data/%s", name);
+		music = sound_loader->LoadMusic(name, path);
+		resources.insert(music);
+	}
+	return music;
+}
+
+Sound* ResourceManager::GetSound(Cstring name)
+{
+	Sound* sound = (Sound*)Get(name, Resource::Type::Sound);
+	if(!sound)
+	{
+		cstring path = Format("Data/%s", name);
+		sound = sound_loader->LoadSound(name, path);
+		resources.insert(sound);
+	}
+	return sound;
+}
+
 Texture* ResourceManager::GetTexture(Cstring name)
 {
 	Texture* tex = (Texture*)Get(name, Resource::Type::Texture);
@@ -65,17 +104,4 @@ Texture* ResourceManager::GetTexture(Cstring name)
 		resources.insert(tex);
 	}
 	return tex;
-}
-
-Font* ResourceManager::GetFont(Cstring name, int size)
-{
-	assert(size >= 1);
-	cstring resource_name = Format("%s;%d", name, size);
-	Font* font = (Font*)Get(resource_name, Resource::Type::Font);
-	if(!font)
-	{
-		font = font_loader->Load(name, size);
-		resources.insert(font);
-	}
-	return font;
 }

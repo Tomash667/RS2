@@ -4,11 +4,13 @@
 #include "Input.h"
 #include "Window.h"
 #include "Render.h"
+#include "SoundManager.h"
 #include "ResourceManager.h"
 #include "Scene.h"
 #include "Gui.h"
 
-Engine::Engine() : handler(nullptr), input(new Input), window(new Window), render(new Render), res_mgr(new ResourceManager), scene(new Scene), gui(new Gui), fps(0)
+Engine::Engine() : handler(nullptr), input(new Input), window(new Window), render(new Render), sound_mgr(new SoundManager), res_mgr(new ResourceManager),
+scene(new Scene), gui(new Gui), fps(0)
 {
 }
 
@@ -30,10 +32,11 @@ void Engine::Init(GameHandler* handler)
 
 	window->Init(input.get());
 	render->Init(window.get());
-	res_mgr->Init(render.get());
+	sound_mgr->Init();
+	res_mgr->Init(render.get(), sound_mgr.get());
 	scene->Init(render.get());
 	gui->SetWindowSize(window->GetSize());
-	gui->Init(render.get(), res_mgr.get());
+	gui->Init(render.get(), res_mgr.get(), input.get());
 }
 
 void Engine::Run()
@@ -71,6 +74,8 @@ void Engine::Run()
 		render->EndScene();
 
 		input->Update();
+		gui->Update();
+		sound_mgr->Update(dt);
 	}
 }
 

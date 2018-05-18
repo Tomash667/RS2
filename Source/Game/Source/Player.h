@@ -7,19 +7,37 @@ enum Action
 	A_NONE,
 	A_USE_MEDKIT,
 	A_PICKUP,
-	A_ATTACK
+	A_ATTACK,
+	A_EAT
+};
+
+enum FoodLevel
+{
+	FL_STARVING,
+	FL_VERY_HUGRY,
+	FL_HUNGRY,
+	FL_NORMAL,
+	FL_FULL
 };
 
 struct Player : Unit
 {
-	Player() : Unit(false), medkits(0), action(A_NONE), item_before(nullptr), rot_buf(0), last_rot(0) {}
+	Player();
+	void UseMedkit();
+	void EatFood();
+
+	FoodLevel GetFoodLevel();
 
 	Action action;
-	int medkits, action_state;
+	int action_state, food;
+	uint medkits, food_cans;
 	SceneNode* weapon, *hair;
 	GroundItem* item_before;
-	float rot_buf, last_rot;
+	float rot_buf, last_rot, hungry_timer;
+	Item* melee_weapon;
+
 	static const float walk_speed;
 	static const float run_speed;
 	static const float rot_speed;
+	static const float hunger_timestep;
 };

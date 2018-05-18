@@ -12,6 +12,7 @@ public:
 	Input* GetInput() { return input.get(); }
 	Render* GetRender() { return render.get(); }
 	Window* GetWindow() { return window.get(); }
+	SoundManager* GetSoundManager() { return sound_mgr.get(); }
 	ResourceManager* GetResourceManager() { return res_mgr.get(); }
 	Scene* GetScene() { return scene.get(); }
 	Gui* GetGui() { return gui.get(); }
@@ -22,6 +23,7 @@ private:
 	unique_ptr<Input> input;
 	unique_ptr<Window> window;
 	unique_ptr<Render> render;
+	unique_ptr<SoundManager> sound_mgr;
 	unique_ptr<ResourceManager> res_mgr;
 	unique_ptr<Scene> scene;
 	unique_ptr<Gui> gui;

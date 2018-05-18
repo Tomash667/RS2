@@ -8,6 +8,8 @@
 #include <Input.h>
 #include <SceneNode.h>
 #include "GroundItem.h"
+#include "Item.h"
+#include "Inventory.h"
 #include <Font.h>
 
 
@@ -64,15 +66,18 @@ void GameGui::Init(Engine* engine, Player* player)
 	this->player = player;
 
 	const Int2& wnd_size = gui->GetWindowSize();
-
 	ResourceManager* res_mgr = engine->GetResourceManager();
 
-	Sprite* sprite = new Sprite;
-	sprite->image = res_mgr->GetTexture("crosshair_dot.png");
-	sprite->size = Int2(16, 16);
-	sprite->pos = (wnd_size - sprite->size) / 2;
-	Add(sprite);
+	gui->SetCursorTexture(res_mgr->GetTexture("cursor.png"));
 
+	// crosshair
+	sprite_crosshair = new Sprite;
+	sprite_crosshair->image = res_mgr->GetTexture("crosshair_dot.png");
+	sprite_crosshair->size = Int2(16, 16);
+	sprite_crosshair->pos = (wnd_size - sprite_crosshair->size) / 2;
+	Add(sprite_crosshair);
+
+	// hp bar
 	hp_bar = new ProgressBar;
 	hp_bar->image = res_mgr->GetTexture("hp_bar.png");
 	hp_bar->background = res_mgr->GetTexture("bar_empty.png");
@@ -80,7 +85,8 @@ void GameGui::Init(Engine* engine, Player* player)
 	hp_bar->pos.y = wnd_size.y - hp_bar->size.y;
 	Add(hp_bar);
 
-	sprite = new Sprite;
+	// medkit icon & counter
+	Sprite* sprite = new Sprite;
 	sprite->image = res_mgr->GetTexture("medkit_icon.png");
 	sprite->size = Int2(32, 32);
 	sprite->pos = Int2(256 + 4, wnd_size.y - 32);
@@ -91,6 +97,15 @@ void GameGui::Init(Engine* engine, Player* player)
 	label_medkits->size = Int2(100, 100);
 	Add(label_medkits);
 
+	// food icon
+	sprite_food = new Sprite;
+	sprite_food->image = res_mgr->GetTexture("food_icon.png");
+	sprite_food->size = Int2(32, 32);
+	sprite_food->pos = Int2(8, hp_bar->pos.y - 40);
+	sprite_food->visible = false;
+	Add(sprite_food);
+
+	// fps panel
 	label_fps = new Label;
 	label_fps->pos = Int2(6, 6);
 	label_fps->color = Color(0, 255, 33, 255);
@@ -101,6 +116,11 @@ void GameGui::Init(Engine* engine, Player* player)
 	panel_fps->visible = false;
 	panel_fps->Add(label_fps);
 	Add(panel_fps);
+
+	// inventory
+	inventory = new Inventory(res_mgr, player);
+	inventory->pos = Int2(wnd_size.x - inventory->size.x, wnd_size.y - inventory->size.y);
+	Add(inventory);
 
 	engine->GetGui()->Add(this);
 }
@@ -119,7 +139,7 @@ void GameGui::Draw()
 		if(!gui->To2dPoint(item_pos, text_pos))
 			return;
 
-		cstring text = "[E] Medkit";
+		cstring text = Format("[E] %s", item->item->name);
 
 		const Int2& wnd_size = gui->GetWindowSize();
 		Int2 text_size = gui->GetDefaultFont()->CalculateSize(text) + Int2(2, 2);
@@ -140,7 +160,9 @@ void GameGui::Draw()
 
 void GameGui::Update()
 {
-	if(engine->GetInput()->Pressed(Key::F1))
+	Input* input = gui->GetInput();
+
+	if(input->Pressed(Key::F1))
 		panel_fps->visible = !panel_fps->visible;
 	if(panel_fps->visible)
 	{
@@ -155,4 +177,40 @@ void GameGui::Update()
 
 	hp_bar->progress = player->GetHpp();
 	label_medkits->text = Format("%d", player->medkits);
+
+	FoodLevel food_level = player->GetFoodLevel();
+	if(food_level == FL_NORMAL)
+		sprite_food->visible = false;
+	else
+	{
+		sprite_food->visible = true;
+		switch(food_level)
+		{
+		case FL_FULL:
+			sprite_food->color = Color(0, 255, 33);
+			break;
+		case FL_HUNGRY:
+			sprite_food->color = Color(240, 216, 0);
+			break;
+		case FL_VERY_HUGRY:
+			sprite_food->color = Color(245, 150, 0);
+			break;
+		case FL_STARVING:
+			sprite_food->color = Color(255, 0, 0);
+			break;
+		}
+	}
+
+	if(input->Pressed(Key::I))
+		inventory->Show(!inventory->visible);
+
+	sprite_crosshair->visible = !inventory->visible;
+
+	if(inventory->visible)
+		inventory->Update();
+}
+
+bool GameGui::IsInventoryOpen()
+{
+	return inventory->visible;
 }

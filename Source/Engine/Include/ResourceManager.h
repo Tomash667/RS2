@@ -7,11 +7,13 @@ class ResourceManager
 public:
 	ResourceManager();
 	~ResourceManager();
-	void Init(Render* render);
+	void Init(Render* render, SoundManager* sound_mgr);
 
-	Mesh* GetMesh(Cstring name);
-	Texture* GetTexture(Cstring name);
 	Font* GetFont(Cstring name, int size);
+	Mesh* GetMesh(Cstring name);
+	Music* GetMusic(Cstring name);
+	Sound* GetSound(Cstring name);
+	Texture* GetTexture(Cstring name);
 
 private:
 	struct ResourceComparer
@@ -26,10 +28,10 @@ private:
 
 	Resource* Get(cstring name, Resource::Type type);
 
-	Render* render;
 	unique_ptr<TextureLoader> tex_loader;
 	unique_ptr<QmshLoader> qmsh_loader;
 	unique_ptr<FontLoader> font_loader;
+	unique_ptr<SoundLoader> sound_loader;
 	ResourceContainer resources;
 	Resource res_search;
 };

@@ -10,6 +10,7 @@ class Input;
 class Render;
 class ResourceManager;
 class Scene;
+class SoundManager;
 class Window;
 
 // entities
@@ -24,7 +25,9 @@ struct Shader;
 struct Font;
 struct Mesh;
 struct MeshPoint;
+struct Music;
 struct Resource;
+struct Sound;
 struct Texture;
 
 // gui controls
@@ -42,6 +45,7 @@ class GuiShader;
 class MeshShader;
 class ParticleShader;
 class QmshLoader;
+class SoundLoader;
 class TextureLoader;
 
 // directx
@@ -63,3 +67,12 @@ struct ID3D11Texture2D;
 struct ID3D11BlendState;
 struct D3D11_INPUT_ELEMENT_DESC;
 typedef ID3D10Blob ID3DBlob;
+
+// fmod
+namespace FMOD
+{
+	class Channel;
+	class ChannelGroup;
+	class Sound;
+	class System;
+}

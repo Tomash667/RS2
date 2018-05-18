@@ -9,10 +9,14 @@ public:
 	void Draw() override;
 	void Update();
 
+	bool IsInventoryOpen();
+
 private:
 	Engine* engine;
 	Player* player;
+	Inventory* inventory;
 	Panel* panel_fps;
 	Label* label_fps, *label_medkits;
+	Sprite* sprite_crosshair, *sprite_food;
 	ProgressBar* hp_bar;
 };

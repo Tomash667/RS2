@@ -22,7 +22,7 @@ Mesh* QmshLoader::Load(cstring name, cstring path)
 	catch(cstring err)
 	{
 		delete mesh;
-		throw Format("Failed to load mesh '%s': %s", name, err);
+		throw Format("Failed to load mesh '%s': %s", path, err);
 	}
 
 	return mesh;

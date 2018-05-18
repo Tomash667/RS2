@@ -47,3 +47,10 @@ Box Unit::GetBox() const
 
 	return box;
 }
+
+Vec3 Unit::GetSoundPos() const
+{
+	Vec3 pos = node->pos;
+	pos.y += 1.7f;
+	return pos;
+}

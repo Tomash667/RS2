@@ -544,6 +544,7 @@ struct Rect
 	static Rect Create(const Int2& pos, const Int2& size);
 	static Rect Intersect(const Rect& r1, const Rect& r2);
 	static bool Intersect(const Rect& r1, const Rect& r2, Rect& result);
+	static bool IsInside(const Int2& pos, const Int2& size, const Int2& pt);
 
 	// Constants
 	static const Rect Zero;

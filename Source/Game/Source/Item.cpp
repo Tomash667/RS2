@@ -3,19 +3,31 @@
 #include <ResourceManager.h>
 
 Item items[] = {
-	"bat", "Baseball bat", Item::Type::MeleeWeapon, 45, 55, nullptr, nullptr,
-	"axe", "Axe", Item::Type::MeleeWeapon, 55, 104, nullptr, nullptr,
-	"pistol", "Pistol", Item::Type::RangedWeapon, 81, 100, nullptr, nullptr,
-	"ammo", "Pistol ammo", Item::Type::Ammo, 0, 0, nullptr, nullptr,
-	"food", "Food", Item::Type::Food, 0, 0, nullptr, nullptr,
-	"medkit", "Medkit", Item::Type::Medicine, 0, 0, nullptr, nullptr
+	Item(Item::MELEE_WEAPON, "baseball_bat", "Baseball bat", nullptr, "baseball_bat.png", 45, 55),
+	Item(Item::MELEE_WEAPON, "axe", "Axe", nullptr, "axe.png", 55, 104),
+	Item(Item::RANGED_WEAPON, "pistol", "Pistol", nullptr, "pistol.png", 81, 100),
+	Item(Item::AMMO, "pistol_ammo", "Pistol ammo", nullptr, "pistol_ammo.png"),
+	Item(Item::MEDKIT, "medkit", "Medkit", "medkit.qmsh", "medkit_ico.png"),
+	Item(Item::FOOD, "canned_food", "Canned food", "canned_food.qmsh", "canned_food.png")
 };
 
-void Item::LoadItems(ResourceManager* res_mgr)
+Item* Item::Get(cstring id)
 {
 	for(Item& item : items)
 	{
-		item.mesh = res_mgr->GetMesh(Format("%s.qmsh", item.id.c_str()));
-		item.icon = res_mgr->GetTexture(Format("%s.png", item.id.c_str()));
+		if(item.id == id)
+			return &item;
+	}
+	return nullptr;
+}
+
+void Item::LoadData(ResourceManager* res_mgr)
+{
+	for(Item& item : items)
+	{
+		if(item.mesh_id)
+			item.mesh = res_mgr->GetMesh(item.mesh_id);
+		if(item.icon_id)
+			item.icon = res_mgr->GetTexture(item.icon_id);
 	}
 }

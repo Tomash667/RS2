@@ -6,7 +6,9 @@ struct Resource
 	{
 		Texture,
 		Mesh,
-		Font
+		Font,
+		Sound,
+		Music
 	};
 
 	Resource() {}
