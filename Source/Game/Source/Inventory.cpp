@@ -109,9 +109,9 @@ void Inventory::Update()
 void Inventory::PrepareSlots()
 {
 	slots[SLOT_MELEE_WEAPON] = Slot(player->melee_weapon);
-	slots[SLOT_RANGED_WEAPON] = Slot(nullptr);
-	slots[SLOT_AMMO] = Slot(nullptr);
-	slots[SLOT_FOOD] = (player->food_cans > 0 ? Slot(Item::Get("food"), player->food_cans) : Slot(nullptr));
+	slots[SLOT_RANGED_WEAPON] = Slot(player->ranged_weapon);
+	slots[SLOT_AMMO] = (player->ammo > 0 ? Slot(Item::Get("pistol_ammo"), player->ammo) : Slot(nullptr));
+	slots[SLOT_FOOD] = (player->food_cans > 0 ? Slot(Item::Get("canned_food"), player->food_cans) : Slot(nullptr));
 	slots[SLOT_MEDKIT] = (player->medkits > 0 ? Slot(Item::Get("medkit"), player->medkits) : Slot(nullptr));
 }
 
@@ -128,6 +128,15 @@ void Inventory::UseItem(SLOT slot)
 {
 	switch(slot)
 	{
+	case SLOT_MELEE_WEAPON:
+		player->SwitchWeapon(true);
+		break;
+	case SLOT_RANGED_WEAPON:
+		player->SwitchWeapon(false);
+		break;
+	case SLOT_AMMO:
+		player->Reload();
+		break;
 	case SLOT_MEDKIT:
 		player->UseMedkit();
 		break;

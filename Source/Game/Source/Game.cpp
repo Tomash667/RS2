@@ -254,6 +254,12 @@ void Game::UpdatePlayer(float dt)
 
 	if(input->Pressed(Key::H))
 		player->UseMedkit();
+	if(input->Pressed(Key::R))
+		player->Reload();
+	if(input->Pressed(Key::N1))
+		player->SwitchWeapon(true);
+	if(input->Pressed(Key::N2))
+		player->SwitchWeapon(false);
 
 	if(player->action == A_NONE && allow_mouse && input->Down(Key::LeftButton))
 	{
@@ -313,6 +319,18 @@ void Game::UpdatePlayer(float dt)
 					break;
 				case Item::FOOD:
 					++player->food_cans;
+					break;
+				case Item::RANGED_WEAPON:
+					if(!player->ranged_weapon)
+					{
+						player->ranged_weapon = player->item_before->item;
+						player->current_ammo = 10;
+					}
+					else
+						player->ammo += 10;
+					break;
+				case Item::AMMO:
+					player->ammo += 20;
 					break;
 				}
 				level->RemoveItem(player->item_before);
