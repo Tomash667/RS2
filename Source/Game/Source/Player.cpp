@@ -4,7 +4,15 @@
 #include <SceneNode.h>
 #include <MeshInstance.h>
 
-Player::Player() : Unit(false), medkits(0), action(A_NONE), item_before(nullptr), rot_buf(0), last_rot(0)
+
+const float Player::walk_speed = 2.5f;
+const float Player::run_speed = 7.f;
+const float Player::rot_speed = 4.f;
+const float Player::hunger_timestep = 1.f; // FIXME
+
+
+Player::Player() : Unit(false), medkits(0), food_cans(false), action(A_NONE), item_before(nullptr), rot_buf(0), last_rot(0), food(80),
+hungry_timer(hunger_timestep)
 {
 	melee_weapon = Item::Get("baseball_bat");
 }
@@ -17,4 +25,28 @@ void Player::UseMedkit()
 		action_state = 0;
 		node->mesh_inst->Play("use", PLAY_ONCE | PLAY_CLEAR_FRAME_END_INFO, 1);
 	}
+}
+
+void Player::EatFood()
+{
+	if(action == A_NONE && food_cans != 0 && GetFoodLevel() != FL_FULL)
+	{
+		action = A_EAT;
+		action_state = 0;
+		node->mesh_inst->Play("je", PLAY_ONCE | PLAY_CLEAR_FRAME_END_INFO, 1);
+	}
+}
+
+FoodLevel Player::GetFoodLevel()
+{
+	if(food >= 90)
+		return FL_FULL;
+	else if(food >= 33)
+		return FL_NORMAL;
+	else if(food >= 15)
+		return FL_HUNGRY;
+	else if(food >= 0)
+		return FL_VERY_HUGRY;
+	else
+		return FL_STARVING;
 }

@@ -6,7 +6,7 @@
 
 void Sprite::Draw()
 {
-	gui->DrawSprite(image, pos, size);
+	gui->DrawSprite(image, pos, size, color);
 }
 
 

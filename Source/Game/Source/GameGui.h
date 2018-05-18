@@ -17,6 +17,6 @@ private:
 	Inventory* inventory;
 	Panel* panel_fps;
 	Label* label_fps, *label_medkits;
-	Sprite* sprite_crosshair;
+	Sprite* sprite_crosshair, *sprite_food;
 	ProgressBar* hp_bar;
 };

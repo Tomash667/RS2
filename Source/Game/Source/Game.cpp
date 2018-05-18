@@ -22,9 +22,6 @@
 #include <SoundManager.h>
 
 
-const float Player::walk_speed = 2.5f;
-const float Player::run_speed = 7.f;
-const float Player::rot_speed = 4.f;
 const float Zombie::walk_speed = 1.5f;
 const float Zombie::rot_speed = 2.5f;
 const int level_size = 32;
@@ -120,7 +117,7 @@ void Game::InitGame()
 {
 	Srand();
 	engine->GetWindow()->SetCursorLock(true);
-	
+
 	Item::LoadData(res_mgr);
 
 	level.reset(new Level);
@@ -158,6 +155,8 @@ void Game::LoadResources()
 	sound_zombie_alert = res_mgr->GetSound("zombie alert.wav");
 	sound_hit = res_mgr->GetSound("hit.mp3");
 	sound_medkit = res_mgr->GetSound("medkit.mp3");
+	sound_eat = res_mgr->GetSound("eat.mp3");
+	sound_hungry = res_mgr->GetSound("hungry.mp3");
 }
 
 void Game::GenerateCity()
@@ -193,6 +192,24 @@ void Game::UpdatePlayer(float dt)
 		return;
 
 	player->last_damage -= dt;
+	if((player->hungry_timer - dt) <= 0.f)
+	{
+		player->hungry_timer = Player::hunger_timestep;
+		FoodLevel prev_food_level = player->GetFoodLevel();
+		--player->food;
+		FoodLevel new_food_level = player->GetFoodLevel();
+		if(prev_food_level != new_food_level && new_food_level <= FL_HUNGRY)
+			sound_mgr->PlaySound3d(sound_hungry, player->GetSoundPos(), 1.f);
+		if(player->food < 0)
+		{
+			player->hp -= 1;
+			if(player->hp <= 0)
+			{
+				player->animation = ANI_DIE;
+				player->node->mesh_inst->Play("umiera", PLAY_ONCE | PLAY_STOP_AT_END | PLAY_PRIO3, 0);
+			}
+		}
+	}
 
 	Animation animation = ANI_STAND;
 
@@ -265,6 +282,20 @@ void Game::UpdatePlayer(float dt)
 			player->action = A_NONE;
 		}
 		break;
+	case A_EAT:
+		can_run = false;
+		if(player->action_state == 0)
+		{
+			sound_mgr->PlaySound3d(sound_eat, player->GetSoundPos(), 2.f);
+			player->action_state = 1;
+		}
+		if(player->node->mesh_inst->GetEndResult(1))
+		{
+			player->food = min(player->food + 25, 100);
+			--player->food_cans;
+			player->action = A_NONE;
+		}
+		break;
 	case A_PICKUP:
 		if(player->action_state == 0)
 		{
@@ -275,10 +306,18 @@ void Game::UpdatePlayer(float dt)
 			if(player->node->mesh_inst->GetProgress(0) > 19.f / 34)
 			{
 				// pickup item
+				switch(player->item_before->item->type)
+				{
+				case Item::MEDKIT:
+					++player->medkits;
+					break;
+				case Item::FOOD:
+					++player->food_cans;
+					break;
+				}
 				level->RemoveItem(player->item_before);
 				player->action_state = 1;
 				player->item_before = nullptr;
-				++player->medkits;
 			}
 		}
 		else if(player->node->mesh_inst->GetEndResult(0))
