@@ -24,6 +24,9 @@ private:
 	bool CheckForHit(Unit& unit, MeshPoint& hitbox, MeshPoint* bone, Unit*& target, Vec3& hitpoint);
 	void HitUnit(Unit& unit, int dmg, const Vec3& hitpoint);
 	bool CheckMove(Unit& uint, const Vec3& dir);
+	void Save(FileWriter& f);
+	void Load(FileReader& f);
+	void NewGame();
 
 	unique_ptr<Engine> engine;
 	Scene* scene;
@@ -42,5 +45,5 @@ private:
 
 	// camera
 	Vec2 cam_rot;
-	float cam_dist, cam_h, cam_shift;
+	float cam_dist, cam_shift;
 };

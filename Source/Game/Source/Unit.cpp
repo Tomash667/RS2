@@ -54,3 +54,18 @@ Vec3 Unit::GetSoundPos() const
 	pos.y += 1.7f;
 	return pos;
 }
+
+void Unit::Save(FileWriter& f)
+{
+	//node->mesh_inst->Save(f);
+	f << node->pos;
+	f << node->rot.y;
+	f << hp;
+	f << last_damage;
+	f << animation;
+}
+
+void Unit::Load(FileReader& f)
+{
+
+}

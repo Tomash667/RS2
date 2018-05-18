@@ -20,6 +20,8 @@ public:
 	void AddCollider(const Collider& c);
 	void SpawnBarriers();
 	float RayTest(const Vec3& pos, const Vec3& ray);
+	void Save(FileWriter& f);
+	void Load(FileReader& f);
 
 	Scene* scene;
 	Player* player;

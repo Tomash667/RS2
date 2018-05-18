@@ -205,3 +205,37 @@ float Level::RayTest(const Vec3& pos, const Vec3& ray)
 
 	return min_t;
 }
+
+void Level::Save(FileWriter& f)
+{
+	player->Save(f);
+
+	for(Zombie* zombie : zombies)
+		zombie->Save(f);
+
+	f << items.size();
+	for(GroundItem& item : items)
+	{
+		f << item.node->pos;
+		f << item.node->rot.y;
+	}
+}
+
+void Level::Load(FileReader& f)
+{
+	player->Load(f);
+
+	for(Zombie* zombie : zombies)
+		zombie->Load(f);
+
+	items.resize(f.Read<uint>());
+	for(GroundItem& item : items)
+	{
+		item.node = new SceneNode;
+		item.node->mesh = mesh_medkit;
+		f >> item.node->pos;
+		f >> item.node->rot.y;
+		item.node->rot.x = 0;
+		item.node->rot.z = 0;
+	}
+}

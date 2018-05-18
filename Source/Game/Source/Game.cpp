@@ -120,7 +120,7 @@ void Game::InitGame()
 {
 	Srand();
 	engine->GetWindow()->SetCursorLock(true);
-	
+
 	Item::LoadData(res_mgr);
 
 	level.reset(new Level);
@@ -131,16 +131,20 @@ void Game::InitGame()
 	scene->SetFogColor(Color(200, 200, 200));
 	scene->SetFogParams(5.f, 20.f);
 
-	// camera
-	cam_rot = Vec2(0, 4.47908592f);
-	cam_dist = 1.5f;
-	cam_shift = 0.25f;
-
 	LoadResources();
+	NewGame();
 	GenerateCity();
 
 	game_gui = new GameGui;
 	game_gui->Init(engine.get(), level->player);
+}
+
+void Game::NewGame()
+{
+	// camera
+	cam_rot = Vec2(0, 4.47908592f);
+	cam_dist = 1.5f;
+	cam_shift = 0.25f;
 }
 
 void Game::LoadResources()
@@ -748,4 +752,58 @@ bool Game::CheckMove(Unit& unit, const Vec3& dir)
 	}
 
 	return false;
+}
+
+void Game::Save(FileWriter& f)
+{
+	// header
+	char sign[] = { 'R','S','A','V' };
+	f << sign;
+	f << VERSION;
+
+	// level
+	level->Save(f);
+
+	// camera
+	f << cam_rot;
+	f << cam_dist;
+	f << cam_shift;
+}
+
+cstring VersionToString(int version)
+{
+	int major = (version & 0xFF00) >> 8;
+	int minor = version & 0xFF;
+	if(minor == 0)
+		return Format("%d", major);
+	else
+		return Format("%d.%d", major, minor);
+}
+
+void Game::Load(FileReader& f)
+{
+	if(!f)
+		throw "Failed to open file.";
+
+	// file sign
+	char sign[] = { 'R','S','A','V' };
+	char sign2[4];
+	f >> sign2;
+	if(memcmp(sign, sign2, sizeof(sign)) != 0)
+		throw "Invalid save header.";
+
+	// version
+	int version;
+	f >> version;
+	version &= 0xFFFF;
+	if(version != VERSION)
+		throw Format("Invalid save version %s.", VersionToString(version));
+
+	// level
+	level->Load(f);
+
+	// camera
+	f >> cam_rot;
+	f >> cam_dist;
+	f >> cam_shift;
 }

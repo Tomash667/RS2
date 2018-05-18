@@ -14,6 +14,8 @@ struct Player : Unit
 {
 	Player();
 	void UseMedkit();
+	void Save(FileWriter& f);
+	void Load(FileReader& f);
 
 	Action action;
 	int action_state;

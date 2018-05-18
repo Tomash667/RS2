@@ -18,3 +18,13 @@ void Player::UseMedkit()
 		node->mesh_inst->Play("use", PLAY_ONCE | PLAY_CLEAR_FRAME_END_INFO, 1);
 	}
 }
+
+void Player::Save(FileWriter& f)
+{
+
+}
+
+void Player::Load(FileReader& f)
+{
+
+}

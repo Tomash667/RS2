@@ -19,6 +19,8 @@ struct Unit
 	float GetHpp() const { return float(hp) / 100; }
 	Box GetBox() const;
 	Vec3 GetSoundPos() const;
+	void Save(FileWriter& f);
+	void Load(FileReader& f);
 
 	SceneNode* node;
 	int hp;
