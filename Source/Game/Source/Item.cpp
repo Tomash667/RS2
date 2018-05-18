@@ -3,8 +3,9 @@
 #include <ResourceManager.h>
 
 Item items[] = {
-	{ "baseball_bat", "Baseball bat", "baseball_bat.png", nullptr },
-	{ "medkit", "Medkit", "medkit_ico.png", nullptr }
+	Item(Item::MELEE_WEAPON, "baseball_bat", "Baseball bat", nullptr, "baseball_bat.png"),
+	Item(Item::MEDKIT, "medkit", "Medkit", "medkit.qmsh", "medkit_ico.png"),
+	Item(Item::FOOD, "canned_food", "Canned food", "canned_food.qmsh", "canned_food.png")
 };
 
 Item* Item::Get(cstring id)
@@ -20,5 +21,10 @@ Item* Item::Get(cstring id)
 void Item::LoadData(ResourceManager* res_mgr)
 {
 	for(Item& item : items)
-		item.icon = res_mgr->GetTexture(item.icon_id);
+	{
+		if(item.mesh_id)
+			item.mesh = res_mgr->GetMesh(item.mesh_id);
+		if(item.icon_id)
+			item.icon = res_mgr->GetTexture(item.icon_id);
+	}
 }

@@ -32,6 +32,7 @@ private:
 
 	void PrepareSlots();
 	cstring GetTooltipText();
+	void UseItem(SLOT slot);
 
 	Player* player;
 	Slot slots[SLOT_MAX];

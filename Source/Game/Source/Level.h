@@ -8,7 +8,7 @@ public:
 	Level();
 	~Level();
 	void Init(Scene* scene, ResourceManager* res_mgr, float level_size);
-	void SpawnMedkit(const Vec3& pos);
+	void SpawnItem(const Vec3& pos, Item* item);
 	void SpawnZombie(const Vec3& pos);
 	void SpawnPlayer(const Vec3& pos);
 	void RemoveItem(GroundItem* item);
@@ -36,7 +36,7 @@ private:
 	}
 
 	ResourceManager* res_mgr;
-	Mesh* mesh_medkit, *mesh_zombie;
+	Mesh* mesh_zombie;
 	vector<vector<Collider>> colliders;
 	vector<Collider> barriers;
 	vector<SceneNode*> bloods;
