@@ -20,6 +20,8 @@ public:
 	void AddCollider(const Collider& c);
 	void SpawnBarriers();
 	float RayTest(const Vec3& pos, const Vec3& ray);
+	void SpawnBlood(const Vec3& pos, Mesh* mesh);
+	void Update(float dt);
 
 	Scene* scene;
 	Player* player;
@@ -37,6 +39,7 @@ private:
 	Mesh* mesh_medkit, *mesh_zombie;
 	vector<vector<Collider>> colliders;
 	vector<Collider> barriers;
+	vector<SceneNode*> bloods;
 	float level_size, tile_size;
 	static const uint grids = 8;
 };

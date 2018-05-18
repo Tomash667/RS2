@@ -68,14 +68,18 @@ void Scene::DrawNodes(vector<SceneNode*>& nodes, const Matrix* parent_matrix)
 		{
 			assert(node->parent && parent_matrix);
 			Mesh::Point* point = (Mesh::Point*)node->parent_point;
-			mat_world = point->mat * node->parent->mesh_inst->GetMatrixBones().at(point->bone) * *parent_matrix;
+			mat_world = point->mat
+				* node->parent->mesh_inst->GetMatrixBones().at(point->bone)
+				* (*parent_matrix);
 		}
 		else
 		{
 			// convert right handed rotation to left handed
-			mat_world = Matrix::Rotation(-node->rot.y, node->rot.x, node->rot.z) * Matrix::Translation(node->pos);
+			mat_world = Matrix::Scale(node->scale)
+				* Matrix::Rotation(-node->rot.y, node->rot.x, node->rot.z)
+				* Matrix::Translation(node->pos);
 			if(parent_matrix)
-				mat_world *= *parent_matrix;
+				mat_world *= (*parent_matrix);
 		}
 		mat_combined = mat_world * mat_view_proj;
 
@@ -217,7 +221,7 @@ void Scene::ListVisibleNodes(vector<SceneNode*>& nodes)
 					ListVisibleNodes(node->childs);
 			}
 		}
-		else if(frustum_planes.SphereToFrustum(node->pos, node->mesh->head.radius))
+		else if(frustum_planes.SphereToFrustum(node->pos, node->mesh->head.radius * node->scale))
 			visible_nodes.push_back(node);
 	}
 }

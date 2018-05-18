@@ -719,7 +719,6 @@ inline float Vec2::Random() const
 	return ::Random(x, y);
 }
 
-
 inline Vec3 Vec2::XY(float _z) const
 {
 	return Vec3(x, y, _z);
@@ -1323,6 +1322,21 @@ inline float Vec3::LengthSquared() const
 	XMVECTOR v1 = XMLoadFloat3(this);
 	XMVECTOR X = XMVector3LengthSq(v1);
 	return XMVectorGetX(X);
+}
+
+inline Vec3 Vec3::ModX(float value) const
+{
+	return Vec3(x + value, y, z);
+}
+
+inline Vec3 Vec3::ModY(float value) const
+{
+	return Vec3(x, y + value, z);
+}
+
+inline Vec3 Vec3::ModZ(float value) const
+{
+	return Vec3(x, y, z + value);
 }
 
 inline Vec3& Vec3::Normalize()

@@ -22,6 +22,7 @@ struct Player : Unit
 	GroundItem* item_before;
 	float rot_buf, last_rot;
 	Item* melee_weapon;
+	bool death_starved;
 
 	static const float walk_speed;
 	static const float run_speed;

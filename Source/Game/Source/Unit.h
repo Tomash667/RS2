@@ -14,7 +14,7 @@ enum Animation
 
 struct Unit
 {
-	explicit Unit(bool is_zombie) : hp(100), animation(ANI_STAND), is_zombie(is_zombie), last_damage(0) {}
+	explicit Unit(bool is_zombie) : hp(100), animation(ANI_STAND), is_zombie(is_zombie), last_damage(0), dying(false) {}
 	void Update(Animation new_animation);
 	float GetHpp() const { return float(hp) / 100; }
 	Box GetBox() const;
@@ -24,7 +24,7 @@ struct Unit
 	int hp;
 	float last_damage;
 	Animation animation;
-	bool is_zombie;
+	bool is_zombie, dying;
 
 	static const float radius;
 	static const float height;

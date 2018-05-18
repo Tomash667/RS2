@@ -145,6 +145,10 @@ void Game::InitGame()
 
 void Game::LoadResources()
 {
+	// meshes
+	mesh_blood_pool = res_mgr->GetMesh("blood_pool.qmsh");
+	mesh_zombie_blood_pool = res_mgr->GetMesh("zombie_blood_pool.qmsh");
+
 	// particle texture
 	tex_blood = res_mgr->GetTexture("blood.png");
 	tex_zombie_blood = res_mgr->GetTexture("zombie_blood.png");
@@ -190,7 +194,14 @@ void Game::UpdatePlayer(float dt)
 {
 	Player* player = level->player;
 	if(player->hp <= 0)
+	{
+		if(player->dying && player->node->mesh_inst->GetEndResult(0))
+		{
+			player->dying = false;
+			level->SpawnBlood(player->node->pos.ModY(0.05f), mesh_blood_pool);
+		}
 		return;
+	}
 
 	player->last_damage -= dt;
 
@@ -439,7 +450,14 @@ void Game::UpdateZombies(float dt)
 	for(Zombie* zombie : level->zombies)
 	{
 		if(zombie->hp <= 0)
+		{
+			if(zombie->dying && zombie->node->mesh_inst->GetEndResult(0))
+			{
+				zombie->dying = false;
+				level->SpawnBlood(zombie->node->pos.ModY(0.05f), mesh_zombie_blood_pool);
+			}
 			continue;
+		}
 
 		if(player->hp <= 0)
 		{
@@ -693,8 +711,11 @@ void Game::HitUnit(Unit& unit, int dmg, const Vec3& hitpoint)
 	if(unit.hp <= 0)
 	{
 		unit.animation = ANI_DIE;
-		unit.node->mesh_inst->Play("umiera", PLAY_ONCE | PLAY_STOP_AT_END | PLAY_PRIO3, 0);
+		unit.dying = true;
+		unit.node->mesh_inst->Play("umiera", PLAY_ONCE | PLAY_STOP_AT_END | PLAY_PRIO3 | PLAY_CLEAR_FRAME_END_INFO, 0);
 		sound_mgr->PlaySound3d(unit.is_zombie ? sound_zombie_die : sound_player_die, unit.GetSoundPos(), 2.f);
+		if(!unit.is_zombie)
+			((Player&)unit).death_starved = false;
 	}
 	else if(unit.last_damage <= 0.f && Rand() % 3 == 0)
 		sound_mgr->PlaySound3d(unit.is_zombie ? sound_zombie_hurt : sound_player_hurt, unit.GetSoundPos(), 2.f);

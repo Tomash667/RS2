@@ -205,3 +205,29 @@ float Level::RayTest(const Vec3& pos, const Vec3& ray)
 
 	return min_t;
 }
+
+void Level::SpawnBlood(const Vec3& pos, Mesh* mesh)
+{
+	SceneNode* node = new SceneNode;
+	node->mesh = mesh;
+	node->pos = pos;
+	node->rot = Vec3(0, Random(PI * 2), 0);
+	node->scale = 0.f;
+	scene->Add(node);
+	bloods.push_back(node);
+}
+
+void Level::Update(float dt)
+{
+	LoopRemove(bloods, [dt](SceneNode* node)
+	{
+		node->scale += dt;
+		if(node->scale >= 1.f)
+		{
+			node->scale = 1.f;
+			return true;
+		}
+		else
+			return false;
+	});
+}

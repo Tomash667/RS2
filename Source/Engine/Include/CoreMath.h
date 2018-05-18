@@ -716,6 +716,9 @@ struct Vec3 : XMFLOAT3
 	bool IsPositive() const;
 	float Length() const;
 	float LengthSquared() const;
+	Vec3 ModX(float value) const;
+	Vec3 ModY(float value) const;
+	Vec3 ModZ(float value) const;
 	Vec3& Normalize();
 	void Normalize(Vec3& result) const;
 	Vec3 Normalized() const;
