@@ -197,7 +197,8 @@ void Game::UpdatePlayer(float dt)
 		if(player->dying && player->node->mesh_inst->GetEndResult(0))
 		{
 			player->dying = false;
-			level->SpawnBlood(player->node->pos.ModY(0.05f), mesh_blood_pool);
+			if(!player->death_starved)
+				level->SpawnBlood(player->node->pos.ModY(0.05f), mesh_blood_pool);
 		}
 		return;
 	}
@@ -218,6 +219,8 @@ void Game::UpdatePlayer(float dt)
 			{
 				player->animation = ANI_DIE;
 				player->node->mesh_inst->Play("umiera", PLAY_ONCE | PLAY_STOP_AT_END | PLAY_PRIO3, 0);
+				player->dying = true;
+				player->death_starved = true;
 			}
 		}
 	}
