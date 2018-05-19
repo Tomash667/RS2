@@ -118,8 +118,6 @@ void Game::InitGame()
 	Srand();
 	engine->GetWindow()->SetCursorLock(true);
 
-	Item::LoadData(res_mgr);
-
 	level.reset(new Level);
 	level->Init(scene, res_mgr, CityGenerator::tile_size * level_size);
 
@@ -142,10 +140,6 @@ void Game::InitGame()
 
 void Game::LoadResources()
 {
-	// meshes
-	mesh_blood_pool = res_mgr->GetMesh("blood_pool.qmsh");
-	mesh_zombie_blood_pool = res_mgr->GetMesh("zombie_blood_pool.qmsh");
-
 	// particle texture
 	tex_blood = res_mgr->GetTexture("blood.png");
 	tex_zombie_blood = res_mgr->GetTexture("zombie_blood.png");
@@ -161,6 +155,9 @@ void Game::LoadResources()
 	sound_medkit = res_mgr->GetSound("medkit.mp3");
 	sound_eat = res_mgr->GetSound("eat.mp3");
 	sound_hungry = res_mgr->GetSound("hungry.mp3");
+
+	level->LoadResources();
+	Item::LoadData(res_mgr);
 }
 
 void Game::GenerateCity()
@@ -184,6 +181,7 @@ bool Game::OnTick(float dt)
 	UpdatePlayer(dt);
 	UpdateZombies(dt);
 	UpdateCamera();
+	level->Update(dt);
 	game_gui->Update();
 
 	return true;
@@ -198,7 +196,7 @@ void Game::UpdatePlayer(float dt)
 		{
 			player->dying = false;
 			if(!player->death_starved)
-				level->SpawnBlood(player->node->pos.ModY(0.05f), mesh_blood_pool);
+				level->SpawnBlood(*player);
 		}
 		return;
 	}
@@ -497,7 +495,7 @@ void Game::UpdateZombies(float dt)
 			if(zombie->dying && zombie->node->mesh_inst->GetEndResult(0))
 			{
 				zombie->dying = false;
-				level->SpawnBlood(zombie->node->pos.ModY(0.05f), mesh_zombie_blood_pool);
+				level->SpawnBlood(*zombie);
 			}
 			continue;
 		}

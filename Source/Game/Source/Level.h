@@ -8,6 +8,7 @@ public:
 	Level();
 	~Level();
 	void Init(Scene* scene, ResourceManager* res_mgr, float level_size);
+	void LoadResources();
 	void SpawnItem(const Vec3& pos, Item* item);
 	void SpawnZombie(const Vec3& pos);
 	void SpawnPlayer(const Vec3& pos);
@@ -20,7 +21,7 @@ public:
 	void AddCollider(const Collider& c);
 	void SpawnBarriers();
 	float RayTest(const Vec3& pos, const Vec3& ray);
-	void SpawnBlood(const Vec3& pos, Mesh* mesh);
+	void SpawnBlood(Unit& unit);
 	void Update(float dt);
 
 	Scene* scene;
@@ -36,7 +37,7 @@ private:
 	}
 
 	ResourceManager* res_mgr;
-	Mesh* mesh_zombie;
+	Mesh* mesh_zombie, *mesh_blood_pool, *mesh_zombie_blood_pool;
 	vector<vector<Collider>> colliders;
 	vector<Collider> barriers;
 	vector<SceneNode*> bloods;

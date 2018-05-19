@@ -56,6 +56,13 @@ void Scene::DrawNodes()
 	mesh_shader->SetParams(fog_color, fog_params);
 	animated_shader->SetParams(fog_color, fog_params);
 	DrawNodes(visible_nodes, nullptr);
+
+	if(!visible_alpha_nodes.empty())
+	{
+		render->SetAlphaBlend(true);
+		render->SetDepthState(Render::DEPTH_READONLY);
+		DrawNodes(visible_alpha_nodes, nullptr);
+	}
 }
 
 void Scene::DrawNodes(vector<SceneNode*>& nodes, const Matrix* parent_matrix)
@@ -185,6 +192,7 @@ void Scene::SetFogParams(float start, float end)
 void Scene::ListVisibleNodes()
 {
 	visible_nodes.clear();
+	visible_alpha_nodes.clear();
 	visible_pes.clear();
 
 	ListVisibleNodes(nodes);
@@ -222,7 +230,12 @@ void Scene::ListVisibleNodes(vector<SceneNode*>& nodes)
 			}
 		}
 		else if(frustum_planes.SphereToFrustum(node->pos, node->mesh->head.radius * node->scale))
-			visible_nodes.push_back(node);
+		{
+			if(node->alpha)
+				visible_alpha_nodes.push_back(node);
+			else
+				visible_nodes.push_back(node);
+		}
 	}
 }
 

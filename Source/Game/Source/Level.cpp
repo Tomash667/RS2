@@ -26,9 +26,14 @@ void Level::Init(Scene* scene, ResourceManager* res_mgr, float level_size)
 	this->level_size = level_size;
 	tile_size = level_size / grids;
 
-	mesh_zombie = res_mgr->GetMesh("zombie.qmsh");
-
 	colliders.resize(grids * grids);
+}
+
+void Level::LoadResources()
+{
+	mesh_zombie = res_mgr->GetMesh("zombie.qmsh");
+	mesh_blood_pool = res_mgr->GetMesh("blood_pool.qmsh");
+	mesh_zombie_blood_pool = res_mgr->GetMesh("zombie_blood_pool.qmsh");
 }
 
 void Level::SpawnItem(const Vec3& pos, Item* item)
@@ -209,13 +214,29 @@ float Level::RayTest(const Vec3& pos, const Vec3& ray)
 	return min_t;
 }
 
-void Level::SpawnBlood(const Vec3& pos, Mesh* mesh)
+void Level::SpawnBlood(Unit& unit)
 {
+	unit.node->mesh_inst->SetupBones();
+
+	Vec3 center;
+	Mesh::Point* point = unit.node->mesh->GetPoint("centrum");
+	if(!point)
+		center = unit.node->pos.ModY(0.05f);
+	else
+	{
+		Matrix mat = point->mat
+			* unit.node->mesh_inst->GetMatrixBones()[point->bone]
+			* (Matrix::RotationY(-unit.node->rot.y) * Matrix::Translation(unit.node->pos));
+		center = Vec3::TransformZero(mat);
+		center.y = unit.node->pos.y + 0.05f;
+	}
+
 	SceneNode* node = new SceneNode;
-	node->mesh = mesh;
-	node->pos = pos;
+	node->mesh = unit.is_zombie ? mesh_zombie_blood_pool : mesh_blood_pool;
+	node->pos = center;
 	node->rot = Vec3(0, Random(PI * 2), 0);
 	node->scale = 0.f;
+	node->alpha = true;
 	scene->Add(node);
 	bloods.push_back(node);
 }

@@ -17,7 +17,7 @@ struct SceneNode
 	};
 
 	SceneNode() : parent(nullptr), parent_point(nullptr), mesh(nullptr), mesh_inst(nullptr), tint(Vec3::One), subs(0xFFFFFFFF), visible(true),
-		container(nullptr), scale(1.f) {}
+		container(nullptr), scale(1.f), alpha(false) {}
 	~SceneNode();
 	void Add(SceneNode* node, MeshPoint* point = nullptr);
 	MeshInstance* GetMeshInstance();
@@ -30,7 +30,7 @@ struct SceneNode
 	Vec3 pos, rot, tint;
 	float scale;
 	int subs;
-	bool visible;
+	bool visible, alpha;
 
 private:
 	SceneNode* parent;
