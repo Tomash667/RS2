@@ -39,6 +39,7 @@ struct Player : Unit
 	float rot_buf, last_rot, hungry_timer;
 	Item* melee_weapon, *ranged_weapon;
 	bool use_melee;
+	bool death_starved;
 
 	static const float walk_speed;
 	static const float run_speed;

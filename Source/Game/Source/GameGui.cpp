@@ -201,8 +201,13 @@ void GameGui::Update()
 		}
 	}
 
-	if(input->Pressed(Key::I))
-		inventory->Show(!inventory->visible);
+	if(player->hp > 0)
+	{
+		if(input->Pressed(Key::I))
+			inventory->Show(!inventory->visible);
+	}
+	else if(inventory->visible)
+		inventory->Show(false);
 
 	sprite_crosshair->visible = !inventory->visible;
 

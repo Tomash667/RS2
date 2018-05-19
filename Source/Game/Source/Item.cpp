@@ -18,7 +18,6 @@ Item* Item::Get(cstring id)
 		if(item.id == id)
 			return &item;
 	}
-	assert(0);
 	return nullptr;
 }
 

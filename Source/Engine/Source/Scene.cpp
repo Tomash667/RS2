@@ -56,6 +56,13 @@ void Scene::DrawNodes()
 	mesh_shader->SetParams(fog_color, fog_params);
 	animated_shader->SetParams(fog_color, fog_params);
 	DrawNodes(visible_nodes, nullptr);
+
+	if(!visible_alpha_nodes.empty())
+	{
+		render->SetAlphaBlend(true);
+		render->SetDepthState(Render::DEPTH_READONLY);
+		DrawNodes(visible_alpha_nodes, nullptr);
+	}
 }
 
 void Scene::DrawNodes(vector<SceneNode*>& nodes, const Matrix* parent_matrix)
@@ -68,14 +75,18 @@ void Scene::DrawNodes(vector<SceneNode*>& nodes, const Matrix* parent_matrix)
 		{
 			assert(node->parent && parent_matrix);
 			Mesh::Point* point = (Mesh::Point*)node->parent_point;
-			mat_world = point->mat * node->parent->mesh_inst->GetMatrixBones().at(point->bone) * *parent_matrix;
+			mat_world = point->mat
+				* node->parent->mesh_inst->GetMatrixBones().at(point->bone)
+				* (*parent_matrix);
 		}
 		else
 		{
 			// convert right handed rotation to left handed
-			mat_world = Matrix::Rotation(-node->rot.y, node->rot.x, node->rot.z) * Matrix::Translation(node->pos);
+			mat_world = Matrix::Scale(node->scale)
+				* Matrix::Rotation(-node->rot.y, node->rot.x, node->rot.z)
+				* Matrix::Translation(node->pos);
 			if(parent_matrix)
-				mat_world *= *parent_matrix;
+				mat_world *= (*parent_matrix);
 		}
 		mat_combined = mat_world * mat_view_proj;
 
@@ -181,6 +192,7 @@ void Scene::SetFogParams(float start, float end)
 void Scene::ListVisibleNodes()
 {
 	visible_nodes.clear();
+	visible_alpha_nodes.clear();
 	visible_pes.clear();
 
 	ListVisibleNodes(nodes);
@@ -217,8 +229,13 @@ void Scene::ListVisibleNodes(vector<SceneNode*>& nodes)
 					ListVisibleNodes(node->childs);
 			}
 		}
-		else if(frustum_planes.SphereToFrustum(node->pos, node->mesh->head.radius))
-			visible_nodes.push_back(node);
+		else if(frustum_planes.SphereToFrustum(node->pos, node->mesh->head.radius * node->scale))
+		{
+			if(node->alpha)
+				visible_alpha_nodes.push_back(node);
+			else
+				visible_nodes.push_back(node);
+		}
 	}
 }
 

@@ -8,10 +8,10 @@
 const float Player::walk_speed = 2.5f;
 const float Player::run_speed = 7.f;
 const float Player::rot_speed = 4.f;
-const float Player::hunger_timestep = 1.f; // FIXME
+const float Player::hunger_timestep = 10.f;
 
 
-Player::Player() : Unit(false), medkits(0), food_cans(false), action(A_NONE), item_before(nullptr), rot_buf(0), last_rot(0), food(80),
+Player::Player() : Unit(false), medkits(0), food_cans(0), action(A_NONE), item_before(nullptr), rot_buf(0), last_rot(0), food(80),
 hungry_timer(hunger_timestep), ranged_weapon(nullptr), ammo(0), current_ammo(0), use_melee(true)
 {
 	melee_weapon = Item::Get("baseball_bat");
@@ -24,6 +24,7 @@ void Player::UseMedkit()
 		action = A_USE_MEDKIT;
 		action_state = 0;
 		node->mesh_inst->Play("use", PLAY_ONCE | PLAY_CLEAR_FRAME_END_INFO, 1);
+		weapon->visible = false;
 	}
 }
 
@@ -34,6 +35,7 @@ void Player::EatFood()
 		action = A_EAT;
 		action_state = 0;
 		node->mesh_inst->Play("je", PLAY_ONCE | PLAY_CLEAR_FRAME_END_INFO, 1);
+		weapon->visible = false;
 	}
 }
 
