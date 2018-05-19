@@ -192,11 +192,11 @@ void Game::UpdatePlayer(float dt)
 		return;
 
 	player->last_damage -= dt;
-	if((player->hungry_timer - dt) <= 0.f)
+	if((player->hungry_timer -= dt) <= 0.f)
 	{
 		player->hungry_timer = Player::hunger_timestep;
 		FoodLevel prev_food_level = player->GetFoodLevel();
-		--player->food;
+		player->food = max(player->food - 1, -10);
 		FoodLevel new_food_level = player->GetFoodLevel();
 		if(prev_food_level != new_food_level && new_food_level <= FL_HUNGRY)
 			sound_mgr->PlaySound3d(sound_hungry, player->GetSoundPos(), 1.f);
@@ -207,6 +207,7 @@ void Game::UpdatePlayer(float dt)
 			{
 				player->animation = ANI_DIE;
 				player->node->mesh_inst->Play("umiera", PLAY_ONCE | PLAY_STOP_AT_END | PLAY_PRIO3, 0);
+				return;
 			}
 		}
 	}
@@ -280,20 +281,22 @@ void Game::UpdatePlayer(float dt)
 			player->hp = min(player->hp + 50, 100);
 			--player->medkits;
 			player->action = A_NONE;
+			player->weapon->visible = true;
 		}
 		break;
 	case A_EAT:
 		can_run = false;
-		if(player->action_state == 0)
+		if(player->action_state == 0 && player->node->mesh_inst->GetProgress(1) >= 19.f / 70)
 		{
-			sound_mgr->PlaySound3d(sound_eat, player->GetSoundPos(), 2.f);
 			player->action_state = 1;
+			sound_mgr->PlaySound3d(sound_eat, player->GetSoundPos(), 2.f);
+			player->food = min(player->food + 25, 100);
+			--player->food_cans;
 		}
 		if(player->node->mesh_inst->GetEndResult(1))
 		{
-			player->food = min(player->food + 25, 100);
-			--player->food_cans;
 			player->action = A_NONE;
+			player->weapon->visible = true;
 		}
 		break;
 	case A_PICKUP:

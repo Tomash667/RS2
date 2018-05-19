@@ -111,7 +111,7 @@ void Inventory::PrepareSlots()
 	slots[SLOT_MELEE_WEAPON] = Slot(player->melee_weapon);
 	slots[SLOT_RANGED_WEAPON] = Slot(nullptr);
 	slots[SLOT_AMMO] = Slot(nullptr);
-	slots[SLOT_FOOD] = (player->food_cans > 0 ? Slot(Item::Get("food"), player->food_cans) : Slot(nullptr));
+	slots[SLOT_FOOD] = (player->food_cans > 0 ? Slot(Item::Get("canned_food"), player->food_cans) : Slot(nullptr));
 	slots[SLOT_MEDKIT] = (player->medkits > 0 ? Slot(Item::Get("medkit"), player->medkits) : Slot(nullptr));
 }
 
