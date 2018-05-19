@@ -33,7 +33,7 @@ private:
 	unique_ptr<AnimatedShader> animated_shader;
 	unique_ptr<ParticleShader> particle_shader;
 	unique_ptr<Camera> camera;
-	vector<SceneNode*> nodes, visible_nodes;
+	vector<SceneNode*> nodes, visible_nodes, visible_alpha_nodes;
 	vector<ParticleEmitter*> pes, visible_pes;
 	Matrix mat_view, mat_view_proj;
 	int mode;

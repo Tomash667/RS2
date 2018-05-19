@@ -118,8 +118,6 @@ void Game::InitGame()
 	Srand();
 	engine->GetWindow()->SetCursorLock(true);
 
-	Item::LoadData(res_mgr);
-
 	level.reset(new Level);
 	level->Init(scene, res_mgr, CityGenerator::tile_size * level_size);
 
@@ -157,6 +155,9 @@ void Game::LoadResources()
 	sound_medkit = res_mgr->GetSound("medkit.mp3");
 	sound_eat = res_mgr->GetSound("eat.mp3");
 	sound_hungry = res_mgr->GetSound("hungry.mp3");
+
+	level->LoadResources();
+	Item::LoadData(res_mgr);
 }
 
 void Game::GenerateCity()
@@ -180,6 +181,7 @@ bool Game::OnTick(float dt)
 	UpdatePlayer(dt);
 	UpdateZombies(dt);
 	UpdateCamera();
+	level->Update(dt);
 	game_gui->Update();
 
 	return true;
@@ -189,7 +191,15 @@ void Game::UpdatePlayer(float dt)
 {
 	Player* player = level->player;
 	if(player->hp <= 0)
+	{
+		if(player->dying && player->node->mesh_inst->GetEndResult(0))
+		{
+			player->dying = false;
+			if(!player->death_starved)
+				level->SpawnBlood(*player);
+		}
 		return;
+	}
 
 	player->last_damage -= dt;
 	if((player->hungry_timer -= dt) <= 0.f)
@@ -481,7 +491,14 @@ void Game::UpdateZombies(float dt)
 	for(Zombie* zombie : level->zombies)
 	{
 		if(zombie->hp <= 0)
+		{
+			if(zombie->dying && zombie->node->mesh_inst->GetEndResult(0))
+			{
+				zombie->dying = false;
+				level->SpawnBlood(*zombie);
+			}
 			continue;
+		}
 
 		if(player->hp <= 0)
 		{
@@ -735,8 +752,11 @@ void Game::HitUnit(Unit& unit, int dmg, const Vec3& hitpoint)
 	if(unit.hp <= 0)
 	{
 		unit.animation = ANI_DIE;
-		unit.node->mesh_inst->Play("umiera", PLAY_ONCE | PLAY_STOP_AT_END | PLAY_PRIO3, 0);
+		unit.dying = true;
+		unit.node->mesh_inst->Play("umiera", PLAY_ONCE | PLAY_STOP_AT_END | PLAY_PRIO3 | PLAY_CLEAR_FRAME_END_INFO, 0);
 		sound_mgr->PlaySound3d(unit.is_zombie ? sound_zombie_die : sound_player_die, unit.GetSoundPos(), 2.f);
+		if(!unit.is_zombie)
+			((Player&)unit).death_starved = false;
 	}
 	else if(unit.last_damage <= 0.f && Rand() % 3 == 0)
 		sound_mgr->PlaySound3d(unit.is_zombie ? sound_zombie_hurt : sound_player_hurt, unit.GetSoundPos(), 2.f);
