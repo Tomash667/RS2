@@ -123,7 +123,7 @@ bool Level::CheckCollision(Unit* unit, const Vec2& pos)
 	// zombies
 	for(Zombie* zombie : zombies)
 	{
-		if(zombie == unit || zombie->hp < 0)
+		if(zombie == unit || zombie->hp <= 0)
 			continue;
 		if(Distance(pos.x, pos.y, zombie->node->pos.x, zombie->node->pos.z) <= Unit::radius * 2)
 			return false;
