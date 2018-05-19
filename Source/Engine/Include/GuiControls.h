@@ -5,10 +5,11 @@
 //-----------------------------------------------------------------------------
 struct Sprite : Control
 {
-	Sprite() : image(nullptr) {}
+	Sprite() : image(nullptr), color(Color::White) {}
 	void Draw() override;
 
 	Texture* image;
+	Color color;
 };
 
 //-----------------------------------------------------------------------------

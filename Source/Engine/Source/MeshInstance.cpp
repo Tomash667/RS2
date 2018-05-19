@@ -506,7 +506,7 @@ void MeshInstance::SetToEnd(Mesh::Animation* anim)
 	groups[0].state = FLAG_GROUP_ACTIVE;
 	groups[0].time = anim->length;
 	groups[0].used_group = 0;
-	groups[0].prio = 3;
+	groups[0].prio = 0;
 
 	if(mesh->head.n_groups > 1)
 	{
@@ -531,7 +531,7 @@ void MeshInstance::SetToEnd()
 	groups[0].state = FLAG_GROUP_ACTIVE;
 	groups[0].time = groups[0].anim->length;
 	groups[0].used_group = 0;
-	groups[0].prio = 1;
+	groups[0].prio = 0;
 
 	for(uint i = 1; i < groups.size(); ++i)
 	{
