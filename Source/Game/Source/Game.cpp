@@ -22,9 +22,6 @@
 #include <SoundManager.h>
 
 
-const float Player::walk_speed = 2.5f;
-const float Player::run_speed = 7.f;
-const float Player::rot_speed = 4.f;
 const float Zombie::walk_speed = 1.5f;
 const float Zombie::rot_speed = 2.5f;
 const int level_size = 32;
@@ -121,8 +118,6 @@ void Game::InitGame()
 	Srand();
 	engine->GetWindow()->SetCursorLock(true);
 
-	Item::LoadData(res_mgr);
-
 	level.reset(new Level);
 	level->Init(scene, res_mgr, CityGenerator::tile_size * level_size);
 
@@ -162,6 +157,11 @@ void Game::LoadResources()
 	sound_zombie_alert = res_mgr->GetSound("zombie alert.wav");
 	sound_hit = res_mgr->GetSound("hit.mp3");
 	sound_medkit = res_mgr->GetSound("medkit.mp3");
+	sound_eat = res_mgr->GetSound("eat.mp3");
+	sound_hungry = res_mgr->GetSound("hungry.mp3");
+
+	level->LoadResources();
+	Item::LoadData(res_mgr);
 }
 
 void Game::GenerateCity()
@@ -185,6 +185,7 @@ bool Game::OnTick(float dt)
 	UpdatePlayer(dt);
 	UpdateZombies(dt);
 	UpdateCamera();
+	level->Update(dt);
 	game_gui->Update();
 
 	return true;
@@ -194,9 +195,36 @@ void Game::UpdatePlayer(float dt)
 {
 	Player* player = level->player;
 	if(player->hp <= 0)
+	{
+		if(player->dying && player->node->mesh_inst->GetEndResult(0))
+		{
+			player->dying = false;
+			if(!player->death_starved)
+				level->SpawnBlood(*player);
+		}
 		return;
+	}
 
 	player->last_damage -= dt;
+	if((player->hungry_timer -= dt) <= 0.f)
+	{
+		player->hungry_timer = Player::hunger_timestep;
+		FoodLevel prev_food_level = player->GetFoodLevel();
+		player->food = max(player->food - 1, -10);
+		FoodLevel new_food_level = player->GetFoodLevel();
+		if(prev_food_level != new_food_level && new_food_level <= FL_HUNGRY)
+			sound_mgr->PlaySound3d(sound_hungry, player->GetSoundPos(), 1.f);
+		if(player->food < 0)
+		{
+			player->hp -= 1;
+			if(player->hp <= 0)
+			{
+				player->animation = ANI_DIE;
+				player->node->mesh_inst->Play("umiera", PLAY_ONCE | PLAY_STOP_AT_END | PLAY_PRIO3, 0);
+				return;
+			}
+		}
+	}
 
 	Animation animation = ANI_STAND;
 
@@ -267,6 +295,22 @@ void Game::UpdatePlayer(float dt)
 			player->hp = min(player->hp + 50, 100);
 			--player->medkits;
 			player->action = A_NONE;
+			player->weapon->visible = true;
+		}
+		break;
+	case A_EAT:
+		can_run = false;
+		if(player->action_state == 0 && player->node->mesh_inst->GetProgress(1) >= 19.f / 70)
+		{
+			player->action_state = 1;
+			sound_mgr->PlaySound3d(sound_eat, player->GetSoundPos(), 2.f);
+			player->food = min(player->food + 25, 100);
+			--player->food_cans;
+		}
+		if(player->node->mesh_inst->GetEndResult(1))
+		{
+			player->action = A_NONE;
+			player->weapon->visible = true;
 		}
 		break;
 	case A_PICKUP:
@@ -279,10 +323,18 @@ void Game::UpdatePlayer(float dt)
 			if(player->node->mesh_inst->GetProgress(0) > 19.f / 34)
 			{
 				// pickup item
+				switch(player->item_before->item->type)
+				{
+				case Item::MEDKIT:
+					++player->medkits;
+					break;
+				case Item::FOOD:
+					++player->food_cans;
+					break;
+				}
 				level->RemoveItem(player->item_before);
 				player->action_state = 1;
 				player->item_before = nullptr;
-				++player->medkits;
 			}
 		}
 		else if(player->node->mesh_inst->GetEndResult(0))
@@ -443,7 +495,14 @@ void Game::UpdateZombies(float dt)
 	for(Zombie* zombie : level->zombies)
 	{
 		if(zombie->hp <= 0)
+		{
+			if(zombie->dying && zombie->node->mesh_inst->GetEndResult(0))
+			{
+				zombie->dying = false;
+				level->SpawnBlood(*zombie);
+			}
 			continue;
+		}
 
 		if(player->hp <= 0)
 		{
@@ -697,8 +756,11 @@ void Game::HitUnit(Unit& unit, int dmg, const Vec3& hitpoint)
 	if(unit.hp <= 0)
 	{
 		unit.animation = ANI_DIE;
-		unit.node->mesh_inst->Play("umiera", PLAY_ONCE | PLAY_STOP_AT_END | PLAY_PRIO3, 0);
+		unit.dying = true;
+		unit.node->mesh_inst->Play("umiera", PLAY_ONCE | PLAY_STOP_AT_END | PLAY_PRIO3 | PLAY_CLEAR_FRAME_END_INFO, 0);
 		sound_mgr->PlaySound3d(unit.is_zombie ? sound_zombie_die : sound_player_die, unit.GetSoundPos(), 2.f);
+		if(!unit.is_zombie)
+			((Player&)unit).death_starved = false;
 	}
 	else if(unit.last_damage <= 0.f && Rand() % 3 == 0)
 		sound_mgr->PlaySound3d(unit.is_zombie ? sound_zombie_hurt : sound_player_hurt, unit.GetSoundPos(), 2.f);

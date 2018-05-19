@@ -7,6 +7,7 @@
 #include "GroundItem.h"
 #include "Zombie.h"
 #include "Player.h"
+#include "Item.h"
 
 Level::Level() : player(nullptr)
 {
@@ -25,23 +26,30 @@ void Level::Init(Scene* scene, ResourceManager* res_mgr, float level_size)
 	this->level_size = level_size;
 	tile_size = level_size / grids;
 
-	mesh_medkit = res_mgr->GetMesh("medkit.qmsh");
-	mesh_zombie = res_mgr->GetMesh("zombie.qmsh");
-
 	colliders.resize(grids * grids);
 }
 
-void Level::SpawnMedkit(const Vec3& pos)
+void Level::LoadResources()
 {
+	mesh_zombie = res_mgr->GetMesh("zombie.qmsh");
+	mesh_blood_pool = res_mgr->GetMesh("blood_pool.qmsh");
+	mesh_zombie_blood_pool = res_mgr->GetMesh("zombie_blood_pool.qmsh");
+}
+
+void Level::SpawnItem(const Vec3& pos, Item* item)
+{
+	assert(item && item->mesh);
+
 	SceneNode* node = new SceneNode;
-	node->mesh = mesh_medkit;
+	node->mesh = item->mesh;
 	node->pos = pos;
 	node->rot = Vec3::Zero;
 	scene->Add(node);
 
-	GroundItem item;
-	item.node = node;
-	items.push_back(item);
+	GroundItem ground_item;
+	ground_item.node = node;
+	ground_item.item = item;
+	items.push_back(ground_item);
 }
 
 void Level::SpawnZombie(const Vec3& pos)
@@ -120,7 +128,7 @@ bool Level::CheckCollision(Unit* unit, const Vec2& pos)
 	// zombies
 	for(Zombie* zombie : zombies)
 	{
-		if(zombie == unit || zombie->hp < 0)
+		if(zombie == unit || zombie->hp <= 0)
 			continue;
 		if(Distance(pos.x, pos.y, zombie->node->pos.x, zombie->node->pos.z) <= Unit::radius * 2)
 			return false;
@@ -204,6 +212,48 @@ float Level::RayTest(const Vec3& pos, const Vec3& ray)
 	}
 
 	return min_t;
+}
+
+void Level::SpawnBlood(Unit& unit)
+{
+	unit.node->mesh_inst->SetupBones();
+
+	Vec3 center;
+	Mesh::Point* point = unit.node->mesh->GetPoint("centrum");
+	if(!point)
+		center = unit.node->pos.ModY(0.05f);
+	else
+	{
+		Matrix mat = point->mat
+			* unit.node->mesh_inst->GetMatrixBones()[point->bone]
+			* (Matrix::RotationY(-unit.node->rot.y) * Matrix::Translation(unit.node->pos));
+		center = Vec3::TransformZero(mat);
+		center.y = unit.node->pos.y + 0.05f;
+	}
+
+	SceneNode* node = new SceneNode;
+	node->mesh = unit.is_zombie ? mesh_zombie_blood_pool : mesh_blood_pool;
+	node->pos = center;
+	node->rot = Vec3(0, Random(PI * 2), 0);
+	node->scale = 0.f;
+	node->alpha = true;
+	scene->Add(node);
+	bloods.push_back(node);
+}
+
+void Level::Update(float dt)
+{
+	LoopRemove(bloods, [dt](SceneNode* node)
+	{
+		node->scale += dt;
+		if(node->scale >= 1.f)
+		{
+			node->scale = 1.f;
+			return true;
+		}
+		else
+			return false;
+	});
 }
 
 void Level::Save(FileWriter& f)

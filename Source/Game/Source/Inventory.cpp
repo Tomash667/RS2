@@ -99,10 +99,7 @@ void Inventory::Update()
 				break;
 			tooltip_index = i;
 			if(gui->GetInput()->Pressed(Key::LeftButton))
-			{
-				if(i == SLOT_MEDKIT)
-					player->UseMedkit();
-			}
+				UseItem((SLOT)i);
 			break;
 		}
 		offset.x += grid_size;
@@ -114,11 +111,8 @@ void Inventory::PrepareSlots()
 	slots[SLOT_MELEE_WEAPON] = Slot(player->melee_weapon);
 	slots[SLOT_RANGED_WEAPON] = Slot(nullptr);
 	slots[SLOT_AMMO] = Slot(nullptr);
-	slots[SLOT_FOOD] = Slot(nullptr);
-	if(player->medkits > 0)
-		slots[SLOT_MEDKIT] = Slot(Item::Get("medkit"), player->medkits);
-	else
-		slots[SLOT_MEDKIT] = Slot(nullptr);
+	slots[SLOT_FOOD] = (player->food_cans > 0 ? Slot(Item::Get("canned_food"), player->food_cans) : Slot(nullptr));
+	slots[SLOT_MEDKIT] = (player->medkits > 0 ? Slot(Item::Get("medkit"), player->medkits) : Slot(nullptr));
 }
 
 cstring Inventory::GetTooltipText()
@@ -128,4 +122,17 @@ cstring Inventory::GetTooltipText()
 		return Format("%s (%u)", slot.item->name, slot.count);
 	else
 		return slot.item->name;
+}
+
+void Inventory::UseItem(SLOT slot)
+{
+	switch(slot)
+	{
+	case SLOT_MEDKIT:
+		player->UseMedkit();
+		break;
+	case SLOT_FOOD:
+		player->EatFood();
+		break;
+	}
 }

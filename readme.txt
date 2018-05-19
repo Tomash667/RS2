@@ -8,6 +8,7 @@ Zombie apocalipse has just begun! Will you surive or will you finish as food for
 
 1. How to play
 Try to survive. Kill zombies with baseball bat and use found medkits when required.
+You need to eat, search for food inside buildings.
 
 2. Controls
 WSAD - move around

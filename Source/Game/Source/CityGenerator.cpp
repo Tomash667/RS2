@@ -6,6 +6,7 @@
 #include <ScenePart.h>
 #include "Level.h"
 #include "Player.h"
+#include "Item.h"
 
 const float CityGenerator::tile_size = 5.f;
 const float CityGenerator::floor_y = 0.05f;
@@ -402,7 +403,7 @@ void CityGenerator::CreateScene()
 			c.center = Vec2(tile_size2 * x + tile_size2 / 2, tile_size2 * pos.y + wall_width / 2);
 			if(x != bottom_hole)
 				level->AddCollider(c);
-			
+
 			// top wall
 			if(x != top_hole)
 			{
@@ -433,14 +434,42 @@ void CityGenerator::CreateScene()
 
 void CityGenerator::SpawnItems()
 {
+	Item* medkit = Item::Get("medkit");
+	Item* food = Item::Get("canned_food");
+
 	// 50% chance to spawn in building
 	for(Building& building : buildings)
 	{
-		if(Rand() % 2 == 0)
-			continue;
-
-		Vec2 pos = building.box.GetRandomPoint(2.f);
-		level->SpawnMedkit(Vec3(pos.x, floor_y, pos.y));
+		switch(Rand() % 6)
+		{
+		case 0:
+		case 1:
+			// nothing
+			break;
+		case 2:
+		case 3:
+			// medkit
+			{
+				Vec2 pos = building.box.GetRandomPoint(2.f);
+				level->SpawnItem(Vec3(pos.x, floor_y, pos.y), medkit);
+			}
+			break;
+		case 4:
+			// food
+			{
+				Vec2 pos = building.box.GetRandomPoint(2.f);
+				level->SpawnItem(Vec3(pos.x, floor_y, pos.y), food);
+			}
+			break;
+		case 5:
+			// food x2
+			for(int i = 0; i < 2; ++i)
+			{
+				Vec2 pos = building.box.GetRandomPoint(2.f);
+				level->SpawnItem(Vec3(pos.x, floor_y, pos.y), food);
+			}
+			break;
+		}
 	}
 }
 
