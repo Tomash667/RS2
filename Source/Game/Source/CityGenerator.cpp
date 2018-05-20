@@ -46,12 +46,16 @@ void CityGenerator::Init(Scene* scene, Level* level, ResourceManager* res_mgr, u
 
 void CityGenerator::Generate()
 {
-	const Vec3 player_pos(map_size / 2, 0, map_size / 2);	GenerateMap();
+	const Vec3 player_pos(map_size / 2, 0, map_size / 2);
+	GenerateMap();
 	CreateScene();
 	level->SpawnBarriers();
 	level->SpawnPlayer(player_start_pos);
 	SpawnItems();
 	SpawnZombies();
+	// FIXME
+	level->SpawnItem(player_start_pos + Vec3(0, 0.05f, 2.f), Item::Get("pistol"));
+	level->SpawnItem(player_start_pos + Vec3(0, 0.05f, 4.f), Item::Get("pistol_ammo"));
 }
 
 struct Leaf

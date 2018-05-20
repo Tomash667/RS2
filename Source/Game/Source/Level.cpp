@@ -41,8 +41,8 @@ void Level::SpawnItem(const Vec3& pos, Item* item)
 	assert(item && item->mesh);
 	SceneNode* node = new SceneNode;
 	node->mesh = item->mesh;
-	node->pos = pos;
-	node->rot = Vec3::Zero;
+	node->pos = pos + item->ground_offset;
+	node->rot = item->ground_rot;
 	scene->Add(node);
 
 	GroundItem ground_item;
@@ -80,7 +80,10 @@ void Level::SpawnPlayer(const Vec3& pos)
 	scene->Add(player->node);
 
 	SceneNode* weapon = new SceneNode;
-	weapon->mesh = res_mgr->GetMesh("baseball_bat.qmsh");
+	if(player->melee_weapon)
+		weapon->mesh = player->melee_weapon->mesh;
+	else
+		weapon->visible = false;
 	weapon->pos = Vec3::Zero;
 	weapon->rot = Vec3::Zero;
 	player->node->Add(weapon, player->node->mesh->GetPoint("bron"));

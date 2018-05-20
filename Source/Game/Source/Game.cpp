@@ -272,7 +272,7 @@ void Game::UpdatePlayer(float dt)
 	if(input->Pressed(Key::N2))
 		player->SwitchWeapon(false);
 
-	if(player->action == A_NONE && allow_mouse && input->Down(Key::LeftButton))
+	if(player->action == A_NONE && allow_mouse && input->Down(Key::LeftButton) && player->use_melee)
 	{
 		// attack
 		player->action = A_ATTACK;
@@ -373,6 +373,22 @@ void Game::UpdatePlayer(float dt)
 		else if(player->node->mesh_inst->GetEndResult(1))
 			player->action = A_NONE;
 		can_run = false;
+		break;
+	case A_RELOAD:
+		can_run = false;
+		if(player->action_state == 0)
+		{
+			//sound_mgr->PlaySound3d(sound_medkit, player->GetSoundPos(), 2.f);
+			player->action_state = 1;
+		}
+		if(player->node->mesh_inst->GetEndResult(1))
+		{
+			uint ammo = min(player->ammo, 10u - player->current_ammo);
+			player->current_ammo += ammo;
+			player->ammo -= ammo;
+			player->action = A_NONE;
+			player->weapon->visible = true;
+		}
 		break;
 	}
 

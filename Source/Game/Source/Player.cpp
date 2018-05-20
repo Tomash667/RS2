@@ -11,10 +11,12 @@ const float Player::rot_speed = 4.f;
 const float Player::hunger_timestep = 10.f;
 
 
+// FIXME
 Player::Player() : Unit(false), medkits(0), food_cans(0), action(A_NONE), item_before(nullptr), rot_buf(0), last_rot(0), food(80),
-hungry_timer(hunger_timestep), ranged_weapon(nullptr), ammo(0), current_ammo(0), use_melee(true)
+hungry_timer(hunger_timestep), ranged_weapon(nullptr), ammo(70), current_ammo(5), use_melee(true)
 {
 	melee_weapon = Item::Get("baseball_bat");
+	ranged_weapon = Item::Get("pistol");
 }
 
 void Player::UseMedkit()
@@ -42,9 +44,11 @@ void Player::EatFood()
 void Player::SwitchWeapon(bool melee)
 {
 	bool have_weapon = (melee ? melee_weapon : ranged_weapon) != nullptr;
-	if(action == A_NONE && use_melee == melee && have_weapon)
+	if(action == A_NONE && use_melee != melee && have_weapon)
 	{
 		use_melee = melee;
+		weapon->mesh = melee ? melee_weapon->mesh : ranged_weapon->mesh;
+		weapon->SetParentPoint(node->mesh->GetPoint(melee ? "bron" : "pistol"));
 	}
 }
 
@@ -54,7 +58,8 @@ void Player::Reload()
 	{
 		action = A_RELOAD;
 		action_state = 0;
-		node->mesh_inst->Play("reload", PLAY_ONCE | PLAY_CLEAR_FRAME_END_INFO, 1);
+		node->mesh_inst->Play("use", PLAY_ONCE | PLAY_CLEAR_FRAME_END_INFO, 1);
+		weapon->visible = false;
 	}
 }
 

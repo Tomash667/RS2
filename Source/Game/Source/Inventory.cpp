@@ -46,8 +46,15 @@ void Inventory::Draw()
 		if(slot.item)
 		{
 			gui->DrawSprite(slot.item->icon, offset, s);
+			cstring count;
 			if(slot.count != 0)
-				gui->DrawText(Format("%u", slot.count), nullptr, Color(0, 255, 33), Font::Bottom, Rect::Create(offset + Int2(4, 0), s));
+				count = Format("%u", slot.count);
+			else if(i == SLOT_RANGED_WEAPON)
+				count = Format("%u/%u", player->current_ammo, 10u);
+			else
+				count = nullptr;
+			if(count)
+				gui->DrawText(count, nullptr, Color(0, 255, 33), Font::Bottom, Rect::Create(offset + Int2(4, 0), s));
 		}
 		offset.x += grid_size;
 	}
