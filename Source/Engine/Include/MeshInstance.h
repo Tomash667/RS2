@@ -16,7 +16,8 @@ enum PLAY_FLAGS
 	PLAY_PRIO3 = 0x60,
 	PLAY_BLEND_WAIT = 0x100, // wait with animation until blending ends
 	PLAY_RESTORE = 0x200, // reset speed and blend_max when changing animation
-	PLAY_CLEAR_FRAME_END_INFO = 0x400
+	PLAY_CLEAR_FRAME_END_INFO = 0x400,
+	PLAY_MANUAL = 0x800
 };
 
 //-----------------------------------------------------------------------------
@@ -118,6 +119,7 @@ public:
 	void SetToEnd(Mesh::Animation* anim);
 	void SetToEnd();
 	void ResetAnimation();
+	void SetProgress(uint group, float progress);
 
 	int GetHighestPriority(uint& group);
 	int GetUsableGroup(uint group);

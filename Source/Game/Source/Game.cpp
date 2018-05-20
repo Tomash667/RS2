@@ -279,6 +279,13 @@ void Game::UpdatePlayer(float dt)
 		player->action_state = 0;
 		player->node->mesh_inst->Play("atak1", PLAY_ONCE | PLAY_CLEAR_FRAME_END_INFO, 1);
 	}
+	if(player->action == A_NONE && allow_mouse && !player->use_melee && input->Down(Key::RightButton))
+	{
+		player->action = A_AIM;
+		player->node->mesh_inst->Play("aim", PLAY_MANUAL, 1);
+		cam_dist = 0.5f;
+		cam_shift = 1.f;
+	}
 
 	bool can_run = true, can_move = true;
 	switch(player->action)
@@ -388,6 +395,25 @@ void Game::UpdatePlayer(float dt)
 			player->ammo -= ammo;
 			player->action = A_NONE;
 			player->weapon->visible = true;
+		}
+		break;
+	case A_AIM:
+		can_run = false;
+		if(!allow_mouse || !input->Down(Key::RightButton))
+		{
+			player->action = A_NONE;
+			player->node->mesh_inst->Deactivate(1);
+		}
+		else
+		{
+			const Vec2 c_cam_angle = Vec2(3.68f, 5.75f);
+			float ratio = 1.f - (cam_rot.y - c_cam_angle.x) / (c_cam_angle.y - c_cam_angle.x);
+			player->node->mesh_inst->SetProgress(1, Clamp(ratio, 0.f, 1.f));
+
+			if(input->Pressed(Key::Spacebar))
+			{
+				Info("%g %g", ratio, cam_rot.y);
+			}
 		}
 		break;
 	}
@@ -650,12 +676,12 @@ void Game::UpdateCamera()
 {
 	Player* player = level->player;
 
-	//if(input->Down(Key::Shift))
-	//	cam_shift += 0.25f * input->GetMouseWheel();
-
 	if(allow_mouse)
 	{
-		cam_dist -= 0.25f * input->GetMouseWheel();
+		if(input->Down(Key::Shift))
+			cam_shift += 0.25f * input->GetMouseWheel();
+		else
+			cam_dist -= 0.25f * input->GetMouseWheel();
 		if(cam_dist < 0.25f)
 			cam_dist = 0.25f;
 		else if(cam_dist > 5.f)
@@ -666,7 +692,11 @@ void Game::UpdateCamera()
 			cam_rot.y = 4.47908592f;
 		}
 
-		const Vec2 c_cam_angle = Vec2(PI + 0.1f, PI * 1.8f - 0.1f);
+		Vec2 c_cam_angle;
+		if(player->action == A_AIM)
+			c_cam_angle = Vec2(3.68f, 5.75f);
+		else
+			c_cam_angle = Vec2(3.24f, 5.47f);
 		cam_rot.x = player->node->rot.y;
 		cam_rot.y = c_cam_angle.Clamp(cam_rot.y - float(input->GetMouseDif().y) / 400);
 	}

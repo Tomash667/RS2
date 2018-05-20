@@ -9,7 +9,8 @@ enum Action
 	A_PICKUP,
 	A_ATTACK,
 	A_EAT,
-	A_RELOAD
+	A_RELOAD,
+	A_AIM
 };
 
 enum FoodLevel

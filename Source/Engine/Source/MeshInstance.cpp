@@ -40,7 +40,15 @@ void MeshInstance::Play(Mesh::Animation* anim, int flags, uint group)
 		gr.blend_max = 0.33f;
 	}
 
-	int new_state = 0;
+	int new_state = FLAG_GROUP_ACTIVE;
+	if(!IS_SET(flags, PLAY_MANUAL))
+		new_state |= FLAG_PLAYING;
+	if(IS_SET(flags, PLAY_ONCE))
+		SET_BIT(new_state, FLAG_ONCE);
+	if(IS_SET(flags, PLAY_STOP_AT_END))
+		SET_BIT(new_state, FLAG_STOP_AT_END);
+	if(IS_SET(flags, PLAY_RESTORE))
+		SET_BIT(new_state, FLAG_RESTORE);
 
 	// blending
 	if(!IS_SET(flags, PLAY_NO_BLEND))
@@ -57,9 +65,7 @@ void MeshInstance::Play(Mesh::Animation* anim, int flags, uint group)
 		gr.frame_end_info = false;
 	gr.anim = anim;
 	gr.prio = ((flags & 0x60) >> 5);
-	gr.state = new_state | FLAG_PLAYING | FLAG_GROUP_ACTIVE;
-	if(IS_SET(flags, PLAY_ONCE))
-		SET_BIT(gr.state, FLAG_ONCE);
+	gr.state = new_state;
 	if(IS_SET(flags, PLAY_BACK))
 	{
 		SET_BIT(gr.state, FLAG_BACK);
@@ -67,10 +73,6 @@ void MeshInstance::Play(Mesh::Animation* anim, int flags, uint group)
 	}
 	else
 		gr.time = 0.f;
-	if(IS_SET(flags, PLAY_STOP_AT_END))
-		SET_BIT(gr.state, FLAG_STOP_AT_END);
-	if(IS_SET(flags, PLAY_RESTORE))
-		SET_BIT(gr.state, FLAG_RESTORE);
 
 	// cancel blending on other bone groups
 	if(IS_SET(flags, PLAY_NO_BLEND))
@@ -552,4 +554,18 @@ void MeshInstance::ResetAnimation()
 	groups[0].time = 0.f;
 	groups[0].blend_time = 0.f;
 	SET_BIT(groups[0].state, FLAG_BLENDING | FLAG_PLAYING);
+}
+
+//=================================================================================================
+void MeshInstance::SetProgress(uint group_index, float progress)
+{
+	assert(group_index < groups.size());
+	Group& group = groups[group_index];
+	assert(group.anim);
+	float new_time = group.anim->length * progress;
+	if(new_time != group.time)
+	{
+		group.time = new_time;
+		need_update = true;
+	}
 }
