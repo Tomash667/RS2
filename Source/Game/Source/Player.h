@@ -24,7 +24,7 @@ enum FoodLevel
 
 struct Player : Unit
 {
-	Player();
+	Player(Level* level);
 	void UseMedkit();
 	void EatFood();
 	void SwitchWeapon(bool melee);
@@ -33,6 +33,7 @@ struct Player : Unit
 	FoodLevel GetFoodLevel();
 	Vec3 GetShootPos();
 
+	Level* level;
 	Action action;
 	int action_state, food;
 	uint medkits, food_cans, ammo, current_ammo;

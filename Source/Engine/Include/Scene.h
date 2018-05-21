@@ -12,6 +12,7 @@ public:
 	void Add(SceneNode* node);
 	void Add(ParticleEmitter* pe);
 	void Remove(SceneNode* node);
+	void RecycleMeshInstance(SceneNode* node);
 
 	void SetFogColor(const Vec4& fog_color) { this->fog_color = fog_color; }
 	void SetFogParams(float start, float end);
@@ -41,4 +42,5 @@ private:
 	FrustumPlanes frustum_planes;
 	unique_ptr<QuadTree> quad_tree;
 	vector<ScenePart*> parts;
+	vector<MeshInstance*> mesh_inst_pool;
 };

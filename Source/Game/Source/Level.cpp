@@ -68,7 +68,7 @@ void Level::SpawnZombie(const Vec3& pos)
 
 void Level::SpawnPlayer(const Vec3& pos)
 {
-	player = new Player;
+	player = new Player(this);
 	player->node = new SceneNode;
 	player->node->mesh = res_mgr->GetMesh("human.qmsh");
 	player->node->mesh_inst = new MeshInstance(player->node->mesh);

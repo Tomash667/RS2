@@ -48,43 +48,18 @@ public:
 		{
 		}
 
-		// continue stopped animation
-		void Play()
-		{
-			SET_BIT(state, FLAG_PLAYING);
-		}
-		// stop current animation
-		void Stop()
-		{
-			CLEAR_BIT(state, FLAG_PLAYING);
-		}
+		void Reset();
+		void Play() { SET_BIT(state, FLAG_PLAYING); }
+		void Stop() { CLEAR_BIT(state, FLAG_PLAYING); }
 
-		int GetFrameIndex(bool& hit) const
-		{
-			return anim->GetFrameIndex(time, hit);
-		}
+		bool IsActive() const { return IS_SET(state, FLAG_GROUP_ACTIVE); }
+		bool IsBlending() const { return IS_SET(state, FLAG_BLENDING); }
+		bool IsPlaying() const { return IS_SET(state, FLAG_PLAYING); }
+
+		int GetFrameIndex(bool& hit) const { return anim->GetFrameIndex(time, hit); }
 		float GetBlendT() const;
-		float GetProgress() const
-		{
-			return time / anim->length;
-		}
-		Mesh::Animation* GetAnimation() const
-		{
-			return anim;
-		}
-
-		bool IsActive() const
-		{
-			return IS_SET(state, FLAG_GROUP_ACTIVE);
-		}
-		bool IsBlending() const
-		{
-			return IS_SET(state, FLAG_BLENDING);
-		}
-		bool IsPlaying() const
-		{
-			return IS_SET(state, FLAG_PLAYING);
-		}
+		float GetProgress() const { return time / anim->length; }
+		Mesh::Animation* GetAnimation() const { return anim; }
 
 	private:
 		Mesh::Animation* anim;
@@ -95,31 +70,25 @@ public:
 
 	explicit MeshInstance(Mesh* mesh);
 	void Update(float dt);
-	void Play(uint group = 0)
-	{
-		GetGroup(group).Play();
-	}
+	void Play(uint group = 0) { GetGroup(group).Play(); }
 	void Play(Mesh::Animation* anim, int flags, uint group);
 	void Play(cstring name, int flags, uint group)
 	{
 		Play(mesh->GetAnimation(name), flags, group);
 	}
-	void Stop(uint group = 0)
-	{
-		GetGroup(group).Stop();
-	}
+	void Stop(uint group = 0) { GetGroup(group).Stop(); }
 	void Deactivate(uint group = 0, bool in_update = false);
 	void SetupBones();
 	void SetupBlending(uint group, bool first = true, bool in_update = false);
 	void ClearBones();
-	void SetToEnd(cstring anim)
-	{
-		SetToEnd(mesh->GetAnimation(anim));
-	}
+	void SetToEnd(cstring anim) { SetToEnd(mesh->GetAnimation(anim)); }
 	void SetToEnd(Mesh::Animation* anim);
 	void SetToEnd();
+	void Reset();
 	void ResetAnimation();
 	void SetProgress(uint group, float progress);
+
+	bool IsBlending() const;
 
 	int GetHighestPriority(uint& group);
 	int GetUsableGroup(uint group);
@@ -148,16 +117,8 @@ public:
 	{
 		return GetGroup(group).GetProgress();
 	}
-	Mesh* GetMesh() const
-	{
-		return mesh;
-	}
-	const vector<Matrix>& GetMatrixBones() const
-	{
-		return mat_bones;
-	}
-
-	bool IsBlending() const;
+	Mesh* GetMesh() const { return mesh; }
+	const vector<Matrix>& GetMatrixBones() const { return mat_bones; }
 
 private:
 	Mesh* mesh;

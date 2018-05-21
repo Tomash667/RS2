@@ -5,6 +5,18 @@
 const int BLEND_TO_BIND_POSE = -1;
 
 
+//=================================================================================================
+void MeshInstance::Group::Reset()
+{
+	anim = nullptr;
+	state = 0;
+	speed = 1.f;
+	prio = 0;
+	blend_max = 0.33f;
+	frame_end_info = false;
+}
+
+//=================================================================================================
 float MeshInstance::Group::GetBlendT() const
 {
 	if(IsBlending())
@@ -544,6 +556,14 @@ void MeshInstance::SetToEnd()
 
 	need_update = true;
 	SetupBones();
+}
+
+//=================================================================================================
+void MeshInstance::Reset()
+{
+	for(Group& group : groups)
+		group.Reset();
+	need_update = true;
 }
 
 //=================================================================================================

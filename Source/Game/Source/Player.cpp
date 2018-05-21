@@ -3,6 +3,8 @@
 #include "Item.h"
 #include <SceneNode.h>
 #include <MeshInstance.h>
+#include "Level.h"
+#include <Scene.h>
 
 
 const float Player::walk_speed = 2.5f;
@@ -12,7 +14,7 @@ const float Player::hunger_timestep = 10.f;
 
 
 // FIXME
-Player::Player() : Unit(false), medkits(0), food_cans(0), action(A_NONE), item_before(nullptr), rot_buf(0), last_rot(0), food(80),
+Player::Player(Level* level) : Unit(false), level(level), medkits(0), food_cans(0), action(A_NONE), item_before(nullptr), rot_buf(0), last_rot(0), food(80),
 hungry_timer(hunger_timestep), ranged_weapon(nullptr), ammo(70), current_ammo(5), use_melee(true)
 {
 	melee_weapon = Item::Get("baseball_bat");
@@ -49,6 +51,7 @@ void Player::SwitchWeapon(bool melee)
 		use_melee = melee;
 		weapon->mesh = melee ? melee_weapon->mesh : ranged_weapon->mesh;
 		weapon->SetParentPoint(node->mesh->GetPoint(melee ? "bron" : "pistol"));
+		level->scene->RecycleMeshInstance(weapon);
 	}
 }
 
@@ -82,7 +85,10 @@ Vec3 Player::GetShootPos()
 	Mesh::Point* hitbox = weapon->mesh->FindPoint("hit");
 	Mesh::Point* bone = (Mesh::Point*)weapon->GetParentPoint();
 	node->mesh_inst->SetupBones();
-	Matrix m = Matrix::RotationY(-node->rot.y) * Matrix::Translation(node->pos);
-	m = hitbox->mat * (bone->mat * node->mesh_inst->GetMatrixBones()[bone->bone] * m);
+	Matrix m = hitbox->mat
+		* bone->mat
+		* node->mesh_inst->GetMatrixBones()[bone->bone]
+		* Matrix::RotationY(-node->rot.y)
+		* Matrix::Translation(node->pos);
 	return Vec3::TransformZero(m);
 }

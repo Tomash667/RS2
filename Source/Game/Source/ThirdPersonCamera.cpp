@@ -6,8 +6,8 @@
 #include <Camera.h>
 #include <SceneNode.h>
 
-const Vec2 ThirdPersonCamera::c_angle = Vec2(3.68f, 5.75f);
-const Vec2 ThirdPersonCamera::c_angle_aim = Vec2(3.24f, 5.47f);
+const Vec2 ThirdPersonCamera::c_angle = Vec2(3.24f, 5.75f);
+const Vec2 ThirdPersonCamera::c_angle_aim = Vec2(3.68f, 5.47f);
 
 ThirdPersonCamera::ThirdPersonCamera(Camera* cam, Level* level, Input* input) : cam(cam), level(level), input(input)
 {
@@ -16,7 +16,10 @@ ThirdPersonCamera::ThirdPersonCamera(Camera* cam, Level* level, Input* input) : 
 	rot = Vec2(0, 4.47908592f);
 	dist = 1.5f;
 	shift = 0.25f;
+	h = 1.7f;
 	aim = false;
+	springiness = 40.f;
+	reset = true;
 }
 
 void ThirdPersonCamera::Update(float dt, bool allow_mouse)
@@ -45,30 +48,43 @@ void ThirdPersonCamera::Update(float dt, bool allow_mouse)
 		rot.y = angle_limits.Clamp(rot.y - float(input->GetMouseDif().y) / 400);
 	}
 
-	cam->to = player->node->pos;
-	cam->to.y += h;
-	Vec3 camera_to_without_shift = cam->to;
+	Vec3 to = player->node->pos;
+	to.y += h;
+	Vec3 camera_to_without_shift = to;
 
 	float shift_x = shift * (dist - 0.25f) / 1.25f;
 	if(shift_x != 0)
 	{
 		float angle = -rot.x + PI;
-		cam->to += Vec3(sin(angle)*shift_x, 0, cos(angle)*shift_x);
+		to += Vec3(sin(angle)*shift_x, 0, cos(angle)*shift_x);
 	}
 
 	Vec3 ray(0, -dist, 0);
 	Matrix mat = Matrix::Rotation(-rot.x - PI / 2, rot.y, 0);
 	ray = Vec3::Transform(ray, mat);
 
-	float t = min(level->RayTest(cam->to, ray), level->RayTest(camera_to_without_shift, ray));
+	float t = min(level->RayTest(to, ray), level->RayTest(camera_to_without_shift, ray));
 
 	shift_x *= t;
 	if(shift_x != 0)
 	{
 		float angle = -rot.x + PI;
-		cam->to = camera_to_without_shift + Vec3(sin(angle)*shift_x, 0, cos(angle)*shift_x);
+		to = camera_to_without_shift + Vec3(sin(angle)*shift_x, 0, cos(angle)*shift_x);
 	}
-	cam->from = cam->to + ray * t;
+	Vec3 from = to + ray * t;
+
+	if(reset)
+	{
+		cam->from = from;
+		cam->to = to;
+		reset = false;
+	}
+	else
+	{
+		float d = 1.0f - exp(log(0.5f) * springiness * dt);
+		cam->from += (from - cam->from) * d;
+		cam->to += (to - cam->to) * d;
+	}
 
 	if(ray.Length() * t < 0.3f)
 	{

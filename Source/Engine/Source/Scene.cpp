@@ -20,6 +20,7 @@ Scene::~Scene()
 {
 	DeleteElements(nodes);
 	ParticleEmitter::Free(pes);
+	DeleteElements(mesh_inst_pool);
 }
 
 void Scene::Init(Render* render)
@@ -246,4 +247,43 @@ void Scene::InitQuadTree(float size, uint splits)
 
 	quad_tree.reset(new QuadTree);
 	quad_tree->Init(size, splits, [] { new ScenePart; });
+}
+
+void Scene::RecycleMeshInstance(SceneNode* node)
+{
+	assert(node && node->mesh);
+	if(node->mesh->IsAnimated())
+	{
+		if(node->mesh_inst)
+		{
+			if(node->mesh_inst->GetMesh() == node->mesh)
+				return;
+			else
+			{
+				node->mesh_inst->Reset();
+				mesh_inst_pool.push_back(node->mesh_inst);
+			}
+		}
+
+		for(auto it = mesh_inst_pool.begin(), end = mesh_inst_pool.end(); it != end; ++it)
+		{
+			if((*it)->GetMesh() == node->mesh)
+			{
+				node->mesh_inst = *it;
+				std::iter_swap(it, end - 1);
+				mesh_inst_pool.pop_back();
+				return;
+			}
+		}
+		node->mesh_inst = new MeshInstance(node->mesh);
+	}
+	else
+	{
+		if(node->mesh_inst)
+		{
+			node->mesh_inst->Reset();
+			mesh_inst_pool.push_back(node->mesh_inst);
+			node->mesh_inst = nullptr;
+		}
+	}
 }

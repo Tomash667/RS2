@@ -28,12 +28,13 @@ const float Zombie::rot_speed = 2.5f;
 const int level_size = 32;
 
 
-Game::Game()
+Game::Game() : camera(nullptr)
 {
 }
 
 Game::~Game()
 {
+	delete camera;
 }
 
 int Game::Start()
@@ -133,6 +134,15 @@ void Game::InitGame()
 
 	game_gui = new GameGui;
 	game_gui->Init(engine.get(), level->player);
+
+	for(int i = 0; i < 10; ++i)
+	{
+		tmp[i] = new SceneNode;
+		tmp[i]->mesh = res_mgr->GetMesh("canned_food.qmsh");
+		tmp[i]->pos = Vec3::Zero;
+		tmp[i]->rot = Vec3::Zero;
+		scene->Add(tmp[i]);
+	}
 }
 
 void Game::LoadResources()
@@ -413,8 +423,14 @@ void Game::UpdatePlayer(float dt)
 		}
 		else
 		{
+			// FIXME
+			Vec3 shoot_dir = (camera->cam->to - camera->cam->from).Normalize();
+			Vec3 shoot_pos = player->GetShootPos();
+			for(int i = 0; i < 10; ++i)
+				tmp[i]->pos = shoot_pos + shoot_dir * 10.f * i / 9;
+
 			const Vec2 angle_limits = ThirdPersonCamera::c_angle_aim;
-			float ratio = 1.f - (camera->rot.y - angle_limits.x) / (angle_limits.y - angle_limits.x);
+			float ratio = (1.f - (camera->rot.y - angle_limits.x) / (angle_limits.y - angle_limits.x)) * 0.8f + 0.1f;
 			player->node->mesh_inst->SetProgress(1, Clamp(ratio, 0.f, 1.f));
 
 			if(input->Pressed(Key::LeftButton)
@@ -430,7 +446,7 @@ void Game::UpdatePlayer(float dt)
 						// try to shoot
 						player->shot_delay = 0.5f;
 						sound_mgr->PlaySound3d(sound_shoot_try, player->GetShootPos(), 1.f);
-						player->weapon->mesh_inst->Play("shoot", PLAY_ONCE, 0);
+						player->weapon->mesh_inst->Play("shoot", PLAY_NO_BLEND, 0);
 					}
 				}
 				else
@@ -445,7 +461,7 @@ void Game::UpdatePlayer(float dt)
 					// particles
 
 					sound_mgr->PlaySound3d(sound_shoot, shoot_pos, 4.f);
-					player->weapon->mesh_inst->Play("shoot", PLAY_ONCE, 0);
+					player->weapon->mesh_inst->Play("shoot", PLAY_NO_BLEND, 0);
 
 					// recoil
 
