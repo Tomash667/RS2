@@ -31,13 +31,14 @@ struct Player : Unit
 	void Reload();
 
 	FoodLevel GetFoodLevel();
+	Vec3 GetShootPos();
 
 	Action action;
 	int action_state, food;
 	uint medkits, food_cans, ammo, current_ammo;
 	SceneNode* weapon, *hair;
 	GroundItem* item_before;
-	float rot_buf, last_rot, hungry_timer;
+	float rot_buf, last_rot, hungry_timer, shot_delay;
 	Item* melee_weapon, *ranged_weapon;
 	bool use_melee;
 	bool death_starved;

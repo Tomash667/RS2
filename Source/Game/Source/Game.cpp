@@ -20,6 +20,7 @@
 #include "Item.h"
 #include "Version.h"
 #include <SoundManager.h>
+#include "ThirdPersonCamera.h"
 
 
 const float Zombie::walk_speed = 1.5f;
@@ -110,7 +111,6 @@ void Game::InitEngine()
 	input = engine->GetInput();
 	res_mgr = engine->GetResourceManager();
 	sound_mgr = engine->GetSoundManager();
-	camera = scene->GetCamera();
 }
 
 void Game::InitGame()
@@ -126,10 +126,7 @@ void Game::InitGame()
 	scene->SetFogColor(Color(200, 200, 200));
 	scene->SetFogParams(5.f, 20.f);
 
-	// camera
-	cam_rot = Vec2(0, 4.47908592f);
-	cam_dist = 1.5f;
-	cam_shift = 0.25f;
+	camera = new ThirdPersonCamera(scene->GetCamera(), level.get(), input);
 
 	LoadResources();
 	GenerateCity();
@@ -155,6 +152,10 @@ void Game::LoadResources()
 	sound_medkit = res_mgr->GetSound("medkit.mp3");
 	sound_eat = res_mgr->GetSound("eat.mp3");
 	sound_hungry = res_mgr->GetSound("hungry.mp3");
+	sound_shoot = res_mgr->GetSound("shoot.mp3");
+	sound_shoot_try = res_mgr->GetSound("shoot_try.mp3");
+	sound_reload = res_mgr->GetSound("reload.mp3");
+	sound_hit_wall = res_mgr->GetSound("hit_wall.mp3");
 
 	level->LoadResources();
 	Item::LoadData(res_mgr);
@@ -180,7 +181,7 @@ bool Game::OnTick(float dt)
 
 	UpdatePlayer(dt);
 	UpdateZombies(dt);
-	UpdateCamera();
+	camera->Update(dt, allow_mouse);
 	level->Update(dt);
 	game_gui->Update();
 
@@ -283,8 +284,7 @@ void Game::UpdatePlayer(float dt)
 	{
 		player->action = A_AIM;
 		player->node->mesh_inst->Play("aim", PLAY_MANUAL, 1);
-		cam_dist = 0.5f;
-		cam_shift = 1.f;
+		camera->SetAim(true);
 	}
 
 	bool can_run = true, can_move = true;
@@ -369,7 +369,7 @@ void Game::UpdatePlayer(float dt)
 			{
 				// check for hitted target
 				Mesh::Point* hitbox = player->weapon->mesh->FindPoint("hit");
-				Mesh::Point* bone = player->node->mesh->GetPoint("bron");
+				Mesh::Point* bone = (Mesh::Point*)player->weapon->GetParentPoint();
 				Vec3 hitpoint;
 				Unit* target;
 				if(CheckForHit(*player, *hitbox, bone, target, hitpoint))
@@ -385,7 +385,7 @@ void Game::UpdatePlayer(float dt)
 		can_run = false;
 		if(player->action_state == 0)
 		{
-			//sound_mgr->PlaySound3d(sound_medkit, player->GetSoundPos(), 2.f);
+			sound_mgr->PlaySound3d(sound_reload, player->GetSoundPos(), 2.f);
 			player->action_state = 1;
 		}
 		if(player->node->mesh_inst->GetEndResult(1))
@@ -396,24 +396,65 @@ void Game::UpdatePlayer(float dt)
 			player->action = A_NONE;
 			player->weapon->visible = true;
 		}
+		if(camera->aim && (!allow_mouse || !input->Down(Key::RightButton)))
+			camera->SetAim(false);
 		break;
 	case A_AIM:
 		can_run = false;
+		player->shot_delay -= dt;
 		if(!allow_mouse || !input->Down(Key::RightButton))
 		{
-			player->action = A_NONE;
-			player->node->mesh_inst->Deactivate(1);
+			if(player->shot_delay <= 0.f)
+			{
+				player->action = A_NONE;
+				player->node->mesh_inst->Deactivate(1);
+				camera->SetAim(false);
+			}
 		}
 		else
 		{
-			const Vec2 c_cam_angle = Vec2(3.68f, 5.75f);
-			float ratio = 1.f - (cam_rot.y - c_cam_angle.x) / (c_cam_angle.y - c_cam_angle.x);
+			const Vec2 angle_limits = ThirdPersonCamera::c_angle_aim;
+			float ratio = 1.f - (camera->rot.y - angle_limits.x) / (angle_limits.y - angle_limits.x);
 			player->node->mesh_inst->SetProgress(1, Clamp(ratio, 0.f, 1.f));
 
-			if(input->Pressed(Key::Spacebar))
+			if(input->Pressed(Key::LeftButton)
+				&& player->shot_delay <= 0
+				&& !player->node->mesh_inst->GetGroup(1).IsBlending())
 			{
-				Info("%g %g", ratio, cam_rot.y);
+				if(player->current_ammo == 0)
+				{
+					if(player->ammo > 0)
+						player->Reload();
+					else
+					{
+						// try to shoot
+						player->shot_delay = 0.5f;
+						sound_mgr->PlaySound3d(sound_shoot_try, player->GetShootPos(), 1.f);
+						player->weapon->mesh_inst->Play("shoot", PLAY_ONCE, 0);
+					}
+				}
+				else
+				{
+					Vec3 shoot_pos = player->GetShootPos();
+
+
+					// get shoot dir ???
+
+					// raytest
+
+					// particles
+
+					sound_mgr->PlaySound3d(sound_shoot, shoot_pos, 4.f);
+					player->weapon->mesh_inst->Play("shoot", PLAY_ONCE, 0);
+
+					// recoil
+
+					player->shot_delay = 0.5f;
+					--player->current_ammo;
+				}
 			}
+			else if(player->shot_delay <= -1.f && player->current_ammo == 0 && player->current_ammo > 0)
+				player->Reload();
 		}
 		break;
 	}
@@ -669,74 +710,6 @@ float Game::UnitRotateTo(float& rot, float expected_rot, float speed, int* dir)
 				*dir = -1;
 		}
 		return dif - speed;
-	}
-}
-
-void Game::UpdateCamera()
-{
-	Player* player = level->player;
-
-	if(allow_mouse)
-	{
-		if(input->Down(Key::Shift))
-			cam_shift += 0.25f * input->GetMouseWheel();
-		else
-			cam_dist -= 0.25f * input->GetMouseWheel();
-		if(cam_dist < 0.25f)
-			cam_dist = 0.25f;
-		else if(cam_dist > 5.f)
-			cam_dist = 5.f;
-		if(input->Down(Key::MiddleButton))
-		{
-			cam_dist = 1.5f;
-			cam_rot.y = 4.47908592f;
-		}
-
-		Vec2 c_cam_angle;
-		if(player->action == A_AIM)
-			c_cam_angle = Vec2(3.68f, 5.75f);
-		else
-			c_cam_angle = Vec2(3.24f, 5.47f);
-		cam_rot.x = player->node->rot.y;
-		cam_rot.y = c_cam_angle.Clamp(cam_rot.y - float(input->GetMouseDif().y) / 400);
-	}
-
-	const float cam_h = 1.7f;
-
-	camera->to = player->node->pos;
-	camera->to.y += cam_h;
-	Vec3 camera_to_without_shift = camera->to;
-
-	float shift = cam_shift * (cam_dist - 0.25f) / 1.25f;
-	if(shift != 0)
-	{
-		float angle = -cam_rot.x + PI;
-		camera->to += Vec3(sin(angle)*shift, 0, cos(angle)*shift);
-	}
-
-	Vec3 ray(0, -cam_dist, 0);
-	Matrix mat = Matrix::Rotation(-cam_rot.x - PI / 2, cam_rot.y, 0);
-	ray = Vec3::Transform(ray, mat);
-
-	float t = min(level->RayTest(camera->to, ray), level->RayTest(camera_to_without_shift, ray));
-
-	shift *= t;
-	if(shift != 0)
-	{
-		float angle = -cam_rot.x + PI;
-		camera->to = camera_to_without_shift + Vec3(sin(angle)*shift, 0, cos(angle)*shift);
-	}
-	camera->from = camera->to + ray * t;
-
-	if(ray.Length() * t < 0.3f)
-	{
-		player->node->visible = false;
-		player->hair->visible = false;
-	}
-	else
-	{
-		player->node->visible = true;
-		player->hair->visible = true;
 	}
 }
 

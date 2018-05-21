@@ -12,5 +12,6 @@ struct Collider;
 struct GroundItem;
 struct Item;
 struct Player;
+struct ThirdPersonCamera;
 struct Unit;
 struct Zombie;

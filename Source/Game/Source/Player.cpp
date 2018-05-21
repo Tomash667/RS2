@@ -54,7 +54,7 @@ void Player::SwitchWeapon(bool melee)
 
 void Player::Reload()
 {
-	if(action == A_NONE && !use_melee && current_ammo != 10 && ammo > 0)
+	if(!use_melee && current_ammo != 10 && ammo > 0 && (action == A_NONE || (action == A_AIM && shot_delay <= 0.f)))
 	{
 		action = A_RELOAD;
 		action_state = 0;
@@ -75,4 +75,14 @@ FoodLevel Player::GetFoodLevel()
 		return FL_VERY_HUGRY;
 	else
 		return FL_STARVING;
+}
+
+Vec3 Player::GetShootPos()
+{
+	Mesh::Point* hitbox = weapon->mesh->FindPoint("hit");
+	Mesh::Point* bone = (Mesh::Point*)weapon->GetParentPoint();
+	node->mesh_inst->SetupBones();
+	Matrix m = Matrix::RotationY(-node->rot.y) * Matrix::Translation(node->pos);
+	m = hitbox->mat * (bone->mat * node->mesh_inst->GetMatrixBones()[bone->bone] * m);
+	return Vec3::TransformZero(m);
 }
