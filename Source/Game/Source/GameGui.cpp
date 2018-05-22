@@ -105,6 +105,13 @@ void GameGui::Init(Engine* engine, Player* player)
 	sprite_food->visible = false;
 	Add(sprite_food);
 
+	// ammo counter
+	label_ammo = new Label;
+	label_ammo->pos = Int2(sprite->pos + Int2(8, 0));
+	label_ammo->size = Int2(100, 32);
+	label_ammo->visible = false;
+	Add(label_ammo);
+
 	// fps panel
 	label_fps = new Label;
 	label_fps->pos = Int2(6, 6);
@@ -162,6 +169,7 @@ void GameGui::Update()
 {
 	Input* input = gui->GetInput();
 
+	// fps panel
 	if(input->Pressed(Key::F1))
 		panel_fps->visible = !panel_fps->visible;
 	if(panel_fps->visible)
@@ -175,9 +183,22 @@ void GameGui::Update()
 			panel_fps->size = Int2::Max(panel_size, panel_fps->size);
 	}
 
+	// hp bar
 	hp_bar->progress = player->GetHpp();
+
+	// medkits counter
 	label_medkits->text = Format("%d", player->medkits);
 
+	// ammo counter
+	if(player->use_melee)
+		label_ammo->visible = false;
+	else
+	{
+		label_ammo->text = Format("%u/%u", player->current_ammo, player->ammo);
+		label_ammo->visible = true;
+	}
+
+	// food icon
 	FoodLevel food_level = player->GetFoodLevel();
 	if(food_level == FL_NORMAL)
 		sprite_food->visible = false;
@@ -201,6 +222,7 @@ void GameGui::Update()
 		}
 	}
 
+	// show/hide inventory
 	if(player->hp > 0)
 	{
 		if(input->Pressed(Key::I))

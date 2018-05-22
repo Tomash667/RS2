@@ -383,7 +383,7 @@ void Game::UpdatePlayer(float dt)
 				Vec3 hitpoint;
 				Unit* target;
 				if(CheckForHit(*player, *hitbox, bone, target, hitpoint))
-					HitUnit(*target, Random(45, 55), hitpoint);
+					HitUnit(*target, player->melee_weapon->RandomValue(), hitpoint);
 				player->action_state = 1;
 			}
 		}

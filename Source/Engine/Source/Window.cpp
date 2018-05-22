@@ -21,7 +21,7 @@ void Window::Init(Input* input)
 {
 	assert(input);
 	this->input = input;
-	
+
 	RegisterWindowClass();
 	AdjustWindowSize();
 	CreateWindow();
@@ -94,7 +94,7 @@ void Window::RegisterWindowClass()
 		0, 0, module, icon, LoadCursor(nullptr, IDC_ARROW), (HBRUSH)GetStockObject(BLACK_BRUSH),
 		nullptr, "MainWindow", nullptr
 	};
-	
+
 	RegisterClassEx(&wc);
 }
 

@@ -181,6 +181,8 @@ void Level::SpawnBarriers()
 	barriers.push_back(Collider(Vec2(level_size / 2, -0.5f), Vec2(level_size / 2, 0.5f)));
 	// top
 	barriers.push_back(Collider(Vec2(level_size / 2, level_size + 0.5f), Vec2(level_size / 2, 0.5f)));
+
+	camera_colliders.push_back(Box(0, -1, 0, level_size, 0.05f, level_size));
 }
 
 float Level::RayTest(const Vec3& pos, const Vec3& ray)
