@@ -433,44 +433,46 @@ void Game::UpdatePlayer(float dt)
 			float ratio = (1.f - (camera->rot.y - angle_limits.x) / (angle_limits.y - angle_limits.x)) * 0.8f + 0.1f;
 			player->node->mesh_inst->SetProgress(1, Clamp(ratio, 0.f, 1.f));
 
-			if(input->Pressed(Key::LeftButton)
+			if(player->current_ammo == 0 && player->ammo != 0 && player->shot_delay <= 0.f)
+				player->Reload();
+			else if(input->Pressed(Key::LeftButton)
 				&& player->shot_delay <= 0
 				&& !player->node->mesh_inst->GetGroup(1).IsBlending())
 			{
 				if(player->current_ammo == 0)
 				{
-					if(player->ammo > 0)
-						player->Reload();
-					else
-					{
-						// try to shoot
-						player->shot_delay = 0.5f;
-						sound_mgr->PlaySound3d(sound_shoot_try, player->GetShootPos(), 1.f);
-						player->weapon->mesh_inst->Play("shoot", PLAY_NO_BLEND, 0);
-					}
+					// try to shoot
+					player->shot_delay = 0.1f;
+					sound_mgr->PlaySound3d(sound_shoot_try, player->GetShootPos(), 1.f);
+					player->weapon->mesh_inst->Play("shoot", PLAY_NO_BLEND | PLAY_ONCE, 0);
 				}
 				else
 				{
 					Vec3 shoot_pos = player->GetShootPos();
+					Vec3 shoot_dir = (camera->cam->to - camera->cam->from).Normalize() * 100.f;
 
-
-					// get shoot dir ???
-
-					// raytest
+					Unit* target;
+					float t;
+					if(level->RayTest(shoot_pos, shoot_dir, t, Level::COLLIDE_ALL, player, &target))
+					{
+						SceneNode* node = new SceneNode;
+						node->mesh = res_mgr->GetMesh("canned_food.qmsh");
+						node->pos = shoot_pos + shoot_dir * t;
+						node->rot = Vec3::Zero;
+						scene->Add(node);
+					}
 
 					// particles
 
 					sound_mgr->PlaySound3d(sound_shoot, shoot_pos, 4.f);
-					player->weapon->mesh_inst->Play("shoot", PLAY_NO_BLEND, 0);
+					player->weapon->mesh_inst->Play("shoot", PLAY_NO_BLEND | PLAY_ONCE, 0);
 
 					// recoil
 
-					player->shot_delay = 0.5f;
+					player->shot_delay = 0.1f;
 					--player->current_ammo;
 				}
 			}
-			else if(player->shot_delay <= -1.f && player->current_ammo == 0 && player->current_ammo > 0)
-				player->Reload();
 		}
 		break;
 	}

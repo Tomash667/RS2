@@ -185,37 +185,82 @@ void Level::SpawnBarriers()
 	camera_colliders.push_back(Box(0, -1, 0, level_size, 0.05f, level_size));
 }
 
-float Level::RayTest(const Vec3& pos, const Vec3& ray)
+bool Level::RayTest(const Vec3& pos, const Vec3& ray, float& out_t, int flags, Unit* excluded, Unit** target)
 {
-	Int2 pt1 = PosToPt(pos.XZ()),
-		pt2 = PosToPt((pos + ray).XZ());
-	Int2::MinMax(pt1, pt2);
-	int minx = max(0, pt1.x),
-		miny = max(0, pt1.y),
-		maxx = min((int)grids - 1, pt2.x),
-		maxy = min((int)grids - 1, pt2.y);
-	float t, min_t = 1.f;
+	float t, min_t = 2.f;
+	Unit* hit = nullptr;
 
-	for(int y = miny; y <= maxy; ++y)
+	if(IS_SET(flags, COLLIDE_COLLIDERS))
 	{
-		for(int x = minx; x <= maxx; ++x)
+		Int2 pt1 = PosToPt(pos.XZ()),
+			pt2 = PosToPt((pos + ray).XZ());
+		Int2::MinMax(pt1, pt2);
+		int minx = max(0, pt1.x),
+			miny = max(0, pt1.y),
+			maxx = min((int)grids - 1, pt2.x),
+			maxy = min((int)grids - 1, pt2.y);
+
+		for(int y = miny; y <= maxy; ++y)
 		{
-			for(Collider& c : colliders[x + y * grids])
+			for(int x = minx; x <= maxx; ++x)
 			{
-				const Box box = c.ToBox();
-				if(RayToBox(pos, ray, box, &t) && t > 0.f && t < min_t)
-					min_t = t;
+				for(Collider& c : colliders[x + y * grids])
+				{
+					const Box box = c.ToBox();
+					if(RayToBox(pos, ray, box, &t) && t > 0.f && t < min_t)
+						min_t = t;
+				}
 			}
 		}
 	}
 
-	for(Box& c : camera_colliders)
+	if(IS_SET(flags, COLLIDE_BOXES))
 	{
-		if(RayToBox(pos, ray, c, &t) && t > 0.f && t < min_t)
-			min_t = t;
+		for(Box& c : camera_colliders)
+		{
+			if(RayToBox(pos, ray, c, &t) && t > 0.f && t < min_t)
+				min_t = t;
+		}
 	}
 
-	return min_t;
+	if(IS_SET(flags, COLLIDE_UNITS))
+	{
+		Vec3 to = pos + ray;
+
+		if(excluded != player && player->hp > 0)
+		{
+			if(RayToCylinder(pos, to, player->node->pos, player->node->pos.ModY(Unit::height), Unit::radius, t) && t > 0.f && t < min_t)
+			{
+				min_t = t;
+				hit = player;
+			}
+		}
+
+		for(Zombie* zombie : zombies)
+		{
+			if(excluded != zombie && zombie->hp > 0)
+			{
+				if(RayToCylinder(pos, to, zombie->node->pos, zombie->node->pos.ModY(Unit::height), Unit::radius, t) && t > 0.f && t < min_t)
+				{
+					min_t = t;
+					hit = zombie;
+				}
+			}
+		}
+	}
+
+	if(target)
+		*target = hit;
+	if(min_t > 1.f)
+	{
+		out_t = 1.f;
+		return false;
+	}
+	else
+	{
+		out_t = min_t;
+		return true;
+	}
 }
 
 void Level::SpawnBlood(Unit& unit)

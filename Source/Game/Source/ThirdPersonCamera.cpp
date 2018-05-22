@@ -63,7 +63,10 @@ void ThirdPersonCamera::Update(float dt, bool allow_mouse)
 	Matrix mat = Matrix::Rotation(-rot.x - PI / 2, rot.y, 0);
 	ray = Vec3::Transform(ray, mat);
 
-	float t = min(level->RayTest(to, ray), level->RayTest(camera_to_without_shift, ray));
+	float t1, t2;
+	level->RayTest(to, ray, t1, Level::COLLIDE_COLLIDERS | Level::COLLIDE_BOXES, nullptr, nullptr);
+	level->RayTest(camera_to_without_shift, ray, t2, Level::COLLIDE_COLLIDERS | Level::COLLIDE_BOXES, nullptr, nullptr);
+	float t = min(t1, t2);
 
 	shift_x *= t;
 	if(shift_x != 0)

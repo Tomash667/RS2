@@ -1368,6 +1368,7 @@ struct FrustumPlanes
 //-----------------------------------------------------------------------------
 bool CircleToRectangle(float circlex, float circley, float radius, float rectx, float recty, float w, float h);
 bool RayToBox(const Vec3& ray_pos, const Vec3& ray_dir, const Box& box, float* out_t);
+bool RayToCylinder(const Vec3& sa, const Vec3& sb, const Vec3& p, const Vec3& q, float r, float& t);
 
 //-----------------------------------------------------------------------------
 #include "CoreMath.inl"

@@ -5,6 +5,14 @@
 class Level
 {
 public:
+	enum CollideWith
+	{
+		COLLIDE_COLLIDERS = 1 << 0,
+		COLLIDE_BOXES = 1 << 1,
+		COLLIDE_UNITS = 1 << 2,
+		COLLIDE_ALL = COLLIDE_COLLIDERS | COLLIDE_BOXES | COLLIDE_UNITS
+	};
+
 	Level();
 	~Level();
 	void Init(Scene* scene, ResourceManager* res_mgr, float level_size);
@@ -20,7 +28,7 @@ public:
 	}
 	void AddCollider(const Collider& c);
 	void SpawnBarriers();
-	float RayTest(const Vec3& pos, const Vec3& ray);
+	bool RayTest(const Vec3& pos, const Vec3& ray, float& t, int flags, Unit* excluded, Unit** target);
 	void SpawnBlood(Unit& unit);
 	void Update(float dt);
 

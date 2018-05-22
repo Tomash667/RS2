@@ -4,7 +4,7 @@
 #include "MeshInstance.h"
 
 const float Unit::radius = 0.3f;
-const float Unit::height = 1.75f;
+const float Unit::height = 1.73f;
 
 void Unit::Update(Animation new_animation)
 {
