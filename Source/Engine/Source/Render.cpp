@@ -262,43 +262,31 @@ void Render::EndScene()
 	C(swap_chain->Present(vsync ? 1 : 0, 0));
 }
 
-ID3DBlob* Render::CompileShader(cstring filename, bool vertex_shader)
+ID3DBlob* Render::CompileShader(cstring filename, cstring entry, cstring target)
 {
-	assert(filename);
+	assert(filename && entry && target);
 
 	uint flags = D3DCOMPILE_ENABLE_STRICTNESS;
 #ifdef _DEBUG
 	flags |= D3DCOMPILE_DEBUG;
 #endif
 
-	cstring entry_point, target;
-	if(vertex_shader)
-	{
-		entry_point = "vs_main";
-		target = "vs_5_0";
-	}
-	else
-	{
-		entry_point = "ps_main";
-		target = "ps_5_0";
-	}
-
 	cstring path = Format("Shaders/%s", filename);
 	ID3DBlob* shader_blob = nullptr;
 	ID3DBlob* error_blob = nullptr;
-	HRESULT result = D3DCompileFromFile(ToWString(path), nullptr, nullptr, entry_point, target, flags, 0, &shader_blob, &error_blob);
+	HRESULT result = D3DCompileFromFile(ToWString(path), nullptr, nullptr, entry, target, flags, 0, &shader_blob, &error_blob);
 	if(FAILED(result))
 	{
 		SafeRelease(shader_blob);
 		if(error_blob)
 		{
 			cstring err = (cstring)error_blob->GetBufferPointer();
-			cstring msg = Format("Failed to compile '%s' function '%s': %s (code %u).", path, entry_point, err, result);
+			cstring msg = Format("Failed to compile '%s' function '%s': %s (code %u).", path, entry, err, result);
 			error_blob->Release();
 			throw msg;
 		}
 		else
-			throw Format("Failed to compile '%s' function '%s' (code %u).", path, entry_point, result);
+			throw Format("Failed to compile '%s' function '%s' (code %u).", path, entry, result);
 	}
 
 	if(error_blob)
@@ -314,13 +302,13 @@ ID3DBlob* Render::CompileShader(cstring filename, bool vertex_shader)
 void Render::CreateShader(Shader& shader, cstring filename, D3D11_INPUT_ELEMENT_DESC* desc, uint desc_count, uint cbuffer_size[2])
 {
 	// create vertex shader
-	CPtr<ID3DBlob> vs_buf = CompileShader(filename, true);
+	CPtr<ID3DBlob> vs_buf = CompileShader(filename, "vs_main", "vs_5_0");
 	HRESULT result = device->CreateVertexShader(vs_buf->GetBufferPointer(), vs_buf->GetBufferSize(), nullptr, &shader.vertex_shader);
 	if(FAILED(result))
 		throw Format("Failed to create vertex shader '%s' (%u).", filename, result);
 
 	// create pixel shader
-	CPtr<ID3DBlob> ps_buf = CompileShader(filename, false);
+	CPtr<ID3DBlob> ps_buf = CompileShader(filename, "ps_main", "ps_5_0");
 	result = device->CreatePixelShader(ps_buf->GetBufferPointer(), ps_buf->GetBufferSize(), nullptr, &shader.pixel_shader);
 	if(FAILED(result))
 		throw Format("Failed to create pixel shader '%s' (%u).", filename, result);
@@ -330,40 +318,40 @@ void Render::CreateShader(Shader& shader, cstring filename, D3D11_INPUT_ELEMENT_
 	if(FAILED(result))
 		throw Format("Failed to create input layout '%s' (%u).", filename, result);
 
-	// create cbuffer for vertex shader
-	if(cbuffer_size[0] > 0)
+	// create cbuffers
+	try
 	{
-		D3D11_BUFFER_DESC cb_desc;
-		cb_desc.Usage = D3D11_USAGE_DYNAMIC;
-		cb_desc.ByteWidth = cbuffer_size[0];
-		cb_desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-		cb_desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-		cb_desc.MiscFlags = 0;
-		cb_desc.StructureByteStride = 0;
+		if(cbuffer_size[0] > 0)
+			shader.vs_buffer = CreateConstantBuffer(cbuffer_size[0]);
 
-		result = device->CreateBuffer(&cb_desc, NULL, &shader.vs_buffer);
-		if(FAILED(result))
-			throw Format("Failed to create vs cbuffer '%s' (%u).", filename, result);
+		if(cbuffer_size[1] > 0)
+			shader.ps_buffer = CreateConstantBuffer(cbuffer_size[1]);
 	}
-
-	// create cbuffer for pixel shader
-	if(cbuffer_size[1] > 0)
+	catch(cstring err)
 	{
-		D3D11_BUFFER_DESC cb_desc;
-		cb_desc.Usage = D3D11_USAGE_DYNAMIC;
-		cb_desc.ByteWidth = cbuffer_size[1];
-		cb_desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-		cb_desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-		cb_desc.MiscFlags = 0;
-		cb_desc.StructureByteStride = 0;
-
-		result = device->CreateBuffer(&cb_desc, NULL, &shader.ps_buffer);
-		if(FAILED(result))
-			throw Format("Failed to create ps cbuffer '%s' (%u).", filename, result);
+		throw Format("Failed to create shader '%s': %s", filename, err);
 	}
 
 	vs_buf->Release();
 	ps_buf->Release();
+}
+
+ID3D11Buffer* Render::CreateConstantBuffer(uint size)
+{
+	D3D11_BUFFER_DESC cb_desc;
+	cb_desc.Usage = D3D11_USAGE_DYNAMIC;
+	cb_desc.ByteWidth = size;
+	cb_desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	cb_desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	cb_desc.MiscFlags = 0;
+	cb_desc.StructureByteStride = 0;
+
+	ID3D11Buffer* buffer;
+	HRESULT result = device->CreateBuffer(&cb_desc, NULL, &buffer);
+	if(FAILED(result))
+		throw Format("Failed to create constant buffer (size:%u; code:%u).", size, result);
+
+	return buffer;
 }
 
 void Render::SetAlphaBlend(bool enabled)

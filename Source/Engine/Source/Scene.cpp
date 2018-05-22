@@ -4,7 +4,6 @@
 #include "Render.h"
 #include "Camera.h"
 #include "MeshShader.h"
-#include "AnimatedShader.h"
 #include "MeshInstance.h"
 #include "ParticleEmitter.h"
 #include "ParticleShader.h"
@@ -31,9 +30,6 @@ void Scene::Init(Render* render)
 	mesh_shader.reset(new MeshShader(render));
 	mesh_shader->Init();
 
-	animated_shader.reset(new AnimatedShader(render));
-	animated_shader->Init();
-
 	particle_shader.reset(new ParticleShader(render));
 	particle_shader->Init();
 }
@@ -53,9 +49,8 @@ void Scene::DrawNodes()
 	render->SetDepthState(Render::DEPTH_YES);
 	render->SetCulling(true);
 
-	mode = -1;
 	mesh_shader->SetParams(fog_color, fog_params);
-	animated_shader->SetParams(fog_color, fog_params);
+	mesh_shader->Prepare();
 	DrawNodes(visible_nodes, nullptr);
 
 	if(!visible_alpha_nodes.empty())
@@ -92,27 +87,7 @@ void Scene::DrawNodes(vector<SceneNode*>& nodes, const Matrix* parent_matrix)
 		mat_combined = mat_world * mat_view_proj;
 
 		if(node->visible)
-		{
-			MeshInstance* mesh_inst = node->GetMeshInstance();
-			if(mesh_inst)
-			{
-				if(mode != 1)
-				{
-					animated_shader->Prepare();
-					mode = 1;
-				}
-				animated_shader->DrawMesh(node->mesh, mesh_inst, mat_combined, node->tint, node->subs);
-			}
-			else
-			{
-				if(mode != 0)
-				{
-					mesh_shader->Prepare();
-					mode = 0;
-				}
-				mesh_shader->DrawMesh(node->mesh, mat_combined, node->tint, node->subs);
-			}
-		}
+			mesh_shader->DrawMesh(node->mesh, node->GetMeshInstance(), mat_combined, node->tint, node->subs);
 
 		if(!node->childs.empty())
 			DrawNodes(node->childs, &mat_world);

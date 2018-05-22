@@ -427,7 +427,7 @@ void Game::UpdatePlayer(float dt)
 			Vec3 shoot_dir = (camera->cam->to - camera->cam->from).Normalize();
 			Vec3 shoot_pos = player->GetShootPos();
 			for(int i = 0; i < 10; ++i)
-				tmp[i]->pos = shoot_pos + shoot_dir * 10.f * i / 9;
+				tmp[i]->pos = shoot_pos + shoot_dir * 10.f * float(i) / 9;
 
 			const Vec2 angle_limits = ThirdPersonCamera::c_angle_aim;
 			float ratio = (1.f - (camera->rot.y - angle_limits.x) / (angle_limits.y - angle_limits.x)) * 0.8f + 0.1f;
