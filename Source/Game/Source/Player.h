@@ -39,7 +39,7 @@ struct Player : Unit
 	uint medkits, food_cans, ammo, current_ammo;
 	SceneNode* weapon, *hair;
 	GroundItem* item_before;
-	float rot_buf, last_rot, hungry_timer, shot_delay;
+	float rot_buf, last_rot, hungry_timer, shot_delay, idle_timer;
 	Item* melee_weapon, *ranged_weapon;
 	bool use_melee;
 	bool death_starved;

@@ -38,7 +38,7 @@ private:
 	SceneNode* tmp[10]; // FIXME
 
 	// resources
-	Texture* tex_blood, *tex_zombie_blood;
+	Texture* tex_blood, *tex_zombie_blood, *tex_hit_object, *tex_gunshot;
 	Sound* sound_player_hurt, *sound_player_die, *sound_zombie_hurt, *sound_zombie_die, *sound_zombie_attack, *sound_zombie_alert, *sound_hit, *sound_medkit,
 		*sound_eat, *sound_hungry, *sound_shoot, *sound_shoot_try, *sound_reload, *sound_hit_wall;
 };

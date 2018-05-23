@@ -31,6 +31,9 @@ void Unit::Update(Animation new_animation)
 	case ANI_RUN:
 		node->mesh_inst->Play("biegnie", 0, 0);
 		break;
+	case ANI_IDLE:
+		node->mesh_inst->Play("idle", PLAY_ONCE | PLAY_CLEAR_FRAME_END_INFO, 0);
+		break;
 	}
 	animation = new_animation;
 }

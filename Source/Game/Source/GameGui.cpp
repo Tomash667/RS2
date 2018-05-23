@@ -107,8 +107,10 @@ void GameGui::Init(Engine* engine, Player* player)
 
 	// ammo counter
 	label_ammo = new Label;
+	label_ammo->font = res_mgr->GetFont("Arial", 20);
 	label_ammo->pos = Int2(sprite->pos + Int2(8, 0));
 	label_ammo->size = Int2(100, 32);
+	label_ammo->color = Color(0, 255, 33);
 	label_ammo->visible = false;
 	Add(label_ammo);
 

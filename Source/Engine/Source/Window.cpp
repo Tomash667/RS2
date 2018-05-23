@@ -13,7 +13,8 @@
 #endif
 
 
-Window::Window() : input(nullptr), hwnd(nullptr), title("Window"), fullscreen(false), size(1024, 768), active(false), cursor_locked(false), cursor_visible(true)
+Window::Window() : input(nullptr), hwnd(nullptr), title("Window"), fullscreen(false), size(1024, 768), active(false), cursor_locked(false),
+cursor_visible(true)
 {
 }
 
@@ -241,7 +242,14 @@ int Window::ProcessMouseButton(uint msg, IntPointer wParam)
 		break;
 	}
 
-	input->Process(key, down);
+	if(cursor_locked)
+	{
+		if(down)
+			SetCursorLock(true);
+	}
+	else
+		input->Process(key, down);
+
 	return result;
 }
 

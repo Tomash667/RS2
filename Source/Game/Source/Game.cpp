@@ -150,6 +150,8 @@ void Game::LoadResources()
 	// particle texture
 	tex_blood = res_mgr->GetTexture("blood.png");
 	tex_zombie_blood = res_mgr->GetTexture("zombie_blood.png");
+	tex_hit_object = res_mgr->GetTexture("hit_object.png");
+	tex_gunshot = res_mgr->GetTexture("gunshot.png");
 
 	// sounds
 	sound_player_hurt = res_mgr->GetSound("player_hurt.mp3");
@@ -288,7 +290,7 @@ void Game::UpdatePlayer(float dt)
 		// attack
 		player->action = A_ATTACK;
 		player->action_state = 0;
-		player->node->mesh_inst->Play("atak1", PLAY_ONCE | PLAY_CLEAR_FRAME_END_INFO, 1);
+		player->node->mesh_inst->Play(Rand() % 2 == 0 ? "atak1" : "atak2", PLAY_ONCE | PLAY_CLEAR_FRAME_END_INFO, 1);
 	}
 	if(player->action == A_NONE && allow_mouse && !player->use_melee && input->Down(Key::RightButton))
 	{
@@ -455,14 +457,66 @@ void Game::UpdatePlayer(float dt)
 					float t;
 					if(level->RayTest(shoot_pos, shoot_dir, t, Level::COLLIDE_ALL, player, &target))
 					{
+						// FIXME
 						SceneNode* node = new SceneNode;
 						node->mesh = res_mgr->GetMesh("canned_food.qmsh");
 						node->pos = shoot_pos + shoot_dir * t;
 						node->rot = Vec3::Zero;
 						scene->Add(node);
+
+						Vec3 hitpoint = shoot_pos + shoot_dir * t;
+						if(target)
+						{
+							// hit unit
+							HitUnit(*target, player->ranged_weapon->RandomValue(), hitpoint);
+						}
+						else
+						{
+							// hit object
+							sound_mgr->PlaySound3d(sound_hit_wall, hitpoint, 2.f);
+
+							ParticleEmitter* pe = ParticleEmitter::Get();
+							pe->tex = tex_hit_object;
+							pe->emision_interval = 0.01f;
+							pe->life = 1.f;
+							pe->particle_life = 0.5f;
+							pe->emisions = 1;
+							pe->spawn_min = 10;
+							pe->spawn_max = 15;
+							pe->max_particles = 15;
+							pe->pos = hitpoint;
+							pe->speed_min = Vec3(-1, 0, -1);
+							pe->speed_max = Vec3(1, 1, 1);
+							pe->pos_min = Vec3(-0.1f, -0.1f, -0.1f);
+							pe->pos_max = Vec3(0.1f, 0.1f, 0.1f);
+							pe->size = 0.3f;
+							pe->op_size = POP_LINEAR_SHRINK;
+							pe->alpha = 0.9f;
+							pe->op_alpha = POP_LINEAR_SHRINK;
+							scene->Add(pe);
+						}
 					}
 
 					// particles
+					ParticleEmitter* pe = ParticleEmitter::Get();
+					pe->tex = tex_gunshot;
+					pe->emision_interval = 0.01f;
+					pe->life = 1.f;
+					pe->particle_life = 0.5f;
+					pe->emisions = 1;
+					pe->spawn_min = 10;
+					pe->spawn_max = 15;
+					pe->max_particles = 15;
+					pe->pos = shoot_pos;
+					pe->speed_min = Vec3(-1, 0, -1);
+					pe->speed_max = Vec3(1, 1, 1);
+					pe->pos_min = Vec3(-0.1f, -0.1f, -0.1f);
+					pe->pos_max = Vec3(0.1f, 0.1f, 0.1f);
+					pe->size = 0.3f;
+					pe->op_size = POP_LINEAR_SHRINK;
+					pe->alpha = 0.9f;
+					pe->op_alpha = POP_LINEAR_SHRINK;
+					scene->Add(pe);
 
 					sound_mgr->PlaySound3d(sound_shoot, shoot_pos, 4.f);
 					player->weapon->mesh_inst->Play("shoot", PLAY_NO_BLEND | PLAY_ONCE, 0);
@@ -596,8 +650,19 @@ void Game::UpdatePlayer(float dt)
 			animation = run ? ANI_RUN : ANI_WALK;
 	}
 
+	if(player->action == A_NONE && animation == ANI_STAND)
+	{
+		if((player->idle_timer -= dt) <= 0)
+		{
+			player->idle_timer = Random(2.f, 4.f);
+			animation = ANI_IDLE;
+		}
+	}
+
 	if(player->action != A_NONE && player->animation == ANI_ACTION)
 		animation = player->animation;
+	if(player->animation == ANI_IDLE && animation == ANI_STAND && !player->node->mesh_inst->GetEndResult(0))
+		animation = ANI_IDLE;
 
 	player->Update(animation);
 	engine->GetSoundManager()->SetListenerPosition(player->GetSoundPos(),
@@ -813,8 +878,21 @@ void Game::HitUnit(Unit& unit, int dmg, const Vec3& hitpoint)
 		if(!unit.is_zombie)
 			((Player&)unit).death_starved = false;
 	}
-	else if(unit.last_damage <= 0.f && Rand() % 3 == 0)
-		sound_mgr->PlaySound3d(unit.is_zombie ? sound_zombie_hurt : sound_player_hurt, unit.GetSoundPos(), 2.f);
+	else
+	{
+		if(unit.last_damage <= 0.f && Rand() % 3 == 0)
+			sound_mgr->PlaySound3d(unit.is_zombie ? sound_zombie_hurt : sound_player_hurt, unit.GetSoundPos(), 2.f);
+
+		if(unit.is_zombie)
+		{
+			Zombie& zombie = (Zombie&)unit;
+			if(!zombie.active)
+			{
+				zombie.active = true;
+				sound_mgr->PlaySound3d(sound_zombie_alert, zombie.GetSoundPos(), 2.f);
+			}
+		}
+	}
 
 	// add blood particle
 	ParticleEmitter* pe = ParticleEmitter::Get();
