@@ -134,15 +134,6 @@ void Game::InitGame()
 
 	game_gui = new GameGui;
 	game_gui->Init(engine.get(), level->player);
-
-	for(int i = 0; i < 10; ++i)
-	{
-		tmp[i] = new SceneNode;
-		tmp[i]->mesh = res_mgr->GetMesh("canned_food.qmsh");
-		tmp[i]->pos = Vec3::Zero;
-		tmp[i]->rot = Vec3::Zero;
-		scene->Add(tmp[i]);
-	}
 }
 
 void Game::LoadResources()
@@ -425,12 +416,6 @@ void Game::UpdatePlayer(float dt)
 		}
 		else
 		{
-			// FIXME
-			Vec3 shoot_dir = (camera->cam->to - camera->cam->from).Normalize();
-			Vec3 shoot_pos = player->GetShootPos();
-			for(int i = 0; i < 10; ++i)
-				tmp[i]->pos = shoot_pos + shoot_dir * 10.f * float(i) / 9;
-
 			const Vec2 angle_limits = ThirdPersonCamera::c_angle_aim;
 			float ratio = (1.f - (camera->rot.y - angle_limits.x) / (angle_limits.y - angle_limits.x)) * 0.8f + 0.1f;
 			player->node->mesh_inst->SetProgress(1, Clamp(ratio, 0.f, 1.f));
@@ -446,25 +431,18 @@ void Game::UpdatePlayer(float dt)
 					// try to shoot
 					player->shot_delay = 0.1f;
 					sound_mgr->PlaySound3d(sound_shoot_try, player->GetShootPos(), 1.f);
-					player->weapon->mesh_inst->Play("shoot", PLAY_NO_BLEND | PLAY_ONCE, 0);
 				}
 				else
 				{
 					Vec3 shoot_pos = player->GetShootPos();
-					Vec3 shoot_dir = (camera->cam->to - camera->cam->from).Normalize() * 100.f;
+					Vec3 shoot_from = camera->cam->from;
+					Vec3 shoot_dir = (camera->cam->to - shoot_from).Normalize() * 100.f;
 
 					Unit* target;
 					float t;
-					if(level->RayTest(shoot_pos, shoot_dir, t, Level::COLLIDE_ALL, player, &target))
+					if(level->RayTest(shoot_from, shoot_dir, t, Level::COLLIDE_ALL, player, &target))
 					{
-						// FIXME
-						SceneNode* node = new SceneNode;
-						node->mesh = res_mgr->GetMesh("canned_food.qmsh");
-						node->pos = shoot_pos + shoot_dir * t;
-						node->rot = Vec3::Zero;
-						scene->Add(node);
-
-						Vec3 hitpoint = shoot_pos + shoot_dir * t;
+						Vec3 hitpoint = shoot_from + shoot_dir * t;
 						if(target)
 						{
 							// hit unit
@@ -521,15 +499,16 @@ void Game::UpdatePlayer(float dt)
 					sound_mgr->PlaySound3d(sound_shoot, shoot_pos, 4.f);
 					player->weapon->mesh_inst->Play("shoot", PLAY_NO_BLEND | PLAY_ONCE, 0);
 
-					// recoil
-
 					player->shot_delay = 0.1f;
+					player->aim += 10.f;
 					--player->current_ammo;
 				}
 			}
 		}
 		break;
 	}
+
+	float expected_aim = 0.f;
 
 	int mov = 0;
 	if(can_move)
@@ -548,6 +527,11 @@ void Game::UpdatePlayer(float dt)
 		{
 			float value = float(mouse_x) / 400;
 			player->rot_buf -= value;
+		}
+		if(allow_mouse)
+		{
+			Int2 dif = input->GetMouseDif();
+			player->aim += float(max(abs(dif.x), abs(dif.y))) / 50;
 		}
 		if(player->rot_buf != 0)
 		{
@@ -648,7 +632,11 @@ void Game::UpdatePlayer(float dt)
 			animation = ANI_WALK_BACK;
 		else
 			animation = run ? ANI_RUN : ANI_WALK;
+		expected_aim = max(expected_aim, run ? 25.f : 10.f);
 	}
+
+	float d = 1.0f - exp(log(0.5f) * 5.f *dt);
+	player->aim += (expected_aim - player->aim) * d;
 
 	if(player->action == A_NONE && animation == ANI_STAND)
 	{

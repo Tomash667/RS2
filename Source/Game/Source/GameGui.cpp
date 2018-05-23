@@ -60,6 +60,15 @@ DIR AngleToDir(float angle)
 }
 
 
+GameGui::GameGui() : sprite_crosshair(nullptr)
+{
+}
+
+GameGui::~GameGui()
+{
+	delete sprite_crosshair;
+}
+
 void GameGui::Init(Engine* engine, Player* player)
 {
 	this->engine = engine;
@@ -75,7 +84,6 @@ void GameGui::Init(Engine* engine, Player* player)
 	sprite_crosshair->image = res_mgr->GetTexture("crosshair_dot.png");
 	sprite_crosshair->size = Int2(16, 16);
 	sprite_crosshair->pos = (wnd_size - sprite_crosshair->size) / 2;
-	Add(sprite_crosshair);
 
 	// hp bar
 	hp_bar = new ProgressBar;
@@ -165,6 +173,14 @@ void GameGui::Draw()
 		gui->DrawSprite(nullptr, text_pos, text_size, Color(0, 163, 33, 128));
 		gui->DrawText(text, nullptr, Color::Black, Font::Top | Font::Center, Rect::Create(text_pos, text_size));
 	}
+
+	if(!inventory->visible)
+	{
+		if(player->action == A_AIM)
+			DrawCrosshair(4, (int)player->aim, 20);
+		else
+			sprite_crosshair->Draw();
+	}
 }
 
 void GameGui::Update()
@@ -232,9 +248,7 @@ void GameGui::Update()
 	}
 	else if(inventory->visible)
 		inventory->Show(false);
-
-	sprite_crosshair->visible = !inventory->visible;
-
+	
 	if(inventory->visible)
 		inventory->Update();
 }
@@ -242,4 +256,18 @@ void GameGui::Update()
 bool GameGui::IsInventoryOpen()
 {
 	return inventory->visible;
+}
+
+void GameGui::DrawCrosshair(int size, int dist, int length)
+{
+	Color col(0, 255, 33);
+	Int2 center = gui->GetWindowSize() / 2;
+	gui->DrawSprite(nullptr, Int2(center.x - size / 2 - length - dist + 1, center.y - size / 2 + 1), Int2(length - 1, size - 1), Color::Black);
+	gui->DrawSprite(nullptr, Int2(center.x + size / 2 + dist + 1, center.y - size / 2 + 1), Int2(length - 1, size - 1), Color::Black);
+	gui->DrawSprite(nullptr, Int2(center.x - size / 2 + 1, center.y - size / 2 - length - dist + 1), Int2(size - 1, length - 1), Color::Black);
+	gui->DrawSprite(nullptr, Int2(center.x - size / 2 + 1, center.y + size / 2 + dist + 1), Int2(size - 1, length - 1), Color::Black);
+	gui->DrawSprite(nullptr, Int2(center.x - size / 2 - length - dist, center.y - size / 2), Int2(length - 1, size - 1), col);
+	gui->DrawSprite(nullptr, Int2(center.x + size / 2 + dist, center.y - size / 2), Int2(length - 1, size - 1), col);
+	gui->DrawSprite(nullptr, Int2(center.x - size / 2, center.y - size / 2 - length - dist), Int2(size - 1, length - 1), col);
+	gui->DrawSprite(nullptr, Int2(center.x - size / 2, center.y + size / 2 + dist), Int2(size - 1, length - 1), col);
 }

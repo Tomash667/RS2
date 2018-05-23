@@ -242,7 +242,7 @@ int Window::ProcessMouseButton(uint msg, IntPointer wParam)
 		break;
 	}
 
-	if(cursor_locked)
+	if(!cursor_locked)
 	{
 		if(down)
 			SetCursorLock(true);

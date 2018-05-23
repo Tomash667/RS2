@@ -5,6 +5,8 @@
 class GameGui : public Container
 {
 public:
+	GameGui();
+	~GameGui();
 	void Init(Engine* engine, Player* player);
 	void Draw() override;
 	void Update();
@@ -12,6 +14,8 @@ public:
 	bool IsInventoryOpen();
 
 private:
+	void DrawCrosshair(int size, int dist, int length);
+
 	Engine* engine;
 	Player* player;
 	Inventory* inventory;
