@@ -142,7 +142,6 @@ void Game::LoadResources()
 	tex_blood = res_mgr->GetTexture("blood.png");
 	tex_zombie_blood = res_mgr->GetTexture("zombie_blood.png");
 	tex_hit_object = res_mgr->GetTexture("hit_object.png");
-	tex_gunshot = res_mgr->GetTexture("gunshot.png");
 
 	// sounds
 	sound_player_hurt = res_mgr->GetSound("player_hurt.mp3");
@@ -158,7 +157,6 @@ void Game::LoadResources()
 	sound_shoot = res_mgr->GetSound("shoot.mp3");
 	sound_shoot_try = res_mgr->GetSound("shoot_try.mp3");
 	sound_reload = res_mgr->GetSound("reload.mp3");
-	sound_hit_wall = res_mgr->GetSound("hit_wall.mp3");
 
 	level->LoadResources();
 	Item::LoadData(res_mgr);
@@ -453,7 +451,7 @@ void Game::UpdatePlayer(float dt)
 						else
 						{
 							// hit object
-							sound_mgr->PlaySound3d(sound_hit_wall, hitpoint, 2.f);
+							sound_mgr->PlaySound3d(sound_hit, hitpoint, 2.f);
 
 							ParticleEmitter* pe = ParticleEmitter::Get();
 							pe->tex = tex_hit_object;
