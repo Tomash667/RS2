@@ -53,9 +53,6 @@ void CityGenerator::Generate()
 	level->SpawnPlayer(player_start_pos);
 	SpawnItems();
 	SpawnZombies();
-	// FIXME
-	level->SpawnItem(player_start_pos + Vec3(0, 0.05f, 2.f), Item::Get("pistol"));
-	level->SpawnItem(player_start_pos + Vec3(0, 0.05f, 4.f), Item::Get("pistol_ammo"));
 }
 
 struct Leaf
@@ -432,7 +429,7 @@ void CityGenerator::CreateScene()
 		}
 
 		level->camera_colliders.push_back(Box(tile_size2 * pos.x, 4.f, tile_size2 * pos.y,
-			tile_size2 * (pos.x + size.x), 5.f, tile_size2 * (pos.y + size.y)));
+			tile_size2 * (pos.x + size.x), 4.05f, tile_size2 * (pos.y + size.y)));
 	}
 }
 

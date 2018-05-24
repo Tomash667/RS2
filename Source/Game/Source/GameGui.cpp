@@ -89,21 +89,31 @@ void GameGui::Init(Engine* engine, Player* player)
 	hp_bar = new ProgressBar;
 	hp_bar->image = res_mgr->GetTexture("hp_bar.png");
 	hp_bar->background = res_mgr->GetTexture("bar_empty.png");
-	hp_bar->size = Int2(256, 24);
+	hp_bar->size = Int2(256, 30);
 	hp_bar->pos.y = wnd_size.y - hp_bar->size.y;
 	Add(hp_bar);
 
+	Panel* panel_bg = new Panel;
+	panel_bg->image = res_mgr->GetTexture("panel.png");
+	panel_bg->corners = Int2(6, 32);
+	panel_bg->color = Color(255, 255, 255, 200);
+	panel_bg->pos = Int2(260, wnd_size.y - 36);
+	panel_bg->size = Int2(200, 80);
+	Add(panel_bg);
+
 	// medkit icon & counter
-	Sprite* sprite = new Sprite;
-	sprite->image = res_mgr->GetTexture("medkit_icon.png");
-	sprite->size = Int2(32, 32);
-	sprite->pos = Int2(256 + 4, wnd_size.y - 32);
-	Add(sprite);
+	Sprite* sprite_medkit = new Sprite;
+	sprite_medkit->image = res_mgr->GetTexture("medkit_icon.png");
+	sprite_medkit->size = Int2(32, 32);
+	sprite_medkit->pos = Int2(256 + 8, wnd_size.y - 32);
+	panel_bg->Add(sprite_medkit);
 
 	label_medkits = new Label;
-	label_medkits->pos = sprite->pos + Int2(2, 10);
+	label_medkits->font = res_mgr->GetFont("Arial", 20);
+	label_medkits->pos = sprite_medkit->pos + Int2(32, 2);
 	label_medkits->size = Int2(100, 100);
-	Add(label_medkits);
+	label_medkits->color = Color(0, 255, 33);
+	panel_bg->Add(label_medkits);
 
 	// food icon
 	sprite_food = new Sprite;
@@ -114,13 +124,19 @@ void GameGui::Init(Engine* engine, Player* player)
 	Add(sprite_food);
 
 	// ammo counter
+	Sprite* sprite_ammo = new Sprite;
+	sprite_ammo->image = res_mgr->GetTexture("ammo.png");
+	sprite_ammo->pos = Int2(label_medkits->pos + Int2(32, -2));
+	sprite_ammo->size = Int2(32, 32);
+	panel_bg->Add(sprite_ammo);
+
 	label_ammo = new Label;
-	label_ammo->font = res_mgr->GetFont("Arial", 20);
-	label_ammo->pos = Int2(sprite->pos + Int2(8, 0));
+	label_ammo->font = label_medkits->font;
+	label_ammo->pos = Int2(sprite_ammo->pos + Int2(32, 2));
 	label_ammo->size = Int2(100, 32);
 	label_ammo->color = Color(0, 255, 33);
 	label_ammo->visible = false;
-	Add(label_ammo);
+	panel_bg->Add(label_ammo);
 
 	// fps panel
 	label_fps = new Label;

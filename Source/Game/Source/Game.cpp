@@ -437,7 +437,7 @@ void Game::UpdatePlayer(float dt)
 					Vec3 shoot_pos = player->GetShootPos();
 					Vec3 shoot_from = camera->cam->from;
 					Vec3 shoot_dir = (camera->cam->to - shoot_from).Normalize() * 100.f;
-					Vec3 target_pos = shoot_from + shoot_dir * 100.f + RandomPointInsideSphere(player->aim);
+					Vec3 target_pos = shoot_from + shoot_dir * 100.f + RandomPointInsideSphere(player->aim * 20);
 					shoot_dir = (target_pos - shoot_from).Normalize() * 100.f;
 
 					Unit* target;
@@ -469,35 +469,14 @@ void Game::UpdatePlayer(float dt)
 							pe->speed_max = Vec3(1, 1, 1);
 							pe->pos_min = Vec3(-0.1f, -0.1f, -0.1f);
 							pe->pos_max = Vec3(0.1f, 0.1f, 0.1f);
-							pe->size = 0.3f;
+							pe->size = 0.2f;
 							pe->op_size = POP_LINEAR_SHRINK;
-							pe->alpha = 0.9f;
+							pe->alpha = 0.8f;
 							pe->op_alpha = POP_LINEAR_SHRINK;
 							scene->Add(pe);
 						}
 					}
-
-					// particles
-					ParticleEmitter* pe = ParticleEmitter::Get();
-					pe->tex = tex_gunshot;
-					pe->emision_interval = 0.01f;
-					pe->life = 1.f;
-					pe->particle_life = 0.5f;
-					pe->emisions = 1;
-					pe->spawn_min = 10;
-					pe->spawn_max = 15;
-					pe->max_particles = 15;
-					pe->pos = shoot_pos;
-					pe->speed_min = Vec3(-1, 0, -1);
-					pe->speed_max = Vec3(1, 1, 1);
-					pe->pos_min = Vec3(-0.1f, -0.1f, -0.1f);
-					pe->pos_max = Vec3(0.1f, 0.1f, 0.1f);
-					pe->size = 0.3f;
-					pe->op_size = POP_LINEAR_SHRINK;
-					pe->alpha = 0.9f;
-					pe->op_alpha = POP_LINEAR_SHRINK;
-					scene->Add(pe);
-
+					
 					sound_mgr->PlaySound3d(sound_shoot, shoot_pos, 4.f);
 					player->weapon->mesh_inst->Play("shoot", PLAY_NO_BLEND | PLAY_ONCE, 0);
 
@@ -644,7 +623,7 @@ void Game::UpdatePlayer(float dt)
 	{
 		if((player->idle_timer -= dt) <= 0)
 		{
-			player->idle_timer_max = Random(3.f, 5.f);
+			player->idle_timer_max = Random(2.5f, 4.f);
 			player->idle_timer = player->idle_timer_max;
 			animation = ANI_IDLE;
 		}
