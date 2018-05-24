@@ -437,6 +437,8 @@ void Game::UpdatePlayer(float dt)
 					Vec3 shoot_pos = player->GetShootPos();
 					Vec3 shoot_from = camera->cam->from;
 					Vec3 shoot_dir = (camera->cam->to - shoot_from).Normalize() * 100.f;
+					Vec3 target_pos = shoot_from + shoot_dir * 100.f + RandomPointInsideSphere(player->aim);
+					shoot_dir = (target_pos - shoot_from).Normalize() * 100.f;
 
 					Unit* target;
 					float t;
@@ -642,10 +644,13 @@ void Game::UpdatePlayer(float dt)
 	{
 		if((player->idle_timer -= dt) <= 0)
 		{
-			player->idle_timer = Random(2.f, 4.f);
+			player->idle_timer_max = Random(3.f, 5.f);
+			player->idle_timer = player->idle_timer_max;
 			animation = ANI_IDLE;
 		}
 	}
+	else
+		player->idle_timer = player->idle_timer_max;
 
 	if(player->action != A_NONE && player->animation == ANI_ACTION)
 		animation = player->animation;

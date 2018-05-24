@@ -440,39 +440,55 @@ void CityGenerator::SpawnItems()
 {
 	Item* medkit = Item::Get("medkit");
 	Item* food = Item::Get("canned_food");
+	Item* ammo = Item::Get("pistol_ammo");
+	Item* pistol = Item::Get("pistol");
 
-	// 50% chance to spawn in building
 	for(Building& building : buildings)
 	{
-		switch(Rand() % 6)
+		int count = Rand() % 10; // 10% - 0, 40% - 1, 40% - 2, 10% - 3
+		switch(count)
 		{
 		case 0:
-		case 1:
-			// nothing
 			break;
+		case 1:
 		case 2:
 		case 3:
-			// medkit
-			{
-				Vec2 pos = building.box.GetRandomPoint(2.f);
-				level->SpawnItem(Vec3(pos.x, floor_y, pos.y), medkit);
-			}
-			break;
 		case 4:
-			// food
-			{
-				Vec2 pos = building.box.GetRandomPoint(2.f);
-				level->SpawnItem(Vec3(pos.x, floor_y, pos.y), food);
-			}
+			count = 1;
 			break;
 		case 5:
-			// food x2
-			for(int i = 0; i < 2; ++i)
-			{
-				Vec2 pos = building.box.GetRandomPoint(2.f);
-				level->SpawnItem(Vec3(pos.x, floor_y, pos.y), food);
-			}
+		case 6:
+		case 7:
+		case 8:
+			count = 2;
 			break;
+		case 9:
+			count = 3;
+			break;
+		}
+
+		for(int i = 0; i < count; ++i)
+		{
+			Item* item;
+			switch(Rand() % 4)
+			{
+			default:
+			case 0:
+				item = medkit;
+				break;
+			case 1:
+				item = food;
+				break;
+			case 2:
+				item = ammo;
+				break;
+			case 3:
+				item = pistol;
+				break;
+			}
+
+			Vec2 pos = building.box.GetRandomPoint(2.f);
+			level->SpawnItem(Vec3(pos.x, floor_y, pos.y), item);
 		}
 	}
 }

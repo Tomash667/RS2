@@ -197,6 +197,19 @@ bool Oob::Collide(const Oob& a, const Oob& b)
 }
 
 //=================================================================================================
+Vec3 RandomPointInsideSphere(float r)
+{
+	Vec3 pos;
+	do
+	{
+		pos.x = Random(-r, r);
+		pos.y = Random(-r, r);
+		pos.z = Random(-r, r);
+	} while(pos.x * pos.x + pos.y * pos.y + pos.z * pos.z > r * r);
+	return pos;
+}
+
+//=================================================================================================
 bool CircleToRectangle(float circlex, float circley, float radius, float rectx, float recty, float w, float h)
 {
 	//
