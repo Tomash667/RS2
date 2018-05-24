@@ -27,6 +27,14 @@ void SceneNode::Add(SceneNode* node, MeshPoint* point)
 	childs.push_back(node);
 }
 
+void SceneNode::SetParentPoint(MeshPoint* point)
+{
+	assert(point);
+	Mesh::Point* pt = (Mesh::Point*)point;
+	assert(parent && parent->mesh_inst && parent->mesh->HavePoint(pt));
+	parent_point = pt;
+}
+
 MeshInstance* SceneNode::GetMeshInstance()
 {
 	if(mesh_inst)

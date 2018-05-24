@@ -16,6 +16,8 @@ public:
 	void BeginScene();
 	void EndScene();
 	void CreateShader(Shader& shader, cstring filename, D3D11_INPUT_ELEMENT_DESC* desc, uint desc_count, uint cbuffer_size[2]);
+	ID3DBlob* CompileShader(cstring filename, cstring entry, cstring target);
+	ID3D11Buffer* CreateConstantBuffer(uint size);
 
 	void SetClearColor(const Vec4& clear_color) { this->clear_color = clear_color; }
 	void SetAlphaBlend(bool enabled);
@@ -33,7 +35,6 @@ private:
 	void SetViewport();
 	void CreateRasterState();
 	void CreateBlendState();
-	ID3DBlob* CompileShader(cstring filename, bool vertex_shader);
 
 	Window* window;
 	IDXGISwapChain* swap_chain;

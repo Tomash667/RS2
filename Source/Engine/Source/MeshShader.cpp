@@ -1,18 +1,29 @@
 #include "EngineCore.h"
 #include "MeshShader.h"
 #include "Render.h"
-#include "Mesh.h"
+#include "MeshInstance.h"
 #include "Texture.h"
 #include "Vertex.h"
 #include <d3d11_1.h>
 #include "InternalHelper.h"
 
-MeshShader::MeshShader(Render* render) : render(render), device_context(nullptr), sampler(nullptr)
+MeshShader::MeshShader(Render* render) : render(render), device_context(nullptr), vertex_shader(nullptr), vertex_shader_animated(nullptr),
+pixel_shader(nullptr), layout_mesh(nullptr), layout_animated(nullptr), layout_animated_no_inst(nullptr), vs_buffer(nullptr), vs_buffer_animated(nullptr),
+ps_buffer(nullptr), sampler(nullptr)
 {
 }
 
 MeshShader::~MeshShader()
 {
+	SafeRelease(vertex_shader);
+	SafeRelease(vertex_shader_animated);
+	SafeRelease(pixel_shader);
+	SafeRelease(layout_mesh);
+	SafeRelease(layout_animated);
+	SafeRelease(layout_animated_no_inst);
+	SafeRelease(vs_buffer);
+	SafeRelease(vs_buffer_animated);
+	SafeRelease(ps_buffer);
 	SafeRelease(sampler);
 }
 
@@ -20,15 +31,76 @@ void MeshShader::Init()
 {
 	device_context = render->GetDeviceContext();
 
-	// compile shader
-	D3D11_INPUT_ELEMENT_DESC desc[] = {
+	try
+	{
+		InitInternal();
+	}
+	catch(cstring err)
+	{
+		throw Format("Failed to initialize mesh shader: %s", err);
+	}
+}
+
+void MeshShader::InitInternal()
+{
+	ID3D11Device* device = render->GetDevice();
+	HRESULT result;
+
+	// compile shader to blobs
+	ID3DBlob* blob_vs_mesh = render->CompileShader("mesh.hlsl", "vs_mesh", "vs_5_0");
+	ID3DBlob* blob_vs_animated = render->CompileShader("mesh.hlsl", "vs_animated", "vs_5_0");
+	ID3DBlob* blob_ps = render->CompileShader("mesh.hlsl", "ps_main", "ps_5_0");
+
+	// create shaders
+	result = device->CreateVertexShader(blob_vs_mesh->GetBufferPointer(), blob_vs_mesh->GetBufferSize(), nullptr, &vertex_shader);
+	if(FAILED(result))
+		throw Format("Failed to create vertex shader (%u).", result);
+
+	result = device->CreateVertexShader(blob_vs_animated->GetBufferPointer(), blob_vs_animated->GetBufferSize(), nullptr, &vertex_shader_animated);
+	if(FAILED(result))
+		throw Format("Failed to create animated vertex shader (%u).", result);
+
+	result = device->CreatePixelShader(blob_ps->GetBufferPointer(), blob_ps->GetBufferSize(), nullptr, &pixel_shader);
+	if(FAILED(result))
+		throw Format("Failed to create pixel shader (%u).", result);
+
+	// create input layouts
+	D3D11_INPUT_ELEMENT_DESC desc_mesh[] = {
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
 	};
-	uint cbuffer_size[] = { sizeof(Matrix), sizeof(PixelShaderGlobals) };
-	render->CreateShader(shader, "mesh.hlsl", desc, countof(desc), cbuffer_size);
-	shader.vertex_stride = sizeof(Vertex);
+
+	D3D11_INPUT_ELEMENT_DESC desc_animated[] = {
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "BLENDWEIGHT", 0, DXGI_FORMAT_R32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "BLENDINDICES", 0, DXGI_FORMAT_R8G8B8A8_UINT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+	};
+
+	result = device->CreateInputLayout(desc_mesh, countof(desc_mesh), blob_vs_mesh->GetBufferPointer(), blob_vs_mesh->GetBufferSize(), &layout_mesh);
+	if(FAILED(result))
+		throw Format("Failed to create mesh layout (%u).", result);
+
+	result = device->CreateInputLayout(desc_animated, countof(desc_animated), blob_vs_animated->GetBufferPointer(), blob_vs_animated->GetBufferSize(),
+		&layout_animated);
+	if(FAILED(result))
+		throw Format("Failed to create animated mesh layout (%u).", result);
+
+	result = device->CreateInputLayout(desc_animated, countof(desc_animated), blob_vs_mesh->GetBufferPointer(), blob_vs_mesh->GetBufferSize(),
+		&layout_animated_no_inst);
+	if(FAILED(result))
+		throw Format("Failed to create animated mesh without instance layout (%u).", result);
+
+	blob_vs_mesh->Release();
+	blob_vs_animated->Release();
+	blob_ps->Release();
+
+	// create constant buffers
+	vs_buffer = render->CreateConstantBuffer(sizeof(VertexShaderGlobals));
+	vs_buffer_animated = render->CreateConstantBuffer(sizeof(AnimatedVertexShaderGlobals));
+	ps_buffer = render->CreateConstantBuffer(sizeof(PixelShaderGlobals));
 
 	// create texture sampler
 	D3D11_SAMPLER_DESC sampler_desc;
@@ -46,7 +118,7 @@ void MeshShader::Init()
 	sampler_desc.MinLOD = 0;
 	sampler_desc.MaxLOD = D3D11_FLOAT32_MAX;
 
-	HRESULT result = render->GetDevice()->CreateSamplerState(&sampler_desc, &sampler);
+	result = device->CreateSamplerState(&sampler_desc, &sampler);
 	if(FAILED(result))
 		throw Format("Failed to create sampler state (%u).", result);
 }
@@ -60,35 +132,78 @@ void MeshShader::SetParams(const Vec4& fog_color, const Vec4& fog_params)
 void MeshShader::Prepare()
 {
 	device_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	device_context->IASetInputLayout(shader.layout);
-	device_context->VSSetShader(shader.vertex_shader, nullptr, 0);
-	device_context->VSSetConstantBuffers(0, 1, &shader.vs_buffer);
-	device_context->PSSetShader(shader.pixel_shader, nullptr, 0);
-	device_context->PSSetConstantBuffers(0, 1, &shader.ps_buffer);
+	device_context->PSSetShader(pixel_shader, nullptr, 0);
+	device_context->PSSetConstantBuffers(0, 1, &ps_buffer);
 	device_context->PSSetSamplers(0, 1, &sampler);
+	current_mode = MODE_NONE;
 }
 
-void MeshShader::DrawMesh(Mesh* mesh, const Matrix& mat_combined, const Vec3& tint, int subs)
+void MeshShader::DrawMesh(Mesh* mesh, MeshInstance* mesh_inst, const Matrix& mat_combined, const Vec3& tint, int subs)
 {
 	assert(mesh);
 
+	// change mode
+	Mode new_mode;
+	if(mesh_inst)
+		new_mode = MODE_ANIMATED;
+	else if(mesh->IsAnimated())
+		new_mode = MODE_ANIMATED_NO_INST;
+	else
+		new_mode = MODE_MESH;
+	if(new_mode != current_mode)
+	{
+		current_mode = new_mode;
+		switch(new_mode)
+		{
+		case MODE_MESH:
+			device_context->IASetInputLayout(layout_mesh);
+			device_context->VSSetShader(vertex_shader, nullptr, 0);
+			device_context->VSSetConstantBuffers(0, 1, &vs_buffer);
+			break;
+		case MODE_ANIMATED:
+			device_context->IASetInputLayout(layout_animated);
+			device_context->VSSetShader(vertex_shader_animated, nullptr, 0);
+			device_context->VSSetConstantBuffers(0, 1, &vs_buffer_animated);
+			break;
+		case MODE_ANIMATED_NO_INST:
+			device_context->IASetInputLayout(layout_animated_no_inst);
+			device_context->VSSetShader(vertex_shader, nullptr, 0);
+			device_context->VSSetConstantBuffers(0, 1, &vs_buffer);
+			break;
+		}
+	}
+
 	// set vertex shader constants
 	D3D11_MAPPED_SUBRESOURCE resource;
-	C(device_context->Map(shader.vs_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource));
-	Matrix& m = *(Matrix*)resource.pData;
-	m = mat_combined.Transpose();
-	device_context->Unmap(shader.vs_buffer, 0);
+	if(current_mode != MODE_ANIMATED)
+	{
+		C(device_context->Map(vs_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource));
+		VertexShaderGlobals& g = *(VertexShaderGlobals*)resource.pData;
+		g.mat_combined = mat_combined.Transpose();
+		device_context->Unmap(vs_buffer, 0);
+	}
+	else
+	{
+		C(device_context->Map(vs_buffer_animated, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource));
+		AnimatedVertexShaderGlobals& g = *(AnimatedVertexShaderGlobals*)resource.pData;
+		g.mat_combined = mat_combined.Transpose();
+		mesh_inst->SetupBones();
+		const vector<Matrix>& bones = mesh_inst->GetMatrixBones();
+		for(size_t i = 0, count = bones.size(); i < count; ++i)
+			g.mat_bones[i] = bones[i].Transpose();
+		device_context->Unmap(vs_buffer_animated, 0);
+	}
 
 	// set pixel shader constants
-	C(device_context->Map(shader.ps_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource));
+	C(device_context->Map(ps_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource));
 	PixelShaderGlobals& psg = *(PixelShaderGlobals*)resource.pData;
 	psg.fog_color = fog_color;
 	psg.fog_params = fog_params;
 	psg.tint = Vec4(tint, 1.f);
-	device_context->Unmap(shader.ps_buffer, 0);
+	device_context->Unmap(ps_buffer, 0);
 
 	// set buffers
-	uint stride = shader.vertex_stride,
+	uint stride = (current_mode == MODE_MESH ? sizeof(Vertex) : sizeof(AniVertex)),
 		offset = 0;
 	device_context->IASetVertexBuffers(0, 1, &mesh->vb, &stride, &offset);
 	device_context->IASetIndexBuffer(mesh->ib, DXGI_FORMAT_R16_UINT, 0);
