@@ -20,7 +20,12 @@ struct SceneNode
 		container(nullptr), scale(1.f), alpha(false) {}
 	~SceneNode();
 	void Add(SceneNode* node, MeshPoint* point = nullptr);
+
+	void SetParentPoint(MeshPoint* point);
+
 	MeshInstance* GetMeshInstance();
+	SceneNode* GetParent() { return parent; }
+	MeshPoint* GetParentPoint() { return parent_point; }
 
 	static MeshPoint* USE_PARENT_BONES;
 

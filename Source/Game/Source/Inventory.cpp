@@ -46,8 +46,15 @@ void Inventory::Draw()
 		if(slot.item)
 		{
 			gui->DrawSprite(slot.item->icon, offset, s);
+			cstring count;
 			if(slot.count != 0)
-				gui->DrawText(Format("%u", slot.count), nullptr, Color(0, 255, 33), Font::Bottom, Rect::Create(offset + Int2(4, 0), s));
+				count = Format("%u", slot.count);
+			else if(i == SLOT_RANGED_WEAPON)
+				count = Format("%u/%u", player->current_ammo, 10u);
+			else
+				count = nullptr;
+			if(count)
+				gui->DrawText(count, nullptr, Color(0, 255, 33), Font::Bottom, Rect::Create(offset + Int2(4, 0), s));
 		}
 		offset.x += grid_size;
 	}
@@ -109,8 +116,8 @@ void Inventory::Update(float dt)
 void Inventory::PrepareSlots()
 {
 	slots[SLOT_MELEE_WEAPON] = Slot(player->melee_weapon);
-	slots[SLOT_RANGED_WEAPON] = Slot(nullptr);
-	slots[SLOT_AMMO] = Slot(nullptr);
+	slots[SLOT_RANGED_WEAPON] = Slot(player->ranged_weapon);
+	slots[SLOT_AMMO] = (player->ammo > 0 ? Slot(Item::Get("pistol_ammo"), player->ammo) : Slot(nullptr));
 	slots[SLOT_FOOD] = (player->food_cans > 0 ? Slot(Item::Get("canned_food"), player->food_cans) : Slot(nullptr));
 	slots[SLOT_MEDKIT] = (player->medkits > 0 ? Slot(Item::Get("medkit"), player->medkits) : Slot(nullptr));
 }
@@ -128,6 +135,15 @@ void Inventory::UseItem(SLOT slot)
 {
 	switch(slot)
 	{
+	case SLOT_MELEE_WEAPON:
+		player->SwitchWeapon(true);
+		break;
+	case SLOT_RANGED_WEAPON:
+		player->SwitchWeapon(false);
+		break;
+	case SLOT_AMMO:
+		player->Reload();
+		break;
 	case SLOT_MEDKIT:
 		player->UseMedkit();
 		break;

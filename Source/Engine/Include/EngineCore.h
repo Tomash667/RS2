@@ -40,7 +40,6 @@ struct ProgressBar;
 struct Sprite;
 
 // internal classes
-class AnimatedShader;
 class FontLoader;
 class GuiShader;
 class MeshShader;
