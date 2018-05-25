@@ -113,9 +113,6 @@
     <ClInclude Include="Include\MeshInstance.h">
       <Filter>1. Include\Engine</Filter>
     </ClInclude>
-    <ClInclude Include="Source\AnimatedShader.h">
-      <Filter>2. Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Include\Gui.h">
       <Filter>1. Include\Engine</Filter>
     </ClInclude>
@@ -224,9 +221,6 @@
       <Filter>3. Source Files\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\MeshInstance.cpp">
-      <Filter>3. Source Files\Engine</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\AnimatedShader.cpp">
       <Filter>3. Source Files\Engine</Filter>
     </ClCompile>
     <ClCompile Include="Source\SceneNode.cpp">

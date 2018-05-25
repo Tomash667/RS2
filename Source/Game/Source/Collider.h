@@ -7,7 +7,7 @@ struct Collider
 	Box ToBox() const
 	{
 		return Box(center.x - half_size.x, 0, center.y - half_size.y,
-			center.x + half_size.x, 8, center.y + half_size.y);
+			center.x + half_size.x, 4, center.y + half_size.y);
 	}
 
 	Vec2 center, half_size;

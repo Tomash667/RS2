@@ -8,7 +8,9 @@ enum Action
 	A_USE_MEDKIT,
 	A_PICKUP,
 	A_ATTACK,
-	A_EAT
+	A_EAT,
+	A_RELOAD,
+	A_AIM
 };
 
 enum FoodLevel
@@ -22,21 +24,26 @@ enum FoodLevel
 
 struct Player : Unit
 {
-	Player();
+	Player(Level* level);
 	void UseMedkit();
 	void EatFood();
+	void SwitchWeapon(bool melee);
+	void Reload();
 	void Save(FileWriter& f);
 	void Load(FileReader& f);
 
 	FoodLevel GetFoodLevel();
+	Vec3 GetShootPos();
 
+	Level* level;
 	Action action;
 	int action_state, food;
-	uint medkits, food_cans;
+	uint medkits, food_cans, ammo, current_ammo;
 	SceneNode* weapon, *hair;
 	GroundItem* item_before;
-	float rot_buf, last_rot, hungry_timer;
-	Item* melee_weapon;
+	float rot_buf, last_rot, hungry_timer, shot_delay, idle_timer, idle_timer_max, aim;
+	Item* melee_weapon, *ranged_weapon;
+	bool use_melee;
 	bool death_starved;
 
 	static const float walk_speed;

@@ -9,7 +9,8 @@ enum Animation
 	ANI_WALK_BACK,
 	ANI_RUN,
 	ANI_ACTION,
-	ANI_DIE
+	ANI_DIE,
+	ANI_IDLE
 };
 
 struct Unit

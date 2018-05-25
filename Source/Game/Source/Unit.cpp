@@ -4,7 +4,7 @@
 #include "MeshInstance.h"
 
 const float Unit::radius = 0.3f;
-const float Unit::height = 1.75f;
+const float Unit::height = 1.73f;
 
 void Unit::Update(Animation new_animation)
 {
@@ -30,6 +30,9 @@ void Unit::Update(Animation new_animation)
 		break;
 	case ANI_RUN:
 		node->mesh_inst->Play("biegnie", 0, 0);
+		break;
+	case ANI_IDLE:
+		node->mesh_inst->Play(is_zombie ? "idle" : "drapie", PLAY_ONCE | PLAY_CLEAR_FRAME_END_INFO, 0);
 		break;
 	}
 	animation = new_animation;

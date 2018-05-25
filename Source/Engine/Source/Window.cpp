@@ -13,7 +13,8 @@
 #endif
 
 
-Window::Window() : input(nullptr), hwnd(nullptr), title("Window"), fullscreen(false), size(1024, 768), active(false), cursor_locked(false), cursor_visible(true)
+Window::Window() : input(nullptr), hwnd(nullptr), title("Window"), fullscreen(false), size(1024, 768), active(false), cursor_locked(false),
+cursor_visible(true)
 {
 }
 
@@ -21,7 +22,7 @@ void Window::Init(Input* input)
 {
 	assert(input);
 	this->input = input;
-	
+
 	RegisterWindowClass();
 	AdjustWindowSize();
 	CreateWindow();
@@ -94,7 +95,7 @@ void Window::RegisterWindowClass()
 		0, 0, module, icon, LoadCursor(nullptr, IDC_ARROW), (HBRUSH)GetStockObject(BLACK_BRUSH),
 		nullptr, "MainWindow", nullptr
 	};
-	
+
 	RegisterClassEx(&wc);
 }
 
@@ -241,7 +242,14 @@ int Window::ProcessMouseButton(uint msg, IntPointer wParam)
 		break;
 	}
 
-	input->Process(key, down);
+	if(!cursor_locked)
+	{
+		if(down)
+			SetCursorLock(true);
+	}
+	else
+		input->Process(key, down);
+
 	return result;
 }
 

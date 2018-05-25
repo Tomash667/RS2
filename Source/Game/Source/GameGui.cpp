@@ -60,6 +60,15 @@ DIR AngleToDir(float angle)
 }
 
 
+GameGui::GameGui() : sprite_crosshair(nullptr)
+{
+}
+
+GameGui::~GameGui()
+{
+	delete sprite_crosshair;
+}
+
 void GameGui::Init(Engine* engine, Player* player)
 {
 	this->engine = engine;
@@ -75,27 +84,36 @@ void GameGui::Init(Engine* engine, Player* player)
 	sprite_crosshair->image = res_mgr->GetTexture("crosshair_dot.png");
 	sprite_crosshair->size = Int2(16, 16);
 	sprite_crosshair->pos = (wnd_size - sprite_crosshair->size) / 2;
-	Add(sprite_crosshair);
 
 	// hp bar
 	hp_bar = new ProgressBar;
 	hp_bar->image = res_mgr->GetTexture("hp_bar.png");
 	hp_bar->background = res_mgr->GetTexture("bar_empty.png");
-	hp_bar->size = Int2(256, 24);
+	hp_bar->size = Int2(256, 30);
 	hp_bar->pos.y = wnd_size.y - hp_bar->size.y;
 	Add(hp_bar);
 
+	Panel* panel_bg = new Panel;
+	panel_bg->image = res_mgr->GetTexture("panel.png");
+	panel_bg->corners = Int2(6, 32);
+	panel_bg->color = Color(255, 255, 255, 200);
+	panel_bg->pos = Int2(260, wnd_size.y - 36);
+	panel_bg->size = Int2(200, 80);
+	Add(panel_bg);
+
 	// medkit icon & counter
-	Sprite* sprite = new Sprite;
-	sprite->image = res_mgr->GetTexture("medkit_icon.png");
-	sprite->size = Int2(32, 32);
-	sprite->pos = Int2(256 + 4, wnd_size.y - 32);
-	Add(sprite);
+	Sprite* sprite_medkit = new Sprite;
+	sprite_medkit->image = res_mgr->GetTexture("medkit_icon.png");
+	sprite_medkit->size = Int2(32, 32);
+	sprite_medkit->pos = Int2(256 + 8, wnd_size.y - 32);
+	panel_bg->Add(sprite_medkit);
 
 	label_medkits = new Label;
-	label_medkits->pos = sprite->pos + Int2(2, 10);
+	label_medkits->font = res_mgr->GetFont("Arial", 20);
+	label_medkits->pos = sprite_medkit->pos + Int2(32, 2);
 	label_medkits->size = Int2(100, 100);
-	Add(label_medkits);
+	label_medkits->color = Color(0, 255, 33);
+	panel_bg->Add(label_medkits);
 
 	// food icon
 	sprite_food = new Sprite;
@@ -104,6 +122,21 @@ void GameGui::Init(Engine* engine, Player* player)
 	sprite_food->pos = Int2(8, hp_bar->pos.y - 40);
 	sprite_food->visible = false;
 	Add(sprite_food);
+
+	// ammo counter
+	Sprite* sprite_ammo = new Sprite;
+	sprite_ammo->image = res_mgr->GetTexture("ammo.png");
+	sprite_ammo->pos = Int2(label_medkits->pos + Int2(32, -2));
+	sprite_ammo->size = Int2(32, 32);
+	panel_bg->Add(sprite_ammo);
+
+	label_ammo = new Label;
+	label_ammo->font = label_medkits->font;
+	label_ammo->pos = Int2(sprite_ammo->pos + Int2(32, 2));
+	label_ammo->size = Int2(100, 32);
+	label_ammo->color = Color(0, 255, 33);
+	label_ammo->visible = false;
+	panel_bg->Add(label_ammo);
 
 	// fps panel
 	label_fps = new Label;
@@ -156,12 +189,21 @@ void GameGui::Draw()
 		gui->DrawSprite(nullptr, text_pos, text_size, Color(0, 163, 33, 128));
 		gui->DrawText(text, nullptr, Color::Black, Font::Top | Font::Center, Rect::Create(text_pos, text_size));
 	}
+
+	if(!inventory->visible)
+	{
+		if(player->action == A_AIM)
+			DrawCrosshair(4, (int)player->aim, 20);
+		else
+			sprite_crosshair->Draw();
+	}
 }
 
 void GameGui::Update()
 {
 	Input* input = gui->GetInput();
 
+	// fps panel
 	if(input->Pressed(Key::F1))
 		panel_fps->visible = !panel_fps->visible;
 	if(panel_fps->visible)
@@ -175,9 +217,22 @@ void GameGui::Update()
 			panel_fps->size = Int2::Max(panel_size, panel_fps->size);
 	}
 
+	// hp bar
 	hp_bar->progress = player->GetHpp();
+
+	// medkits counter
 	label_medkits->text = Format("%d", player->medkits);
 
+	// ammo counter
+	if(player->use_melee)
+		label_ammo->visible = false;
+	else
+	{
+		label_ammo->text = Format("%u/%u", player->current_ammo, player->ammo);
+		label_ammo->visible = true;
+	}
+
+	// food icon
 	FoodLevel food_level = player->GetFoodLevel();
 	if(food_level == FL_NORMAL)
 		sprite_food->visible = false;
@@ -201,6 +256,7 @@ void GameGui::Update()
 		}
 	}
 
+	// show/hide inventory
 	if(player->hp > 0)
 	{
 		if(input->Pressed(Key::I))
@@ -208,9 +264,7 @@ void GameGui::Update()
 	}
 	else if(inventory->visible)
 		inventory->Show(false);
-
-	sprite_crosshair->visible = !inventory->visible;
-
+	
 	if(inventory->visible)
 		inventory->Update();
 }
@@ -218,4 +272,18 @@ void GameGui::Update()
 bool GameGui::IsInventoryOpen()
 {
 	return inventory->visible;
+}
+
+void GameGui::DrawCrosshair(int size, int dist, int length)
+{
+	Color col(0, 255, 33);
+	Int2 center = gui->GetWindowSize() / 2;
+	gui->DrawSprite(nullptr, Int2(center.x - size / 2 - length - dist + 1, center.y - size / 2 + 1), Int2(length - 1, size - 1), Color::Black);
+	gui->DrawSprite(nullptr, Int2(center.x + size / 2 + dist + 1, center.y - size / 2 + 1), Int2(length - 1, size - 1), Color::Black);
+	gui->DrawSprite(nullptr, Int2(center.x - size / 2 + 1, center.y - size / 2 - length - dist + 1), Int2(size - 1, length - 1), Color::Black);
+	gui->DrawSprite(nullptr, Int2(center.x - size / 2 + 1, center.y + size / 2 + dist + 1), Int2(size - 1, length - 1), Color::Black);
+	gui->DrawSprite(nullptr, Int2(center.x - size / 2 - length - dist, center.y - size / 2), Int2(length - 1, size - 1), col);
+	gui->DrawSprite(nullptr, Int2(center.x + size / 2 + dist, center.y - size / 2), Int2(length - 1, size - 1), col);
+	gui->DrawSprite(nullptr, Int2(center.x - size / 2, center.y - size / 2 - length - dist), Int2(size - 1, length - 1), col);
+	gui->DrawSprite(nullptr, Int2(center.x - size / 2, center.y + size / 2 + dist), Int2(size - 1, length - 1), col);
 }

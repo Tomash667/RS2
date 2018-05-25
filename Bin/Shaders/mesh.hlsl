@@ -3,9 +3,24 @@ cbuffer vs_globals
 	matrix mat_combined;
 };
 
+cbuffer vs_animated_globals
+{
+	matrix mat_combined_ani;
+	matrix mat_bones[32];
+};
+
 struct VS_INPUT
 {
     float3 pos : POSITION;
+	float3 normal : NORMAL;
+	float2 tex : TEXCOORD0;
+};
+
+struct VS_INPUT_ANIMATED
+{
+    float3 pos : POSITION;
+	half weight : BLENDWEIGHT0;
+	uint4 indices : BLENDINDICES0;
 	float3 normal : NORMAL;
 	float2 tex : TEXCOORD0;
 };
@@ -16,10 +31,20 @@ struct VS_OUTPUT
 	float2 tex : TEXCOORD0;
 };
 
-VS_OUTPUT vs_main(VS_INPUT In)
+VS_OUTPUT vs_mesh(VS_INPUT In)
 {
 	VS_OUTPUT Out;
 	Out.pos = mul(float4(In.pos,1), mat_combined);
+	Out.tex = In.tex;
+	return Out;
+}
+
+VS_OUTPUT vs_animated(VS_INPUT_ANIMATED In)
+{
+	VS_OUTPUT Out;
+	float3 pos = (mul(float4(In.pos,1), mat_bones[In.indices[0]]) * In.weight).xyz;
+	pos += (mul(float4(In.pos,1), mat_bones[In.indices[1]]) * (1-In.weight)).xyz;
+	Out.pos = mul(float4(pos,1), mat_combined_ani);
 	Out.tex = In.tex;
 	return Out;
 }

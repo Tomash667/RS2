@@ -16,6 +16,9 @@ Left button - attack
 Shift - walk
 E - pickup items
 H - use medkit
+R - reload
+1 - switch to melee weapon
+2 - switch to ranged weapon
 U - lock/unlock cursor
 F1 - show/hide fps
 

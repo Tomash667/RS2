@@ -12,6 +12,7 @@ public:
 	void Add(SceneNode* node);
 	void Add(ParticleEmitter* pe);
 	void Remove(SceneNode* node);
+	void RecycleMeshInstance(SceneNode* node);
 
 	void SetFogColor(const Vec4& fog_color) { this->fog_color = fog_color; }
 	void SetFogParams(float start, float end);
@@ -30,15 +31,14 @@ private:
 
 	Render* render;
 	unique_ptr<MeshShader> mesh_shader;
-	unique_ptr<AnimatedShader> animated_shader;
 	unique_ptr<ParticleShader> particle_shader;
 	unique_ptr<Camera> camera;
 	vector<SceneNode*> nodes, visible_nodes, visible_alpha_nodes;
 	vector<ParticleEmitter*> pes, visible_pes;
 	Matrix mat_view, mat_view_proj;
-	int mode;
 	Vec4 fog_color, fog_params;
 	FrustumPlanes frustum_planes;
 	unique_ptr<QuadTree> quad_tree;
 	vector<ScenePart*> parts;
+	vector<MeshInstance*> mesh_inst_pool;
 };
