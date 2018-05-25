@@ -105,3 +105,8 @@ Texture* ResourceManager::GetTexture(Cstring name)
 	}
 	return tex;
 }
+
+void ResourceManager::AddFontFromFile(Cstring name)
+{
+	font_loader->AddFromFile(Format("Data/%s", name));
+}

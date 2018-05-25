@@ -23,4 +23,6 @@ private:
 	Label* label_fps, *label_medkits, *label_ammo;
 	Sprite* sprite_crosshair, *sprite_food;
 	ProgressBar* hp_bar;
+	Texture* tex_background;
+	Font* font_big;
 };

@@ -15,8 +15,10 @@ private:
 	void InitEngine();
 	void InitGame();
 	void LoadResources();
-	void GenerateCity();
+	void StartGame();
+	void ExitToMenu();
 	bool OnTick(float dt) override;
+	void UpdateGame(float dt);
 	void UpdatePlayer(float dt);
 	void UpdateZombies(float dt);
 	float UnitRotateTo(float& rot, float expected_rot, float speed, int* dir = nullptr);
@@ -30,10 +32,11 @@ private:
 	ResourceManager* res_mgr;
 	SoundManager* sound_mgr;
 	ThirdPersonCamera* camera;
+	MainMenu* main_menu;
 	GameGui* game_gui;
 	unique_ptr<Level> level;
 	unique_ptr<CityGenerator> city_generator;
-	bool allow_mouse;
+	bool in_game, allow_mouse;
 
 	// resources
 	Texture* tex_blood, *tex_zombie_blood, *tex_hit_object;

@@ -29,6 +29,19 @@ void Level::Init(Scene* scene, ResourceManager* res_mgr, float level_size)
 	colliders.resize(grids * grids);
 }
 
+void Level::Reset()
+{
+	delete player;
+	player = nullptr;
+	DeleteElements(zombies);
+	items.clear();
+	camera_colliders.clear();
+	for(vector<Collider>& cols : colliders)
+		cols.clear();
+	barriers.clear();
+	bloods.clear();
+}
+
 void Level::LoadResources()
 {
 	mesh_zombie = res_mgr->GetMesh("zombie.qmsh");

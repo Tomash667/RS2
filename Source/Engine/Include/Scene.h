@@ -6,6 +6,7 @@ public:
 	Scene();
 	~Scene();
 	void Init(Render* render);
+	void Reset();
 	void InitQuadTree(float size, uint splits);
 	void Draw();
 	void Update(float dt);

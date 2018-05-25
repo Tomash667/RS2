@@ -85,3 +85,20 @@ void Button::Update(float dt)
 	else
 		state = UP;
 }
+
+void Button::NormalizeSize(Button* buttons[], uint count, const Int2& padding)
+{
+	Button::Layout& layout = buttons[0]->layout;
+	Font* font = (layout.font ? layout.font : buttons[0]->gui->GetDefaultFont());
+	Int2 max_size(0, 0);
+
+	for(uint i = 0; i < count; ++i)
+	{
+		Button* bt = buttons[i];
+		bt->size = font->CalculateSize(bt->text) + padding;
+		max_size = Int2::Max(max_size, bt->size);
+	}
+
+	for(uint i = 0; i < count; ++i)
+		buttons[i]->size = max_size;
+}

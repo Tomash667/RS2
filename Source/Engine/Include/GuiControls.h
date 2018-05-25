@@ -75,5 +75,6 @@ struct Button : Control
 	State state;
 	string text;
 
+	static void NormalizeSize(Button* buttons[], uint count, const Int2& padding);
 	static Layout default_layout;
 };

@@ -11,6 +11,7 @@
 #include "Item.h"
 #include "Inventory.h"
 #include <Font.h>
+#include "GameState.h"
 
 
 enum DIR
@@ -155,6 +156,10 @@ void GameGui::Init(Engine* engine, Player* player)
 	inventory->pos = Int2(wnd_size.x - inventory->size.x, wnd_size.y - inventory->size.y);
 	Add(inventory);
 
+	tex_background = res_mgr->GetTexture("background.png");
+	res_mgr->AddFontFromFile("pertili.ttf");
+	font_big = res_mgr->GetFont("Perpetua Titling MT", 40);
+
 	engine->GetGui()->Add(this);
 }
 
@@ -196,6 +201,16 @@ void GameGui::Draw()
 			DrawCrosshair(4, (int)player->aim, 20);
 		else
 			sprite_crosshair->Draw();
+	}
+
+	if(global::state.IsPaused())
+	{
+		gui->DrawSprite(tex_background, Int2::Zero, gui->GetWindowSize());
+		gui->DrawText("GAME PAUSED", font_big, Color::Black, Font::Center | Font::VCenter, Rect::Create(Int2::Zero, gui->GetWindowSize()));
+		// background
+
+		// text GAME PAUSED - Esc to continue, Enter to save & quit
+		// TODO
 	}
 }
 
@@ -264,9 +279,18 @@ void GameGui::Update(float dt)
 	}
 	else if(inventory->visible)
 		inventory->Show(false);
-	
+
 	if(inventory->visible)
 		inventory->Update(dt);
+	else if(global::state.IsPaused())
+	{
+		if(input->Pressed(Key::Enter))
+			global::state.SetChangeState(GameState::EXIT_TO_MENU);
+		else if(input->Pressed(Key::Escape))
+			global::state.SetPaused(false);
+	}
+	else if(input->Pressed(Key::Escape))
+		global::state.SetPaused(true);
 }
 
 bool GameGui::IsInventoryOpen()

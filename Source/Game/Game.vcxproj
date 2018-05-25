@@ -169,6 +169,7 @@
     <ClInclude Include="Source\Game.h" />
     <ClInclude Include="Source\GameCore.h" />
     <ClInclude Include="Source\GameGui.h" />
+    <ClInclude Include="Source\GameState.h" />
     <ClInclude Include="Source\GroundItem.h" />
     <ClInclude Include="Source\Inventory.h" />
     <ClInclude Include="Source\Item.h" />

@@ -16,6 +16,7 @@ public:
 	Level();
 	~Level();
 	void Init(Scene* scene, ResourceManager* res_mgr, float level_size);
+	void Reset();
 	void LoadResources();
 	void SpawnItem(const Vec3& pos, Item* item);
 	void SpawnZombie(const Vec3& pos);

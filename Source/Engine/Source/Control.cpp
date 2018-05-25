@@ -28,5 +28,8 @@ void Container::Add(Control* control)
 void Container::Update(float dt)
 {
 	for(Control* control : controls)
-		control->Update(dt);
+	{
+		if(control->visible)
+			control->Update(dt);
+	}
 }

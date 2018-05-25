@@ -5,14 +5,18 @@
 class MainMenu : public Container
 {
 public:
+	void Init(ResourceManager* res_mgr);
 
 private:
 	enum ButtonId
 	{
-		NEW_GAME,
 		CONTINUE,
-		EXIT
+		NEW_GAME,
+		EXIT,
+		BUTTON_MAX
 	};
 
-	void Init(ResourceManager* res_mgr);
+	void OnEvent(int id);
+
+	Button* buttons[BUTTON_MAX];
 };

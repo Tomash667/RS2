@@ -183,3 +183,8 @@ void FontLoader::RenderFontToTexture(ID3D11Texture2D* tex, Font* font, void* win
 	C(surface->ReleaseDC(nullptr));
 	surface->Release();
 }
+
+void FontLoader::AddFromFile(cstring name)
+{
+	AddFontResourceEx(name, FR_PRIVATE, 0);
+}

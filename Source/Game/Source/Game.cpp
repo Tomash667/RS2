@@ -21,11 +21,14 @@
 #include "Version.h"
 #include <SoundManager.h>
 #include "ThirdPersonCamera.h"
+#include "MainMenu.h"
+#include "GameState.h"
 
 
 const float Zombie::walk_speed = 1.5f;
 const float Zombie::rot_speed = 2.5f;
 const int level_size = 32;
+GameState global::state;
 
 
 Game::Game() : camera(nullptr)
@@ -116,6 +119,8 @@ void Game::InitEngine()
 
 void Game::InitGame()
 {
+	in_game = false;
+
 	Srand();
 	engine->GetWindow()->SetCursorLock(true);
 
@@ -130,10 +135,16 @@ void Game::InitGame()
 	camera = new ThirdPersonCamera(scene->GetCamera(), level.get(), input);
 
 	LoadResources();
-	GenerateCity();
+
+	city_generator.reset(new CityGenerator);
+	city_generator->Init(scene, level.get(), res_mgr, level_size, 3);
+
+	main_menu = new MainMenu;
+	main_menu->Init(res_mgr);
 
 	game_gui = new GameGui;
 	game_gui->Init(engine.get(), level->player);
+	game_gui->visible = false;
 }
 
 void Game::LoadResources()
@@ -162,30 +173,63 @@ void Game::LoadResources()
 	Item::LoadData(res_mgr);
 }
 
-void Game::GenerateCity()
+void Game::StartGame()
 {
-	city_generator.reset(new CityGenerator);
-	city_generator->Init(scene, level.get(), res_mgr, level_size, 3);
+	main_menu->visible = false;
+	game_gui->visible = true;
 	city_generator->Generate();
+	camera->reset = true;
+	global::state.SetPaused(false);
+}
+
+void Game::ExitToMenu()
+{
+	main_menu->visible = true;
+	game_gui->visible = false;
+	city_generator->Reset();
 }
 
 bool Game::OnTick(float dt)
 {
-	if((input->Pressed(Key::Escape) && !game_gui->IsInventoryOpen())
-		|| (input->Down(Key::Alt) && input->Pressed(Key::F4)))
+	GameState::ChangeState change_state = global::state.GetChangeState();
+
+	if((input->Down(Key::Alt) && input->Pressed(Key::F4))
+		|| change_state == GameState::QUIT)
 		return false;
 
 	if(input->Pressed(Key::U))
 		engine->GetWindow()->SetCursorLock(!engine->GetWindow()->IsCursorLocked());
 
+	if(in_game)
+	{
+		if(change_state == GameState::EXIT_TO_MENU)
+			ExitToMenu();
+		else
+			UpdateGame(dt);
+	}
+	else
+	{
+		if(change_state == GameState::CONTINUE)
+		{
+			// TODO
+		}
+		else if(change_state == GameState::NEW_GAME)
+		{
+			StartGame();
+		}
+	}
+
+	return true;
+}
+
+void Game::UpdateGame(float dt)
+{
 	allow_mouse = !game_gui->IsInventoryOpen();
 
 	UpdatePlayer(dt);
 	UpdateZombies(dt);
 	camera->Update(dt, allow_mouse);
 	level->Update(dt);
-
-	return true;
 }
 
 void Game::UpdatePlayer(float dt)
@@ -473,7 +517,7 @@ void Game::UpdatePlayer(float dt)
 							scene->Add(pe);
 						}
 					}
-					
+
 					sound_mgr->PlaySound3d(sound_shoot, shoot_pos, 4.f);
 					player->weapon->mesh_inst->Play("shoot", PLAY_NO_BLEND | PLAY_ONCE, 0);
 

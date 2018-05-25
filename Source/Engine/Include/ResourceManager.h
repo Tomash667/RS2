@@ -9,6 +9,7 @@ public:
 	~ResourceManager();
 	void Init(Render* render, SoundManager* sound_mgr);
 
+	void AddFontFromFile(Cstring name);
 	Font* GetFont(Cstring name, int size);
 	Mesh* GetMesh(Cstring name);
 	Music* GetMusic(Cstring name);
