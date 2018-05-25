@@ -10,7 +10,7 @@ public:
 	~Gui();
 	void Init(Render* render, ResourceManager* res_mgr, Input* input);
 	void Draw(const Matrix& mat_view_proj);
-	void Update();
+	void Update(float dt) override;
 	bool To2dPoint(const Vec3& pos, Int2& pt);
 
 	void DrawSprite(Texture* image, const Int2& pos, const Int2& size, Color color = Color::White);

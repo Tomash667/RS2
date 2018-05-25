@@ -40,7 +40,7 @@ void Gui::Draw(const Matrix& mat_view_proj)
 		DrawSprite(tex_cursor, cursor_pos, Int2(32, 32));
 }
 
-void Gui::Update()
+void Gui::Update(float dt)
 {
 	if(cursor_visible)
 	{
@@ -48,6 +48,8 @@ void Gui::Update()
 		cursor_pos.x = Clamp(cursor_pos.x, 0, wnd_size.x - 1);
 		cursor_pos.y = Clamp(cursor_pos.y, 0, wnd_size.y - 1);
 	}
+
+	Container::Update(dt);
 }
 
 void Gui::DrawSprite(Texture* image, const Int2& pos, const Int2& size, Color color)

@@ -158,7 +158,7 @@ void GameGui::Draw()
 	}
 }
 
-void GameGui::Update()
+void GameGui::Update(float dt)
 {
 	Input* input = gui->GetInput();
 
@@ -212,7 +212,7 @@ void GameGui::Update()
 	sprite_crosshair->visible = !inventory->visible;
 
 	if(inventory->visible)
-		inventory->Update();
+		inventory->Update(dt);
 }
 
 bool GameGui::IsInventoryOpen()

@@ -73,7 +73,7 @@ void Inventory::Draw()
 	}
 }
 
-void Inventory::Update()
+void Inventory::Update(float dt)
 {
 	PrepareSlots();
 	tooltip_index = -1;

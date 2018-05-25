@@ -182,7 +182,6 @@ bool Game::OnTick(float dt)
 	UpdateZombies(dt);
 	UpdateCamera();
 	level->Update(dt);
-	game_gui->Update();
 
 	return true;
 }

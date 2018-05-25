@@ -8,7 +8,7 @@ public:
 	Inventory(ResourceManager* res_mgr, Player* player);
 	void Show(bool show);
 	void Draw() override;
-	void Update();
+	void Update(float dt) override;
 
 private:
 	struct Slot

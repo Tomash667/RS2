@@ -7,7 +7,7 @@ class GameGui : public Container
 public:
 	void Init(Engine* engine, Player* player);
 	void Draw() override;
-	void Update();
+	void Update(float dt) override;
 
 	bool IsInventoryOpen();
 

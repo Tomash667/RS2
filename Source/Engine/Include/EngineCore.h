@@ -31,6 +31,7 @@ struct Sound;
 struct Texture;
 
 // gui controls
+struct Button;
 struct Container;
 struct Control;
 struct Label;
