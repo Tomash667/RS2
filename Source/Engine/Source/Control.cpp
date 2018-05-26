@@ -24,3 +24,12 @@ void Container::Add(Control* control)
 	assert(control);
 	controls.push_back(control);
 }
+
+void Container::Update(float dt)
+{
+	for(Control* control : controls)
+	{
+		if(control->visible)
+			control->Update(dt);
+	}
+}

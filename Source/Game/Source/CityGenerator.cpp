@@ -44,6 +44,13 @@ void CityGenerator::Init(Scene* scene, Level* level, ResourceManager* res_mgr, u
 	mesh_corner = res_mgr->GetMesh("corner.qmsh");
 }
 
+void CityGenerator::Reset()
+{
+	buildings.clear();
+	scene->Reset();
+	level->Reset();
+}
+
 void CityGenerator::Generate()
 {
 	const Vec3 player_pos(map_size / 2, 0, map_size / 2);
@@ -439,6 +446,7 @@ void CityGenerator::SpawnItems()
 	Item* food = Item::Get("canned_food");
 	Item* ammo = Item::Get("pistol_ammo");
 	Item* pistol = Item::Get("pistol");
+	Item* axe = Item::Get("axe");
 
 	for(Building& building : buildings)
 	{
@@ -487,6 +495,13 @@ void CityGenerator::SpawnItems()
 			Vec2 pos = building.box.GetRandomPoint(2.f);
 			level->SpawnItem(Vec3(pos.x, floor_y, pos.y), item);
 		}
+	}
+
+	for(int i = 0; i < 2; ++i)
+	{
+		Building& building = buildings[Rand() % buildings.size()];
+		Vec2 pos = building.box.GetRandomPoint(2.f);
+		level->SpawnItem(Vec3(pos.x, floor_y, pos.y), axe);
 	}
 }
 

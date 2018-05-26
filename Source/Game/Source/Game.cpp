@@ -21,6 +21,8 @@
 #include "Version.h"
 #include <SoundManager.h>
 #include "ThirdPersonCamera.h"
+#include "MainMenu.h"
+#include "GameState.h"
 
 
 const float Zombie::walk_speed = 1.5f;
@@ -105,7 +107,7 @@ void Game::InitLogger()
 
 void Game::InitEngine()
 {
-	engine->GetWindow()->SetTitle("Rouge Savior v" VERSION_STR);
+	engine->GetWindow()->SetTitle("Rouge Survival v" VERSION_STR);
 	engine->Init(this);
 
 	scene = engine->GetScene();
@@ -116,11 +118,14 @@ void Game::InitEngine()
 
 void Game::InitGame()
 {
+	in_game = false;
+
 	Srand();
 	engine->GetWindow()->SetCursorLock(true);
 
 	level.reset(new Level);
-	level->Init(scene, res_mgr, CityGenerator::tile_size * level_size);
+	level->Init(scene, res_mgr, &game_state, CityGenerator::tile_size * level_size);
+	game_state.level = level.get();
 
 	// fog
 	engine->GetRender()->SetClearColor(Color(200, 200, 200));
@@ -130,11 +135,16 @@ void Game::InitGame()
 	camera = new ThirdPersonCamera(scene->GetCamera(), level.get(), input);
 
 	LoadResources();
-	NewGame();
-	GenerateCity();
+
+	city_generator.reset(new CityGenerator);
+	city_generator->Init(scene, level.get(), res_mgr, level_size, 3);
+
+	main_menu = new MainMenu;
+	main_menu->Init(res_mgr, &game_state);
 
 	game_gui = new GameGui;
-	game_gui->Init(engine.get(), level->player);
+	game_gui->Init(engine.get(), &game_state);
+	game_gui->visible = false;
 }
 
 void Game::NewGame()
@@ -171,21 +181,61 @@ void Game::LoadResources()
 	Item::LoadData(res_mgr);
 }
 
-void Game::GenerateCity()
+void Game::StartGame()
 {
-	city_generator.reset(new CityGenerator);
-	city_generator->Init(scene, level.get(), res_mgr, level_size, 3);
+	main_menu->Hide();
+	game_gui->visible = true;
 	city_generator->Generate();
+	camera->reset = true;
+	game_state.SetPaused(false);
+	in_game = true;
+}
+
+void Game::ExitToMenu()
+{
+	main_menu->Show();
+	game_gui->visible = false;
+	city_generator->Reset();
+	in_game = false;
 }
 
 bool Game::OnTick(float dt)
 {
-	if((input->Pressed(Key::Escape) && !game_gui->IsInventoryOpen())
-		|| (input->Down(Key::Alt) && input->Pressed(Key::F4)))
+	GameState::ChangeState change_state = game_state.GetChangeState();
+
+	if((input->Down(Key::Alt) && input->Pressed(Key::F4))
+		|| change_state == GameState::QUIT)
 		return false;
 
 	if(input->Pressed(Key::U))
 		engine->GetWindow()->SetCursorLock(!engine->GetWindow()->IsCursorLocked());
+
+	if(in_game)
+	{
+		if(change_state == GameState::EXIT_TO_MENU)
+			ExitToMenu();
+		else
+			UpdateGame(dt);
+	}
+	else
+	{
+		if(change_state == GameState::CONTINUE)
+		{
+			// TODO
+		}
+		else if(change_state == GameState::NEW_GAME)
+		{
+			StartGame();
+		}
+	}
+
+	return true;
+}
+
+void Game::UpdateGame(float dt)
+{
+	if(game_state.IsPaused())
+		return;
 
 	allow_mouse = !game_gui->IsInventoryOpen();
 
@@ -193,9 +243,8 @@ bool Game::OnTick(float dt)
 	UpdateZombies(dt);
 	camera->Update(dt, allow_mouse);
 	level->Update(dt);
-	game_gui->Update();
 
-	return true;
+	scene->Update(dt);
 }
 
 void Game::UpdatePlayer(float dt)
@@ -243,10 +292,10 @@ void Game::UpdatePlayer(float dt)
 		GroundItem* best_item = nullptr;
 		for(GroundItem& item : level->items)
 		{
-			float dist = Vec3::Distance2d(player->node->pos, item.node->pos);
+			float dist = Vec3::Distance2d(player->node->pos, item.pos);
 			if(dist < best_range)
 			{
-				float angle = AngleDiff(player->node->rot.y, Vec3::Angle2d(player->node->pos, item.node->pos));
+				float angle = AngleDiff(player->node->rot.y, Vec3::Angle2d(player->node->pos, item.pos));
 				if(angle < PI / 4)
 				{
 					best_item = &item;
@@ -336,7 +385,7 @@ void Game::UpdatePlayer(float dt)
 		if(player->action_state == 0)
 		{
 			// rotate towards item
-			float expected_rot = Vec3::Angle2d(player->node->pos, player->item_before->node->pos);
+			float expected_rot = Vec3::Angle2d(player->node->pos, player->item_before->pos);
 			UnitRotateTo(player->node->rot.y, expected_rot, Player::rot_speed * dt);
 
 			if(player->node->mesh_inst->GetProgress(0) > 19.f / 34)
@@ -361,6 +410,13 @@ void Game::UpdatePlayer(float dt)
 					break;
 				case Item::AMMO:
 					player->ammo += 20;
+					break;
+				case Item::MELEE_WEAPON:
+					if(player->melee_weapon != player->item_before->item)
+					{
+						player->melee_weapon = player->item_before->item;
+						player->weapon->mesh = player->melee_weapon->mesh;
+					}
 					break;
 				}
 				level->RemoveItem(player->item_before);
@@ -483,7 +539,7 @@ void Game::UpdatePlayer(float dt)
 							scene->Add(pe);
 						}
 					}
-					
+
 					sound_mgr->PlaySound3d(sound_shoot, shoot_pos, 4.f);
 					player->weapon->mesh_inst->Play("shoot", PLAY_NO_BLEND | PLAY_ONCE, 0);
 
@@ -631,7 +687,7 @@ void Game::UpdatePlayer(float dt)
 		if((player->idle_timer -= dt) <= 0)
 		{
 			player->idle_timer_max = Random(2.5f, 4.f);
-			player->idle_timer = player->idle_timer_max;
+			player->idle_timer = player->idle_timer_max + 1.5f;
 			animation = ANI_IDLE;
 		}
 	}

@@ -66,7 +66,8 @@ void Engine::Run()
 		if(!handler->OnTick(dt))
 			return;
 
-		scene->Update(dt);
+		gui->Update(dt);
+		sound_mgr->Update(dt);
 
 		render->BeginScene();
 		scene->Draw();
@@ -74,8 +75,6 @@ void Engine::Run()
 		render->EndScene();
 
 		input->Update();
-		gui->Update();
-		sound_mgr->Update(dt);
 	}
 }
 

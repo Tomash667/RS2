@@ -2,30 +2,38 @@
 #include "QuadTree.h"
 
 
-QuadTree::Part::~Part()
+QuadTree::Factory default_factory;
+
+
+void QuadTree::Part::Remove(Factory* factory)
 {
 	for(int i = 0; i < 4; ++i)
-		delete childs[i];
+	{
+		if(childs[i])
+			childs[i]->Remove(factory);
+	}
+	factory->Remove(this);
 }
 
 
 QuadTree::QuadTree() : root(nullptr)
 {
-	factory = [] { return new Part; };
+	factory = &default_factory;
 }
 
 QuadTree::~QuadTree()
 {
-	delete root;
+	if(root)
+		root->Remove(factory);
 }
 
-void QuadTree::Init(float size, uint splits, delegate<Part*()> factory)
+void QuadTree::Init(float size, uint splits, Factory* new_factory)
 {
 	assert(size > 0 && splits > 0);
-	if(factory)
-		this->factory = factory;
+	if(new_factory)
+		factory = new_factory;
 
-	root = factory();
+	root = factory->Create();
 	root->box = Box2d(0, 0, size, size);
 	root->size = splits;
 	c.push_back(root);
@@ -37,7 +45,7 @@ void QuadTree::Init(float size, uint splits, delegate<Part*()> factory)
 
 		for(int i = 0; i < 4; ++i)
 		{
-			part.childs[i] = factory();
+			part.childs[i] = factory->Create();
 			Part& child = *part.childs[i];
 			child.size = part.size - 1;
 			if(child.size == 0)
@@ -97,7 +105,7 @@ QuadTree::Part* QuadTree::GetPart(const Vec2& pos)
 		}
 
 		part = part->childs[index];
-		if(part->size == 0u)
+		if(part->IsLeaf())
 			break;
 	}
 
@@ -116,13 +124,35 @@ void QuadTree::ListVisibleParts(FrustumPlanes& frustum, vector<Part*>& parts)
 		c.pop_back();
 		if(frustum.BoxToFrustum(part->box))
 		{
-			if(part->size == 0u)
+			if(part->IsLeaf())
 				parts.push_back(part);
 			else
 			{
 				for(int i = 0; i < 4; ++i)
 					c.push_back(part->childs[i]);
 			}
+		}
+	}
+}
+
+void QuadTree::ForEach(delegate<void(Part*)> callback, bool leaf_only)
+{
+	assert(callback);
+	c.clear();
+	c.push_back(root);
+
+	while(!c.empty())
+	{
+		Part* part = c.back();
+		c.pop_back();
+		if(part->IsLeaf())
+			callback(part);
+		else
+		{
+			if(!leaf_only)
+				callback(part);
+			for(int i = 0; i < 4; ++i)
+				c.push_back(part->childs[i]);
 		}
 	}
 }

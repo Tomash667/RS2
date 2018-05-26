@@ -16,6 +16,7 @@ public:
 	CityGenerator();
 	~CityGenerator();
 	void Init(Scene* scene, Level* level, ResourceManager* res_mgr, uint size, uint splits);
+	void Reset();
 	void Generate();
 	void DrawMap();
 	float GetY(const Vec3& pos);

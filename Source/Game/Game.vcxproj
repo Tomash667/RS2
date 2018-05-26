@@ -169,10 +169,12 @@
     <ClInclude Include="Source\Game.h" />
     <ClInclude Include="Source\GameCore.h" />
     <ClInclude Include="Source\GameGui.h" />
+    <ClInclude Include="Source\GameState.h" />
     <ClInclude Include="Source\GroundItem.h" />
     <ClInclude Include="Source\Inventory.h" />
     <ClInclude Include="Source\Item.h" />
     <ClInclude Include="Source\Level.h" />
+    <ClInclude Include="Source\MainMenu.h" />
     <ClInclude Include="Source\Player.h" />
     <ClInclude Include="Source\ThirdPersonCamera.h" />
     <ClInclude Include="Source\Unit.h" />
@@ -187,6 +189,7 @@
     <ClCompile Include="Source\Item.cpp" />
     <ClCompile Include="Source\Level.cpp" />
     <ClCompile Include="Source\Main.cpp" />
+    <ClCompile Include="Source\MainMenu.cpp" />
     <ClCompile Include="Source\Player.cpp" />
     <ClCompile Include="Source\ThirdPersonCamera.cpp" />
     <ClCompile Include="Source\Unit.cpp" />

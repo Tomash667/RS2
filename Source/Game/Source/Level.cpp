@@ -8,6 +8,7 @@
 #include "Zombie.h"
 #include "Player.h"
 #include "Item.h"
+#include "GameState.h"
 
 Level::Level() : player(nullptr)
 {
@@ -19,14 +20,28 @@ Level::~Level()
 	DeleteElements(zombies);
 }
 
-void Level::Init(Scene* scene, ResourceManager* res_mgr, float level_size)
+void Level::Init(Scene* scene, ResourceManager* res_mgr, GameState* game_state, float level_size)
 {
 	this->scene = scene;
 	this->res_mgr = res_mgr;
+	this->game_state = game_state;
 	this->level_size = level_size;
 	tile_size = level_size / grids;
 
 	colliders.resize(grids * grids);
+}
+
+void Level::Reset()
+{
+	delete player;
+	player = nullptr;
+	DeleteElements(zombies);
+	items.clear();
+	camera_colliders.clear();
+	for(vector<Collider>& cols : colliders)
+		cols.clear();
+	barriers.clear();
+	bloods.clear();
 }
 
 void Level::LoadResources()
@@ -48,6 +63,7 @@ void Level::SpawnItem(const Vec3& pos, Item* item)
 	GroundItem ground_item;
 	ground_item.node = node;
 	ground_item.item = item;
+	ground_item.pos = pos;
 	items.push_back(ground_item);
 }
 
@@ -102,6 +118,8 @@ void Level::SpawnPlayer(const Vec3& pos)
 	hair->tint = Color(86, 34, 0);
 	player->node->Add(hair, SceneNode::USE_PARENT_BONES);
 	player->hair = hair;
+
+	game_state->player = player;
 }
 
 void Level::RemoveItem(GroundItem* item)

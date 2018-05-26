@@ -12,3 +12,8 @@ void ScenePart::Add(SceneNode* node)
 	assert(node);
 	nodes.push_back(node);
 }
+
+void ScenePart::Reset()
+{
+	DeleteElements(nodes);
+}
