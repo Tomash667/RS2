@@ -3,6 +3,7 @@ Rouge Survival Changelog
 v1 (2018-05-??):
 + gun, ammo, shooting
 + canned food, eating, starving
++ axe, better clothes
 + simple inventory
 + playing sounds
 + blood pools

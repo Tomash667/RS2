@@ -48,6 +48,7 @@ void Level::SpawnItem(const Vec3& pos, Item* item)
 	GroundItem ground_item;
 	ground_item.node = node;
 	ground_item.item = item;
+	ground_item.pos = pos;
 	items.push_back(ground_item);
 }
 
