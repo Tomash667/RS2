@@ -29,12 +29,10 @@ public:
 	}
 	void SetPaused(bool paused) { this->paused = paused; }
 
+	Level* level;
+	Player* player;
+
 private:
 	ChangeState change_state;
 	bool paused;
 };
-
-namespace global
-{
-	extern GameState state;
-}

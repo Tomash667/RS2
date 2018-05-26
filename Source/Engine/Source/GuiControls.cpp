@@ -16,7 +16,7 @@ void Sprite::Draw()
 
 void Label::Draw()
 {
-	gui->DrawText(text, font, color, Font::Left, Rect::Create(pos, size));
+	gui->DrawText(text, font, color, flags, Rect::Create(pos, size));
 }
 
 Int2 Label::CalculateSize() const
@@ -54,9 +54,6 @@ void Button::Draw()
 	case HOVER:
 		img = layout.image_hover;
 		break;
-	case DOWN:
-		img = layout.image_down;
-		break;
 	case DISABLED:
 		img = layout.image_disabled;
 		font_color = layout.font_color_disabled;
@@ -73,14 +70,9 @@ void Button::Update(float dt)
 		return;
 	if(Rect::IsInside(pos, size, gui->GetCursorPos()))
 	{
-		if(gui->GetInput()->Down(Key::LeftButton))
-			state = DOWN;
-		else
-		{
-			if(state == DOWN && event)
-				event(id);
-			state = HOVER;
-		}
+		state = HOVER;
+		if(gui->GetInput()->Down(Key::LeftButton) && event)
+			event(id);
 	}
 	else
 		state = UP;
@@ -95,9 +87,11 @@ void Button::NormalizeSize(Button* buttons[], uint count, const Int2& padding)
 	for(uint i = 0; i < count; ++i)
 	{
 		Button* bt = buttons[i];
-		bt->size = font->CalculateSize(bt->text) + padding;
+		bt->size = font->CalculateSize(bt->text);
 		max_size = Int2::Max(max_size, bt->size);
 	}
+
+	max_size += padding * 2;
 
 	for(uint i = 0; i < count; ++i)
 		buttons[i]->size = max_size;

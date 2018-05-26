@@ -10,7 +10,7 @@ void QuadTree::Part::Remove(Factory* factory)
 	for(int i = 0; i < 4; ++i)
 	{
 		if(childs[i])
-			factory->Remove(childs[i]);
+			childs[i]->Remove(factory);
 	}
 	factory->Remove(this);
 }

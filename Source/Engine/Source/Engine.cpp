@@ -67,7 +67,6 @@ void Engine::Run()
 			return;
 
 		gui->Update(dt);
-		scene->Update(dt);
 		sound_mgr->Update(dt);
 
 		render->BeginScene();

@@ -18,6 +18,7 @@ public:
 	void DrawSpriteGrid(Texture* image, Color color, const GridF& pos, const GridF& uv);
 	void DrawSpriteGrid(Texture* image, Color color, int image_size, int corner_size, const Int2& pos, const Int2& size);
 	bool DrawText(Cstring text, Font* font, Color color, int flags, const Rect& rect, const Rect* clip = nullptr);
+	bool DrawTextOutline(Cstring text, Font* font, Color color, Color outline_color, int flags, const Rect& rect, const Rect* clip = nullptr);
 
 	void SetCursorTexture(Texture* tex) { tex_cursor = tex; }
 	void SetCursorVisible(bool visible) { cursor_visible = visible; }

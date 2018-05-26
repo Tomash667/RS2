@@ -28,7 +28,6 @@
 const float Zombie::walk_speed = 1.5f;
 const float Zombie::rot_speed = 2.5f;
 const int level_size = 32;
-GameState global::state;
 
 
 Game::Game() : camera(nullptr)
@@ -108,7 +107,7 @@ void Game::InitLogger()
 
 void Game::InitEngine()
 {
-	engine->GetWindow()->SetTitle("Rouge Savior v" VERSION_STR);
+	engine->GetWindow()->SetTitle("Rouge Survival v" VERSION_STR);
 	engine->Init(this);
 
 	scene = engine->GetScene();
@@ -125,7 +124,8 @@ void Game::InitGame()
 	engine->GetWindow()->SetCursorLock(true);
 
 	level.reset(new Level);
-	level->Init(scene, res_mgr, CityGenerator::tile_size * level_size);
+	level->Init(scene, res_mgr, &game_state, CityGenerator::tile_size * level_size);
+	game_state.level = level.get();
 
 	// fog
 	engine->GetRender()->SetClearColor(Color(200, 200, 200));
@@ -140,10 +140,10 @@ void Game::InitGame()
 	city_generator->Init(scene, level.get(), res_mgr, level_size, 3);
 
 	main_menu = new MainMenu;
-	main_menu->Init(res_mgr);
+	main_menu->Init(res_mgr, &game_state);
 
 	game_gui = new GameGui;
-	game_gui->Init(engine.get(), level->player);
+	game_gui->Init(engine.get(), &game_state);
 	game_gui->visible = false;
 }
 
@@ -175,23 +175,25 @@ void Game::LoadResources()
 
 void Game::StartGame()
 {
-	main_menu->visible = false;
+	main_menu->Hide();
 	game_gui->visible = true;
 	city_generator->Generate();
 	camera->reset = true;
-	global::state.SetPaused(false);
+	game_state.SetPaused(false);
+	in_game = true;
 }
 
 void Game::ExitToMenu()
 {
-	main_menu->visible = true;
+	main_menu->Show();
 	game_gui->visible = false;
 	city_generator->Reset();
+	in_game = false;
 }
 
 bool Game::OnTick(float dt)
 {
-	GameState::ChangeState change_state = global::state.GetChangeState();
+	GameState::ChangeState change_state = game_state.GetChangeState();
 
 	if((input->Down(Key::Alt) && input->Pressed(Key::F4))
 		|| change_state == GameState::QUIT)
@@ -224,12 +226,17 @@ bool Game::OnTick(float dt)
 
 void Game::UpdateGame(float dt)
 {
+	if(game_state.IsPaused())
+		return;
+
 	allow_mouse = !game_gui->IsInventoryOpen();
 
 	UpdatePlayer(dt);
 	UpdateZombies(dt);
 	camera->Update(dt, allow_mouse);
 	level->Update(dt);
+
+	scene->Update(dt);
 }
 
 void Game::UpdatePlayer(float dt)

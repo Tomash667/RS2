@@ -15,13 +15,14 @@ struct Sprite : Control
 //-----------------------------------------------------------------------------
 struct Label : Control
 {
-	Label() : font(nullptr), color(Color::Black) {}
+	Label() : font(nullptr), color(Color::Black), flags(0) {}
 	void Draw() override;
 	Int2 CalculateSize() const;
 
 	Font* font;
 	string text;
 	Color color;
+	int flags;
 };
 
 //-----------------------------------------------------------------------------
@@ -52,13 +53,12 @@ struct Button : Control
 	{
 		UP,
 		HOVER,
-		DOWN,
 		DISABLED
 	};
 
 	struct Layout
 	{
-		Texture* image, *image_hover, *image_down, *image_disabled;
+		Texture* image, *image_hover, *image_disabled;
 		Int2 corners;
 		Font* font;
 		Color font_color, font_color_disabled;

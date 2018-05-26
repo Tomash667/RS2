@@ -1,7 +1,7 @@
 #pragma once
 
 #include <GameHandler.h>
-#include "Collider.h"
+#include "GameState.h"
 
 class Game : public GameHandler
 {
@@ -31,6 +31,7 @@ private:
 	Input* input;
 	ResourceManager* res_mgr;
 	SoundManager* sound_mgr;
+	GameState game_state;
 	ThirdPersonCamera* camera;
 	MainMenu* main_menu;
 	GameGui* game_gui;

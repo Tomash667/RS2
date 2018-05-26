@@ -5,7 +5,7 @@
 class Inventory : public Panel
 {
 public:
-	Inventory(ResourceManager* res_mgr, Player* player);
+	Inventory(ResourceManager* res_mgr, GameState* game_state);
 	void Show(bool show);
 	void Draw() override;
 	void Update(float dt) override;
@@ -34,7 +34,7 @@ private:
 	cstring GetTooltipText();
 	void UseItem(SLOT slot);
 
-	Player* player;
+	GameState* game_state;
 	Slot slots[SLOT_MAX];
 	Texture* tex_grid;
 	int tooltip_index;

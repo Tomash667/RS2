@@ -216,6 +216,15 @@ void Gui::DrawTextLine(Font* font, cstring text, uint line_begin, uint line_end,
 	}
 }
 
+bool Gui::DrawTextOutline(Cstring text, Font* font, Color color, Color outline_color, int flags, const Rect& rect, const Rect* clip)
+{
+	Rect outline_rect = rect;
+	outline_rect.p1.x++;
+	outline_rect.p1.y++;
+	DrawText(text, font, outline_color, flags, outline_rect, clip);
+	return DrawText(text, font, color, flags, rect, clip);
+}
+
 Gui::ClipResult Gui::Clip(int x, int y, int w, int h, const Rect* clip)
 {
 	if(!clip)

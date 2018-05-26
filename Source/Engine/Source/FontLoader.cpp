@@ -186,5 +186,6 @@ void FontLoader::RenderFontToTexture(ID3D11Texture2D* tex, Font* font, void* win
 
 void FontLoader::AddFromFile(cstring name)
 {
-	AddFontResourceEx(name, FR_PRIVATE, 0);
+	int result = AddFontResourceEx(name, FR_PRIVATE, 0);
+	assert(result != 0);
 }
