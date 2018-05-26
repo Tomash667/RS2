@@ -277,10 +277,10 @@ void Game::UpdatePlayer(float dt)
 		GroundItem* best_item = nullptr;
 		for(GroundItem& item : level->items)
 		{
-			float dist = Vec3::Distance2d(player->node->pos, item.node->pos);
+			float dist = Vec3::Distance2d(player->node->pos, item.pos);
 			if(dist < best_range)
 			{
-				float angle = AngleDiff(player->node->rot.y, Vec3::Angle2d(player->node->pos, item.node->pos));
+				float angle = AngleDiff(player->node->rot.y, Vec3::Angle2d(player->node->pos, item.pos));
 				if(angle < PI / 4)
 				{
 					best_item = &item;
@@ -370,7 +370,7 @@ void Game::UpdatePlayer(float dt)
 		if(player->action_state == 0)
 		{
 			// rotate towards item
-			float expected_rot = Vec3::Angle2d(player->node->pos, player->item_before->node->pos);
+			float expected_rot = Vec3::Angle2d(player->node->pos, player->item_before->pos);
 			UnitRotateTo(player->node->rot.y, expected_rot, Player::rot_speed * dt);
 
 			if(player->node->mesh_inst->GetProgress(0) > 19.f / 34)
@@ -395,6 +395,13 @@ void Game::UpdatePlayer(float dt)
 					break;
 				case Item::AMMO:
 					player->ammo += 20;
+					break;
+				case Item::MELEE_WEAPON:
+					if(player->melee_weapon != player->item_before->item)
+					{
+						player->melee_weapon = player->item_before->item;
+						player->weapon->mesh = player->melee_weapon->mesh;
+					}
 					break;
 				}
 				level->RemoveItem(player->item_before);
@@ -665,7 +672,7 @@ void Game::UpdatePlayer(float dt)
 		if((player->idle_timer -= dt) <= 0)
 		{
 			player->idle_timer_max = Random(2.5f, 4.f);
-			player->idle_timer = player->idle_timer_max;
+			player->idle_timer = player->idle_timer_max + 1.5f;
 			animation = ANI_IDLE;
 		}
 	}

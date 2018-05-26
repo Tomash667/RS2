@@ -5,7 +5,7 @@
 
 Item items[] = {
 	Item(Item::MELEE_WEAPON, "baseball_bat", "Baseball bat", "baseball_bat.qmsh", "baseball_bat.png", 45, 55),
-	//Item(Item::MELEE_WEAPON, "axe", "Axe", nullptr, "axe.png", 55, 104),
+	Item(Item::MELEE_WEAPON, "axe", "Axe", "axe.qmsh", "axe.png", 55, 104),
 	Item(Item::RANGED_WEAPON, "pistol", "Pistol", "pistol.qmsh", "pistol.png", 81, 100),
 	Item(Item::AMMO, "pistol_ammo", "Pistol ammo", "pistol_ammo.qmsh", "pistol_ammo.png"),
 	Item(Item::MEDKIT, "medkit", "Medkit", "medkit.qmsh", "medkit_ico.png"),

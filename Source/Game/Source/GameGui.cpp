@@ -170,7 +170,7 @@ void GameGui::Draw()
 	GroundItem* item = player->item_before;
 	if(item)
 	{
-		Vec3 item_pos = item->node->pos;
+		Vec3 item_pos = item->pos;
 		item_pos.y += 0.5f;
 
 		Int2 text_pos;
