@@ -44,6 +44,13 @@ void CityGenerator::Init(Scene* scene, Level* level, ResourceManager* res_mgr, u
 	mesh_corner = res_mgr->GetMesh("corner.qmsh");
 }
 
+void CityGenerator::Reset()
+{
+	buildings.clear();
+	scene->Reset();
+	level->Reset();
+}
+
 void CityGenerator::Generate()
 {
 	const Vec3 player_pos(map_size / 2, 0, map_size / 2);

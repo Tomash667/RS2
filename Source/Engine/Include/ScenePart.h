@@ -8,7 +8,8 @@ struct ScenePart : QuadTree::Part
 
 	~ScenePart();
 	void Add(SceneNode* node);
-	
+	void Reset();
+
 private:
 	vector<SceneNode*> nodes;
 };

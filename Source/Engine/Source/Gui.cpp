@@ -40,7 +40,7 @@ void Gui::Draw(const Matrix& mat_view_proj)
 		DrawSprite(tex_cursor, cursor_pos, Int2(32, 32));
 }
 
-void Gui::Update()
+void Gui::Update(float dt)
 {
 	if(cursor_visible)
 	{
@@ -48,6 +48,8 @@ void Gui::Update()
 		cursor_pos.x = Clamp(cursor_pos.x, 0, wnd_size.x - 1);
 		cursor_pos.y = Clamp(cursor_pos.y, 0, wnd_size.y - 1);
 	}
+
+	Container::Update(dt);
 }
 
 void Gui::DrawSprite(Texture* image, const Int2& pos, const Int2& size, Color color)
@@ -212,6 +214,15 @@ void Gui::DrawTextLine(Font* font, cstring text, uint line_begin, uint line_end,
 			Lock();
 		}
 	}
+}
+
+bool Gui::DrawTextOutline(Cstring text, Font* font, Color color, Color outline_color, int flags, const Rect& rect, const Rect* clip)
+{
+	Rect outline_rect = rect;
+	outline_rect.p1.x++;
+	outline_rect.p1.y++;
+	DrawText(text, font, outline_color, flags, outline_rect, clip);
+	return DrawText(text, font, color, flags, rect, clip);
 }
 
 Gui::ClipResult Gui::Clip(int x, int y, int w, int h, const Rect* clip)

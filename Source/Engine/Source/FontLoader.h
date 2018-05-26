@@ -5,6 +5,7 @@ class FontLoader
 public:
 	FontLoader(ID3D11Device* device);
 	Font* Load(cstring name, int size);
+	void AddFromFile(cstring name);
 
 private:
 	void InitGdi();

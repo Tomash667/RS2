@@ -6,12 +6,13 @@
 #include <Gui.h>
 #include <Font.h>
 #include <Input.h>
+#include "GameState.h"
 
 const uint Inventory::grid_size = 64;
 
-Inventory::Inventory(ResourceManager* res_mgr, Player* player)
+Inventory::Inventory(ResourceManager* res_mgr, GameState* game_state)
 {
-	this->player = player;
+	this->game_state = game_state;
 	tooltip_index = -1;
 
 	image = res_mgr->GetTexture("panel.png");
@@ -50,7 +51,7 @@ void Inventory::Draw()
 			if(slot.count != 0)
 				count = Format("%u", slot.count);
 			else if(i == SLOT_RANGED_WEAPON)
-				count = Format("%u/%u", player->current_ammo, 10u);
+				count = Format("%u/%u", game_state->player->current_ammo, 10u);
 			else
 				count = nullptr;
 			if(count)
@@ -80,7 +81,7 @@ void Inventory::Draw()
 	}
 }
 
-void Inventory::Update()
+void Inventory::Update(float dt)
 {
 	PrepareSlots();
 	tooltip_index = -1;
@@ -115,11 +116,12 @@ void Inventory::Update()
 
 void Inventory::PrepareSlots()
 {
-	slots[SLOT_MELEE_WEAPON] = Slot(player->melee_weapon);
-	slots[SLOT_RANGED_WEAPON] = Slot(player->ranged_weapon);
-	slots[SLOT_AMMO] = (player->ammo > 0 ? Slot(Item::Get("pistol_ammo"), player->ammo) : Slot(nullptr));
-	slots[SLOT_FOOD] = (player->food_cans > 0 ? Slot(Item::Get("canned_food"), player->food_cans) : Slot(nullptr));
-	slots[SLOT_MEDKIT] = (player->medkits > 0 ? Slot(Item::Get("medkit"), player->medkits) : Slot(nullptr));
+	Player& player = *game_state->player;
+	slots[SLOT_MELEE_WEAPON] = Slot(player.melee_weapon);
+	slots[SLOT_RANGED_WEAPON] = Slot(player.ranged_weapon);
+	slots[SLOT_AMMO] = (player.ammo > 0 ? Slot(Item::Get("pistol_ammo"), player.ammo) : Slot(nullptr));
+	slots[SLOT_FOOD] = (player.food_cans > 0 ? Slot(Item::Get("canned_food"), player.food_cans) : Slot(nullptr));
+	slots[SLOT_MEDKIT] = (player.medkits > 0 ? Slot(Item::Get("medkit"), player.medkits) : Slot(nullptr));
 }
 
 cstring Inventory::GetTooltipText()
@@ -133,22 +135,23 @@ cstring Inventory::GetTooltipText()
 
 void Inventory::UseItem(SLOT slot)
 {
+	Player& player = *game_state->player;
 	switch(slot)
 	{
 	case SLOT_MELEE_WEAPON:
-		player->SwitchWeapon(true);
+		player.SwitchWeapon(true);
 		break;
 	case SLOT_RANGED_WEAPON:
-		player->SwitchWeapon(false);
+		player.SwitchWeapon(false);
 		break;
 	case SLOT_AMMO:
-		player->Reload();
+		player.Reload();
 		break;
 	case SLOT_MEDKIT:
-		player->UseMedkit();
+		player.UseMedkit();
 		break;
 	case SLOT_FOOD:
-		player->EatFood();
+		player.EatFood();
 		break;
 	}
 }

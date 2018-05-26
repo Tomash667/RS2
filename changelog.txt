@@ -6,4 +6,5 @@ v1 (2018-05-??):
 + axe, better clothes
 + simple inventory
 + playing sounds
++ main menu, death screen
 + blood pools

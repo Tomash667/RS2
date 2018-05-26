@@ -11,6 +11,7 @@
 #include "Item.h"
 #include "Inventory.h"
 #include <Font.h>
+#include "GameState.h"
 
 
 enum DIR
@@ -69,10 +70,10 @@ GameGui::~GameGui()
 	delete sprite_crosshair;
 }
 
-void GameGui::Init(Engine* engine, Player* player)
+void GameGui::Init(Engine* engine, GameState* game_state)
 {
 	this->engine = engine;
-	this->player = player;
+	this->game_state = game_state;
 
 	const Int2& wnd_size = gui->GetWindowSize();
 	ResourceManager* res_mgr = engine->GetResourceManager();
@@ -151,9 +152,13 @@ void GameGui::Init(Engine* engine, Player* player)
 	Add(panel_fps);
 
 	// inventory
-	inventory = new Inventory(res_mgr, player);
+	inventory = new Inventory(res_mgr, game_state);
 	inventory->pos = Int2(wnd_size.x - inventory->size.x, wnd_size.y - inventory->size.y);
 	Add(inventory);
+
+	tex_background = res_mgr->GetTexture("background.png");
+	res_mgr->AddFontFromFile("pertili.ttf");
+	font_big = res_mgr->GetFont("Perpetua Titling MT", 40);
 
 	engine->GetGui()->Add(this);
 }
@@ -162,6 +167,7 @@ void GameGui::Draw()
 {
 	Container::Draw();
 
+	Player* player = game_state->player;
 	GroundItem* item = player->item_before;
 	if(item)
 	{
@@ -190,18 +196,44 @@ void GameGui::Draw()
 		gui->DrawText(text, nullptr, Color::Black, Font::Top | Font::Center, Rect::Create(text_pos, text_size));
 	}
 
-	if(!inventory->visible)
+	
+
+	if(death_timer > 1.f)
 	{
-		if(player->action == A_AIM)
-			DrawCrosshair(4, (int)player->aim, 20);
-		else
-			sprite_crosshair->Draw();
+		// death screen
+		int alpha = (int)(Min(1.f, (death_timer - 1.f)) * 255);
+		Color front = Color(255, 0, 0, alpha);
+		Color back = Color(0, 0, 0, alpha);
+		gui->DrawSprite(nullptr, Int2::Zero, gui->GetWindowSize(), Color(50, 50, 50, alpha * 150 / 255));
+		gui->DrawTextOutline("YOU DIED", font_big, front, back, Font::Center | Font::VCenter, Rect::Create(Int2::Zero, gui->GetWindowSize()));
+		gui->DrawTextOutline("Esc to exit to menu", nullptr, front, back, Font::Center | Font::VCenter,
+			Rect::Create(Int2(0, 100), gui->GetWindowSize()));
+	}
+	else if(game_state->IsPaused())
+	{
+		// paused
+		gui->DrawSprite(nullptr, Int2::Zero, gui->GetWindowSize(), Color(50, 50, 50, 150));
+		gui->DrawTextOutline("GAME PAUSED", font_big, Color(0, 255, 33), Color::Black, Font::Center | Font::VCenter, Rect::Create(Int2::Zero, gui->GetWindowSize()));
+		gui->DrawTextOutline("Esc to continue, Enter to save & quit", nullptr, Color(0, 255, 33), Color::Black, Font::Center | Font::VCenter,
+			Rect::Create(Int2(0, 100), gui->GetWindowSize()));
+	}
+	else
+	{
+		// cursor
+		if(!inventory->visible)
+		{
+			if(player->action == A_AIM)
+				DrawCrosshair(4, (int)player->aim, 20);
+			else
+				sprite_crosshair->Draw();
+		}
 	}
 }
 
-void GameGui::Update()
+void GameGui::Update(float dt)
 {
 	Input* input = gui->GetInput();
+	Player* player = game_state->player;
 
 	// fps panel
 	if(input->Pressed(Key::F1))
@@ -256,6 +288,11 @@ void GameGui::Update()
 		}
 	}
 
+	if(player->hp > 0)
+		death_timer = 0.f;
+	else
+		death_timer += dt;
+
 	// show/hide inventory
 	if(player->hp > 0)
 	{
@@ -264,9 +301,23 @@ void GameGui::Update()
 	}
 	else if(inventory->visible)
 		inventory->Show(false);
-	
+
 	if(inventory->visible)
-		inventory->Update();
+		inventory->Update(dt);
+	else if(game_state->IsPaused())
+	{
+		if(input->Pressed(Key::Enter))
+			game_state->SetChangeState(GameState::EXIT_TO_MENU);
+		else if(input->Pressed(Key::Escape))
+			game_state->SetPaused(false);
+	}
+	else if(input->Pressed(Key::Escape))
+	{
+		if(death_timer == 0.f)
+			game_state->SetPaused(true);
+		else if(death_timer > 2.f)
+			game_state->SetChangeState(GameState::EXIT_TO_MENU);
+	}
 }
 
 bool GameGui::IsInventoryOpen()

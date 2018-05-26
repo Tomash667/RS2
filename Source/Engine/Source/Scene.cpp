@@ -10,6 +10,21 @@
 #include "QuadTree.h"
 #include "ScenePart.h"
 
+
+struct ScenePartFactory : QuadTree::Factory
+{
+	QuadTree::Part* Create() override
+	{
+		return new ScenePart;
+	}
+
+	void Remove(QuadTree::Part* part) override
+	{
+		delete (ScenePart*)part;
+	}
+} scene_part_factory;
+
+
 Scene::Scene() : fog_color(Color::White), fog_params(1000, 2000, 1000, 0)
 {
 	camera.reset(new Camera);
@@ -32,6 +47,20 @@ void Scene::Init(Render* render)
 
 	particle_shader.reset(new ParticleShader(render));
 	particle_shader->Init();
+}
+
+void Scene::Reset()
+{
+	DeleteElements(nodes);
+	ParticleEmitter::Free(pes);
+	if(quad_tree)
+	{
+		quad_tree->ForEach([](QuadTree::Part* part)
+		{
+			ScenePart* scene_part = (ScenePart*)part;
+			scene_part->Reset();
+		});
+	}
 }
 
 void Scene::Draw()
@@ -221,7 +250,7 @@ void Scene::InitQuadTree(float size, uint splits)
 		return;
 
 	quad_tree.reset(new QuadTree);
-	quad_tree->Init(size, splits, [] { new ScenePart; });
+	quad_tree->Init(size, splits, &scene_part_factory);
 }
 
 void Scene::RecycleMeshInstance(SceneNode* node)

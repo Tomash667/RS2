@@ -15,7 +15,8 @@ public:
 
 	Level();
 	~Level();
-	void Init(Scene* scene, ResourceManager* res_mgr, float level_size);
+	void Init(Scene* scene, ResourceManager* res_mgr, GameState* game_state, float level_size);
+	void Reset();
 	void LoadResources();
 	void SpawnItem(const Vec3& pos, Item* item);
 	void SpawnZombie(const Vec3& pos);
@@ -45,6 +46,7 @@ private:
 	}
 
 	ResourceManager* res_mgr;
+	GameState* game_state;
 	Mesh* mesh_zombie, *mesh_blood_pool, *mesh_zombie_blood_pool;
 	vector<vector<Collider>> colliders;
 	vector<Collider> barriers;

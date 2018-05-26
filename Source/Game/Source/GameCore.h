@@ -5,6 +5,8 @@
 class CityGenerator;
 class Game;
 class GameGui;
+class GameState;
+class MainMenu;
 class Inventory;
 class Level;
 

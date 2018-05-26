@@ -10,7 +10,7 @@ public:
 	~Gui();
 	void Init(Render* render, ResourceManager* res_mgr, Input* input);
 	void Draw(const Matrix& mat_view_proj);
-	void Update();
+	void Update(float dt) override;
 	bool To2dPoint(const Vec3& pos, Int2& pt);
 
 	void DrawSprite(Texture* image, const Int2& pos, const Int2& size, Color color = Color::White);
@@ -18,6 +18,7 @@ public:
 	void DrawSpriteGrid(Texture* image, Color color, const GridF& pos, const GridF& uv);
 	void DrawSpriteGrid(Texture* image, Color color, int image_size, int corner_size, const Int2& pos, const Int2& size);
 	bool DrawText(Cstring text, Font* font, Color color, int flags, const Rect& rect, const Rect* clip = nullptr);
+	bool DrawTextOutline(Cstring text, Font* font, Color color, Color outline_color, int flags, const Rect& rect, const Rect* clip = nullptr);
 
 	void SetCursorTexture(Texture* tex) { tex_cursor = tex; }
 	void SetCursorVisible(bool visible) { cursor_visible = visible; }
