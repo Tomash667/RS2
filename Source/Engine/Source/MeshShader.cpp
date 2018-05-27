@@ -7,9 +7,38 @@
 #include <d3d11_1.h>
 #include "InternalHelper.h"
 
+
+struct VertexShaderGlobals
+{
+	Matrix mat_combined;
+	Matrix mat_world;
+};
+
+struct AnimatedVertexShaderGlobals
+{
+	Matrix mat_combined;
+	Matrix mat_world;
+	Matrix mat_bones[32];
+};
+
+struct PixelShaderGlobals
+{
+	Vec4 fog_color;
+	Vec4 fog_params;
+	Vec4 light_dir;
+	Vec4 light_color;
+	Vec4 ambient_color;
+};
+
+struct PixelShaderPerObject
+{
+	Vec4 tint;
+};
+
+
 MeshShader::MeshShader(Render* render) : render(render), device_context(nullptr), vertex_shader(nullptr), vertex_shader_animated(nullptr),
 pixel_shader(nullptr), layout_mesh(nullptr), layout_animated(nullptr), layout_animated_no_inst(nullptr), vs_buffer(nullptr), vs_buffer_animated(nullptr),
-ps_buffer(nullptr), sampler(nullptr)
+ps_buffer(nullptr), ps_buffer_object(nullptr), sampler(nullptr)
 {
 }
 
@@ -24,6 +53,7 @@ MeshShader::~MeshShader()
 	SafeRelease(vs_buffer);
 	SafeRelease(vs_buffer_animated);
 	SafeRelease(ps_buffer);
+	SafeRelease(ps_buffer_object);
 	SafeRelease(sampler);
 }
 
@@ -101,6 +131,7 @@ void MeshShader::InitInternal()
 	vs_buffer = render->CreateConstantBuffer(sizeof(VertexShaderGlobals));
 	vs_buffer_animated = render->CreateConstantBuffer(sizeof(AnimatedVertexShaderGlobals));
 	ps_buffer = render->CreateConstantBuffer(sizeof(PixelShaderGlobals));
+	ps_buffer_object = render->CreateConstantBuffer(sizeof(PixelShaderPerObject));
 
 	// create texture sampler
 	D3D11_SAMPLER_DESC sampler_desc;
@@ -123,22 +154,27 @@ void MeshShader::InitInternal()
 		throw Format("Failed to create sampler state (%u).", result);
 }
 
-void MeshShader::SetParams(const Vec4& fog_color, const Vec4& fog_params)
-{
-	this->fog_color = fog_color;
-	this->fog_params = fog_params;
-}
-
-void MeshShader::Prepare()
+void MeshShader::Prepare(const Vec3& fog_color, const Vec3& fog_params, const Vec3& light_dir, const Vec3& light_color, const Vec3& ambient_color)
 {
 	device_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	device_context->PSSetShader(pixel_shader, nullptr, 0);
-	device_context->PSSetConstantBuffers(0, 1, &ps_buffer);
+	ID3D11Buffer* buffers[] = { ps_buffer, ps_buffer_object };
+	device_context->PSSetConstantBuffers(0, 2, buffers);
 	device_context->PSSetSamplers(0, 1, &sampler);
 	current_mode = MODE_NONE;
+
+	D3D11_MAPPED_SUBRESOURCE resource;
+	C(device_context->Map(ps_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource));
+	PixelShaderGlobals& psg = *(PixelShaderGlobals*)resource.pData;
+	psg.fog_color = Vec4(fog_color, 0);
+	psg.fog_params = Vec4(fog_params, 0);
+	psg.light_dir = Vec4(light_dir, 0);
+	psg.light_color = Vec4(light_color, 0);
+	psg.ambient_color = Vec4(ambient_color, 0);
+	device_context->Unmap(ps_buffer, 0);
 }
 
-void MeshShader::DrawMesh(Mesh* mesh, MeshInstance* mesh_inst, const Matrix& mat_combined, const Vec3& tint, int subs)
+void MeshShader::DrawMesh(Mesh* mesh, MeshInstance* mesh_inst, const Matrix& mat_combined, const Matrix& mat_world, const Vec3& tint, int subs)
 {
 	assert(mesh);
 
@@ -180,6 +216,7 @@ void MeshShader::DrawMesh(Mesh* mesh, MeshInstance* mesh_inst, const Matrix& mat
 		C(device_context->Map(vs_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource));
 		VertexShaderGlobals& g = *(VertexShaderGlobals*)resource.pData;
 		g.mat_combined = mat_combined.Transpose();
+		g.mat_world = mat_world.Transpose();
 		device_context->Unmap(vs_buffer, 0);
 	}
 	else
@@ -187,6 +224,7 @@ void MeshShader::DrawMesh(Mesh* mesh, MeshInstance* mesh_inst, const Matrix& mat
 		C(device_context->Map(vs_buffer_animated, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource));
 		AnimatedVertexShaderGlobals& g = *(AnimatedVertexShaderGlobals*)resource.pData;
 		g.mat_combined = mat_combined.Transpose();
+		g.mat_world = mat_world.Transpose();
 		mesh_inst->SetupBones();
 		const vector<Matrix>& bones = mesh_inst->GetMatrixBones();
 		for(size_t i = 0, count = bones.size(); i < count; ++i)
@@ -195,12 +233,10 @@ void MeshShader::DrawMesh(Mesh* mesh, MeshInstance* mesh_inst, const Matrix& mat
 	}
 
 	// set pixel shader constants
-	C(device_context->Map(ps_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource));
-	PixelShaderGlobals& psg = *(PixelShaderGlobals*)resource.pData;
-	psg.fog_color = fog_color;
-	psg.fog_params = fog_params;
-	psg.tint = Vec4(tint, 1.f);
-	device_context->Unmap(ps_buffer, 0);
+	C(device_context->Map(ps_buffer_object, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource));
+	PixelShaderPerObject& pspo = *(PixelShaderPerObject*)resource.pData;
+	pspo.tint = Vec4(tint, 1.f);
+	device_context->Unmap(ps_buffer_object, 0);
 
 	// set buffers
 	uint stride = (current_mode == MODE_MESH ? sizeof(Vertex) : sizeof(AniVertex)),

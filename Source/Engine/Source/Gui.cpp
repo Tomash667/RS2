@@ -218,9 +218,7 @@ void Gui::DrawTextLine(Font* font, cstring text, uint line_begin, uint line_end,
 
 bool Gui::DrawTextOutline(Cstring text, Font* font, Color color, Color outline_color, int flags, const Rect& rect, const Rect* clip)
 {
-	Rect outline_rect = rect;
-	outline_rect.p1.x++;
-	outline_rect.p1.y++;
+	Rect outline_rect = rect + Int2(3, 3);
 	DrawText(text, font, outline_color, flags, outline_rect, clip);
 	return DrawText(text, font, color, flags, rect, clip);
 }

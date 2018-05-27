@@ -39,8 +39,9 @@ Game::~Game()
 	delete camera;
 }
 
-int Game::Start()
+int Game::Start(bool quickstart)
 {
+	this->quickstart = quickstart;
 	engine.reset(new Engine);
 
 	InitLogger();
@@ -131,10 +132,17 @@ void Game::InitGame()
 	engine->GetRender()->SetClearColor(Color(200, 200, 200));
 	scene->SetFogColor(Color(200, 200, 200));
 	scene->SetFogParams(5.f, 20.f);
+	scene->SetAmbientColor(Vec3(0.6f, 0.6f, 0.6f));
+	scene->SetLightDir(Vec3(10, 10, 10).Normalize());
 
 	camera = new ThirdPersonCamera(scene->GetCamera(), level.get(), input);
+#ifdef _DEBUG
+	camera->cam->zfar = 50.f;
+#endif
 
 	LoadResources();
+
+	scene->SetSkybox(res_mgr->GetMesh("skybox.qmsh"));
 
 	city_generator.reset(new CityGenerator);
 	city_generator->Init(scene, level.get(), res_mgr, level_size, 3);
@@ -215,8 +223,9 @@ bool Game::OnTick(float dt)
 		{
 			// TODO
 		}
-		else if(change_state == GameState::NEW_GAME)
+		else if(change_state == GameState::NEW_GAME || quickstart)
 		{
+			quickstart = false;
 			StartGame();
 		}
 	}

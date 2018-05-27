@@ -9,6 +9,7 @@
 #include "ParticleShader.h"
 #include "QuadTree.h"
 #include "ScenePart.h"
+#include "SkyboxShader.h"
 
 
 struct ScenePartFactory : QuadTree::Factory
@@ -25,7 +26,7 @@ struct ScenePartFactory : QuadTree::Factory
 } scene_part_factory;
 
 
-Scene::Scene() : fog_color(Color::White), fog_params(1000, 2000, 1000, 0)
+Scene::Scene() : fog_color(Color::White), fog_params(1000, 2000, 1000), skybox(nullptr), light_dir(0, 1, 0), light_color(1, 1, 1), ambient_color(1, 1, 1)
 {
 	camera.reset(new Camera);
 }
@@ -47,6 +48,9 @@ void Scene::Init(Render* render)
 
 	particle_shader.reset(new ParticleShader(render));
 	particle_shader->Init();
+
+	skybox_shader.reset(new SkyboxShader(render));
+	skybox_shader->Init();
 }
 
 void Scene::Reset()
@@ -68,8 +72,17 @@ void Scene::Draw()
 	mat_view_proj = camera->GetMatrix(&mat_view);
 	frustum_planes.Set(mat_view_proj);
 	ListVisibleNodes();
+	DrawSkybox();
 	DrawNodes();
 	DrawParticles();
+}
+
+void Scene::DrawSkybox()
+{
+	if(!skybox)
+		return;
+
+	skybox_shader->Draw(skybox, camera->from, mat_view_proj);
 }
 
 void Scene::DrawNodes()
@@ -77,9 +90,8 @@ void Scene::DrawNodes()
 	render->SetAlphaBlend(false);
 	render->SetDepthState(Render::DEPTH_YES);
 	render->SetCulling(true);
+	mesh_shader->Prepare(fog_color, fog_params, light_dir, light_color, ambient_color);
 
-	mesh_shader->SetParams(fog_color, fog_params);
-	mesh_shader->Prepare();
 	DrawNodes(visible_nodes, nullptr);
 
 	if(!visible_alpha_nodes.empty())
@@ -116,7 +128,7 @@ void Scene::DrawNodes(vector<SceneNode*>& nodes, const Matrix* parent_matrix)
 		mat_combined = mat_world * mat_view_proj;
 
 		if(node->visible)
-			mesh_shader->DrawMesh(node->mesh, node->GetMeshInstance(), mat_combined, node->tint, node->subs);
+			mesh_shader->DrawMesh(node->mesh, node->GetMeshInstance(), mat_combined, mat_world, node->tint, node->subs);
 
 		if(!node->childs.empty())
 			DrawNodes(node->childs, &mat_world);
@@ -127,10 +139,6 @@ void Scene::DrawParticles()
 {
 	if(visible_pes.empty())
 		return;
-
-	render->SetAlphaBlend(true);
-	render->SetDepthState(Render::DEPTH_READONLY);
-	render->SetCulling(false);
 
 	particle_shader->Prepare(mat_view, mat_view_proj);
 	for(ParticleEmitter* pe : visible_pes)
