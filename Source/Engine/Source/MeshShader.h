@@ -6,29 +6,10 @@ public:
 	MeshShader(Render* render);
 	~MeshShader();
 	void Init();
-	void SetParams(const Vec4& fog_color, const Vec4& fog_params);
-	void Prepare();
-	void DrawMesh(Mesh* mesh, MeshInstance* mesh_inst, const Matrix& mat_combined, const Vec3& tint, int subs);
+	void Prepare(const Vec3& fog_color, const Vec3& fog_params, const Vec3& light_dir, const Vec3& light_color, const Vec3& ambient_color);
+	void DrawMesh(Mesh* mesh, MeshInstance* mesh_inst, const Matrix& mat_combined, const Matrix& mat_world, const Vec3& tint, int subs);
 
 private:
-	struct VertexShaderGlobals
-	{
-		Matrix mat_combined;
-	};
-
-	struct AnimatedVertexShaderGlobals
-	{
-		Matrix mat_combined;
-		Matrix mat_bones[32];
-	};
-
-	struct PixelShaderGlobals
-	{
-		Vec4 fog_color;
-		Vec4 fog_params;
-		Vec4 tint;
-	};
-
 	enum Mode
 	{
 		MODE_NONE,
@@ -44,8 +25,7 @@ private:
 	ID3D11VertexShader* vertex_shader, *vertex_shader_animated;
 	ID3D11PixelShader* pixel_shader;
 	ID3D11InputLayout* layout_mesh, *layout_animated, *layout_animated_no_inst;
-	ID3D11Buffer* vs_buffer, *vs_buffer_animated, *ps_buffer;
+	ID3D11Buffer* vs_buffer, *vs_buffer_animated, *ps_buffer, *ps_buffer_object;
 	ID3D11SamplerState* sampler;
-	Vec4 fog_color, fog_params;
 	Mode current_mode;
 };

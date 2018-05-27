@@ -15,14 +15,25 @@ public:
 	void Remove(SceneNode* node);
 	void RecycleMeshInstance(SceneNode* node);
 
-	void SetFogColor(const Vec4& fog_color) { this->fog_color = fog_color; }
+	void SetAmbientColor(const Vec3& ambient_color) { this->ambient_color = ambient_color; }
+	void SetFogColor(const Vec3& fog_color) { this->fog_color = fog_color; }
 	void SetFogParams(float start, float end);
+	void SetLightDir(const Vec3& light_dir) { this->light_dir = light_dir; }
+	void SetLightColor(const Vec3& light_color) { this->light_color = light_color; }
+	void SetSkybox(Mesh* mesh) { skybox = mesh; }
 
+	const Vec3& GetAmbientColor() { return ambient_color; }
 	Camera* GetCamera() { return camera.get(); }
+	const Vec3& GetFogColor() { return fog_color; }
+	Vec2 GetFogParams() { return fog_params.XY(); }
+	const Vec3& GetLightDir() { return light_dir; }
+	const Vec3& GetLightColor() { return light_color; }
+	Mesh* GetSkybox() { return skybox; }
 	const Matrix& GetViewProjectionMatrix() { return mat_view_proj; }
 	QuadTree* GetQuadTree() { return quad_tree.get(); }
 
 private:
+	void DrawSkybox();
 	void DrawNodes();
 	void DrawNodes(vector<SceneNode*>& nodes, const Matrix* parent_matrix);
 	void DrawParticles();
@@ -33,13 +44,15 @@ private:
 	Render* render;
 	unique_ptr<MeshShader> mesh_shader;
 	unique_ptr<ParticleShader> particle_shader;
+	unique_ptr<SkyboxShader> skybox_shader;
 	unique_ptr<Camera> camera;
 	vector<SceneNode*> nodes, visible_nodes, visible_alpha_nodes;
 	vector<ParticleEmitter*> pes, visible_pes;
 	Matrix mat_view, mat_view_proj;
-	Vec4 fog_color, fog_params;
+	Vec3 fog_color, fog_params,  light_dir, light_color, ambient_color;
 	FrustumPlanes frustum_planes;
 	unique_ptr<QuadTree> quad_tree;
 	vector<ScenePart*> parts;
 	vector<MeshInstance*> mesh_inst_pool;
+	Mesh* skybox;
 };

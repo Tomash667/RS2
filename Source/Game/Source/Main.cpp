@@ -5,5 +5,5 @@
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
 	Game game;
-	return game.Start();
+	return game.Start(strcmp(lpCmdLine, "-qs") == 0);
 }

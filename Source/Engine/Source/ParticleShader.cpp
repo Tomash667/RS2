@@ -57,10 +57,8 @@ void ParticleShader::Prepare(const Matrix& mat_view, const Matrix& mat_view_proj
 	mat_view_inv = mat_view.Inverse();
 
 	render->SetAlphaBlend(true);
-	// todo
-	//render->SetNoZwrite()
-	// no zwrite, no culling !!!
-	// restore?
+	render->SetDepthState(Render::DEPTH_READONLY);
+	render->SetCulling(false);
 
 	device_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	device_context->IASetInputLayout(shader.layout);

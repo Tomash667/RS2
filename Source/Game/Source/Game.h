@@ -8,7 +8,7 @@ class Game : public GameHandler
 public:
 	Game();
 	~Game();
-	int Start();
+	int Start(bool quickstart);
 
 private:
 	void InitLogger();
@@ -40,7 +40,7 @@ private:
 	GameGui* game_gui;
 	unique_ptr<Level> level;
 	unique_ptr<CityGenerator> city_generator;
-	bool in_game, allow_mouse;
+	bool in_game, allow_mouse, quickstart;
 
 	// resources
 	Texture* tex_blood, *tex_zombie_blood, *tex_hit_object;
