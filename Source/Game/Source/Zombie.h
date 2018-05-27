@@ -2,13 +2,32 @@
 
 #include "Unit.h"
 
+enum AiState
+{
+	AI_IDLE,
+	AI_COMBAT
+};
+
+enum IdleAction
+{
+	IDLE_NONE,
+	IDLE_ROTATE,
+	IDLE_WALK,
+	IDLE_ANIM
+};
+
 struct Zombie : Unit
 {
-	Zombie() : Unit(true), next_attack(0), attacking(false), active(false) {}
+	Zombie() : Unit(true), state(AI_IDLE), idle(IDLE_NONE), timer(idle_timer.Random()), attacking(false) {}
 
-	float next_attack;
+	AiState state;
+	IdleAction idle;
+	Vec3 idle_pos;
+	float timer;
 	int attack_index;
-	bool attacking, active;
+	bool attacking;
+
 	static const float walk_speed;
 	static const float rot_speed;
+	static const Vec2 idle_timer;
 };

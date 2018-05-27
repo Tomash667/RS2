@@ -71,7 +71,7 @@ void Button::Update(float dt)
 	if(Rect::IsInside(pos, size, gui->GetCursorPos()))
 	{
 		state = HOVER;
-		if(gui->GetInput()->Down(Key::LeftButton) && event)
+		if(gui->GetInput()->PressedOnce(Key::LeftButton) && event)
 			event(id);
 	}
 	else
