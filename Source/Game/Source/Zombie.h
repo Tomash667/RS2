@@ -5,7 +5,8 @@
 enum AiState
 {
 	AI_IDLE,
-	AI_COMBAT
+	AI_COMBAT,
+	AI_FALLOW
 };
 
 enum IdleAction
@@ -22,7 +23,7 @@ struct Zombie : Unit
 
 	AiState state;
 	IdleAction idle;
-	Vec3 idle_pos;
+	Vec3 target_pos;
 	float timer;
 	int attack_index;
 	bool attacking;

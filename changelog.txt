@@ -4,6 +4,8 @@ v1 (2018-05-??):
 + gun, ammo, shooting
 + canned food, eating, starving
 + axe, better clothes
++ zombies wanders, can escape, pathfinding, better ai
++ spawning more zombies, old corpses/blood disappears
 + simple inventory
 + playing sounds
 + simple lighting, skybox
