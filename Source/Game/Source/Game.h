@@ -25,6 +25,9 @@ private:
 	bool CheckForHit(Unit& unit, MeshPoint& hitbox, MeshPoint* bone, Unit*& target, Vec3& hitpoint);
 	void HitUnit(Unit& unit, int dmg, const Vec3& hitpoint);
 	bool CheckMove(Unit& uint, const Vec3& dir);
+	void ZombieAlert(Zombie* zombie, bool first = false);
+	void SearchForTarget(Zombie* zombie);
+	bool CanSee(Unit& unit, const Vec3& pos);
 
 	unique_ptr<Engine> engine;
 	Scene* scene;
@@ -37,6 +40,7 @@ private:
 	GameGui* game_gui;
 	unique_ptr<Level> level;
 	unique_ptr<CityGenerator> city_generator;
+	vector<std::pair<Vec3, float>> alert_pos;
 	bool in_game, allow_mouse, quickstart;
 
 	// resources

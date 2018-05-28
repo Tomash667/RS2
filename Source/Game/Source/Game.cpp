@@ -706,6 +706,13 @@ void Game::UpdatePlayer(float dt)
 		Vec3(sin(-player->node->rot.y + PI / 2), 0, cos(-player->node->rot.y + PI / 2)));
 }
 
+float AngleDiff(Unit& unit, const Vec3& target)
+{
+	float required_rot = Vec3::Angle2d(unit.node->pos, target);
+	float dif = AngleDiff(unit.node->rot.y, required_rot);
+	return dif;
+}
+
 void Game::UpdateZombies(float dt)
 {
 	Player* player = level->player;
@@ -721,23 +728,23 @@ void Game::UpdateZombies(float dt)
 			continue;
 		}
 
+		enum Move
+		{
+			MOVE_NO,
+			MOVE_ROTATE,
+			MOVE_FORWARD,
+			MOVE_BACK
+		};
+
 		Animation animation = ANI_STAND;
+		Move move = MOVE_NO;
+		Vec3 target_pos;
+
+		if(zombie->state == AI_IDLE)
+			SearchForTarget(zombie);
 
 		if(zombie->state == AI_IDLE)
 		{
-			// search for player
-			if(player->hp > 0.f)
-			{
-				float dist = Vec3::Distance2d(zombie->node->pos, player->node->pos);
-				if(dist <= 5.f)
-				{
-					zombie->state = AI_COMBAT;
-					zombie->timer = 0.f;
-					sound_mgr->PlaySound3d(sound_zombie_alert, zombie->GetSoundPos(), 2.f);
-					continue;
-				}
-			}
-
 			zombie->timer -= dt;
 			if(zombie->timer <= 0.f)
 			{
@@ -748,7 +755,10 @@ void Game::UpdateZombies(float dt)
 				case IDLE_NONE:
 					break;
 				case IDLE_ROTATE:
-					zombie->idle_pos.x = Clip(zombie->node->rot.y + Random(PI / 2, PI * 3 / 2));
+					{
+						float angle = Clip(zombie->node->rot.y + Random(PI / 2, PI * 3 / 2));
+						zombie->idle_pos = zombie->node->pos + Vec3(sin(angle), 0, cos(angle));
+					}
 					break;
 				case IDLE_WALK:
 					{
@@ -769,13 +779,26 @@ void Game::UpdateZombies(float dt)
 				case IDLE_NONE:
 					break;
 				case IDLE_ROTATE:
-					UnitRotateTo(zombie->node->rot.y, zombie->idle_pos.x, Zombie::rot_speed * dt);
+					target_pos = zombie->idle_pos;
+					move = MOVE_ROTATE;
 					break;
 				case IDLE_WALK:
-					// TODO
+					if(Vec3::Distance2d(zombie->idle_pos, zombie->node->pos) < 0.1f)
+						zombie->idle = IDLE_NONE;
+					else
+					{
+						target_pos = zombie->idle_pos;
+						move = MOVE_FORWARD;
+					}
 					break;
 				case IDLE_ANIM:
-					animation = ANI_IDLE;
+					if(zombie->node->mesh_inst->GetEndResult(0))
+					{
+						animation = ANI_STAND;
+						zombie->idle = IDLE_NONE;
+					}
+					else
+						animation = ANI_IDLE;
 					break;
 				}
 			}
@@ -794,9 +817,36 @@ void Game::UpdateZombies(float dt)
 			zombie->timer -= dt; // attack delay
 
 			float dist = Vec3::Distance2d(zombie->node->pos, player->node->pos);
+			if(dist > 1.2f)
+			{
+				// move towards player
+				move = MOVE_FORWARD;
+				target_pos = player->node->pos;
+			}
+			else if(dist < 1.f)
+			{
+				// move away player
+				move = MOVE_BACK;
+				target_pos = player->node->pos;
+			}
 
-			// rotate towards player
-			float required_rot = Vec3::Angle2d(zombie->node->pos, player->node->pos);
+			if(!zombie->attacking && dist < 1.5f && zombie->timer <= 0 && AngleDiff(*zombie, player->node->pos) < PI / 4)
+			{
+				// attack
+				zombie->attacking = true;
+				zombie->animation = ANI_ACTION;
+				zombie->timer = Random(1.5f, 2.5f);
+				zombie->attack_index = Rand() % 2 == 0 ? 0 : 1;
+				zombie->node->mesh_inst->Play(zombie->attack_index == 0 ? "atak1" : "atak2", PLAY_ONCE | PLAY_CLEAR_FRAME_END_INFO, 0);
+				if(Rand() % 4)
+					sound_mgr->PlaySound3d(sound_zombie_attack, zombie->GetSoundPos(), 2.f);
+			}
+		}
+
+		if(move != MOVE_NO)
+		{
+			// rotate towards target
+			float required_rot = Vec3::Angle2d(zombie->node->pos, target_pos);
 			int dir;
 			float dif = UnitRotateTo(zombie->node->rot.y, required_rot, dt * Zombie::rot_speed, &dir);
 			if(dir == 1)
@@ -806,9 +856,9 @@ void Game::UpdateZombies(float dt)
 
 			if(dif < PI / 4)
 			{
-				if(dist > 1.2f)
+				if(move == MOVE_FORWARD)
 				{
-					// move towards player
+					// move forward
 					Vec3 move_dir = Vec3(cos(required_rot), 0, sin(required_rot)) * Zombie::walk_speed * dt;
 					if(CheckMove(*zombie, move_dir))
 					{
@@ -816,27 +866,15 @@ void Game::UpdateZombies(float dt)
 						animation = ANI_WALK;
 					}
 				}
-				else if(dist < 1.f)
+				else if(move == MOVE_BACK)
 				{
-					// move away player
+					// move backward
 					Vec3 move_dir = Vec3(cos(required_rot), 0, sin(required_rot)) * Zombie::walk_speed * dt * -0.66f;
 					if(CheckMove(*zombie, move_dir))
 					{
 						zombie->node->pos.y = city_generator->GetY(zombie->node->pos);
 						animation = ANI_WALK_BACK;
 					}
-				}
-
-				if(!zombie->attacking && dist < 1.5f && zombie->timer <= 0)
-				{
-					// attack
-					zombie->attacking = true;
-					zombie->animation = ANI_ACTION;
-					zombie->timer = Random(1.5f, 2.5f);
-					zombie->attack_index = Rand() % 2 == 0 ? 0 : 1;
-					zombie->node->mesh_inst->Play(zombie->attack_index == 0 ? "atak1" : "atak2", PLAY_ONCE | PLAY_CLEAR_FRAME_END_INFO, 0);
-					if(Rand() % 4)
-						sound_mgr->PlaySound3d(sound_zombie_attack, zombie->GetSoundPos(), 2.f);
 				}
 			}
 		}
@@ -858,6 +896,39 @@ void Game::UpdateZombies(float dt)
 		if(zombie->attacking)
 			animation = zombie->animation;
 		zombie->Update(animation);
+	}
+
+	LoopRemove(alert_pos, [dt](std::pair<Vec3, float>& alert)
+	{
+		return (alert.second -= dt) <= 0.f;
+	});
+}
+
+void Game::SearchForTarget(Zombie* zombie)
+{
+	Player* player = level->player;
+	if(player->hp > 0.f)
+	{
+		float dist = Vec3::Distance2d(zombie->node->pos, player->node->pos);
+		if(dist <= 5.f)
+		{
+			float dif = AngleDiff(*zombie, player->node->pos);
+			if((dist <= 2.5f || dif <= PI / 2) && CanSee(*zombie, player->node->pos))
+			{
+				ZombieAlert(zombie);
+				return;
+			}
+		}
+
+		for(auto& alert : alert_pos)
+		{
+			dist = Vec3::Distance2d(zombie->node->pos, alert.first);
+			if(dist <= 5.f && CanSee(*zombie, alert.first))
+			{
+				ZombieAlert(zombie, false);
+				return;
+			}
+		}
 	}
 }
 
@@ -975,13 +1046,9 @@ void Game::HitUnit(Unit& unit, int dmg, const Vec3& hitpoint)
 
 		if(unit.is_zombie)
 		{
-			Zombie& zombie = (Zombie&)unit;
-			if(zombie.state == AI_IDLE)
-			{
-				zombie.state = AI_COMBAT;
-				zombie.timer = 0.f;
-				sound_mgr->PlaySound3d(sound_zombie_alert, zombie.GetSoundPos(), 2.f);
-			}
+			Zombie* zombie = (Zombie*)&unit;
+			if(zombie->state == AI_IDLE)
+				ZombieAlert(zombie);
 		}
 	}
 
@@ -1034,4 +1101,24 @@ bool Game::CheckMove(Unit& unit, const Vec3& dir)
 	}
 
 	return false;
+}
+
+void Game::ZombieAlert(Zombie* zombie, bool first)
+{
+	zombie->state = AI_COMBAT;
+	zombie->timer = 0.f;
+	if(first)
+	{
+		sound_mgr->PlaySound3d(sound_zombie_alert, zombie->GetSoundPos(), 2.f);
+		alert_pos.push_back({ zombie->node->pos, 1.f });
+	}
+}
+
+bool Game::CanSee(Unit& unit, const Vec3& pos)
+{
+	Vec3 from = unit.node->pos.ModY(1.5f);
+	Vec3 to = pos.ModY(1.5f);
+	Vec3 ray = to - from;
+	float t;
+	return !level->RayTest(from, ray, t, Level::COLLIDE_COLLIDERS, nullptr, nullptr);
 }
