@@ -3,6 +3,7 @@
 #include "Core.h"
 
 // engine
+class DebugDrawer;
 class Engine;
 class GameHandler;
 class Gui;
@@ -40,6 +41,7 @@ struct ProgressBar;
 struct Sprite;
 
 // internal classes
+class DebugShader;
 class FontLoader;
 class GuiShader;
 class MeshShader;

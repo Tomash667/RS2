@@ -13,8 +13,6 @@ enum Tile
 class CityGenerator
 {
 public:
-	CityGenerator();
-	~CityGenerator();
 	void Init(Scene* scene, Level* level, ResourceManager* res_mgr, uint size, uint splits);
 	void Reset();
 	void Generate();
@@ -37,10 +35,11 @@ private:
 	void SpawnItems();
 	void SpawnZombies();
 	Int2 PosToPt(const Vec3& pos);
+	void GenerateNavmesh();
 
 	Scene* scene;
 	Level* level;
-	Tile* map;
+	vector<Tile> map;
 	uint size;
 	Mesh* mesh[T_MAX], *mesh_curb, *mesh_wall, *mesh_corner;
 	float mesh_offset[T_MAX], map_size;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Collider.h"
+#include "Navmesh.h"
 
 class Level
 {
@@ -38,6 +39,7 @@ public:
 	vector<Zombie*> zombies;
 	vector<GroundItem> items;
 	vector<Box> camera_colliders;
+	Navmesh navmesh;
 
 private:
 	Int2 PosToPt(const Vec2& pos)
@@ -52,5 +54,6 @@ private:
 	vector<Collider> barriers;
 	vector<SceneNode*> bloods;
 	float level_size, tile_size;
+
 	static const uint grids = 8;
 };

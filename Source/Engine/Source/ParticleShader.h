@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Shader.h"
-#include "Vertex.h"
 
 class ParticleShader
 {

@@ -28,6 +28,7 @@ private:
 	void ZombieAlert(Zombie* zombie, bool first = true);
 	void SearchForTarget(Zombie* zombie);
 	bool CanSee(Unit& unit, const Vec3& pos);
+	void OnDebugDraw(DebugDrawer* debug);
 
 	unique_ptr<Engine> engine;
 	Scene* scene;

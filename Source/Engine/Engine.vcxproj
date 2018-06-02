@@ -147,6 +147,7 @@
     <ClInclude Include="Include\Core.h" />
     <ClInclude Include="Include\CoreMath.h" />
     <ClInclude Include="Include\CoreMemory.h" />
+    <ClInclude Include="Include\DebugDrawer.h" />
     <ClInclude Include="Include\Engine.h" />
     <ClInclude Include="Include\EngineCore.h" />
     <ClInclude Include="Include\FastFunc.h" />
@@ -175,6 +176,7 @@
     <ClInclude Include="Include\Timer.h" />
     <ClInclude Include="Include\Vertex.h" />
     <ClInclude Include="Include\Window.h" />
+    <ClInclude Include="Source\DebugShader.h" />
     <ClInclude Include="Source\FontLoader.h" />
     <ClInclude Include="Source\GuiShader.h" />
     <ClInclude Include="Source\InternalHelper.h" />
@@ -193,6 +195,8 @@
     <ClCompile Include="Source\Control.cpp" />
     <ClCompile Include="Source\CoreMath.cpp" />
     <ClCompile Include="Source\CoreMemory.cpp" />
+    <ClCompile Include="Source\DebugDrawer.cpp" />
+    <ClCompile Include="Source\DebugShader.cpp" />
     <ClCompile Include="Source\Engine.cpp" />
     <ClCompile Include="Source\File.cpp" />
     <ClCompile Include="Source\Font.cpp" />

@@ -16,6 +16,8 @@ public:
 	void RecycleMeshInstance(SceneNode* node);
 
 	void SetAmbientColor(const Vec3& ambient_color) { this->ambient_color = ambient_color; }
+	void SetDebugDrawEnabled(bool enabled) { debug_draw_enabled = enabled; }
+	void SetDebugDrawHandler(delegate<void(DebugDrawer*)> handler) { debug_draw_handler = handler; }
 	void SetFogColor(const Vec3& fog_color) { this->fog_color = fog_color; }
 	void SetFogParams(float start, float end);
 	void SetLightDir(const Vec3& light_dir) { this->light_dir = light_dir; }
@@ -45,6 +47,7 @@ private:
 	unique_ptr<MeshShader> mesh_shader;
 	unique_ptr<ParticleShader> particle_shader;
 	unique_ptr<SkyboxShader> skybox_shader;
+	unique_ptr<DebugDrawer> debug_drawer;
 	unique_ptr<Camera> camera;
 	vector<SceneNode*> nodes, visible_nodes, visible_alpha_nodes;
 	vector<ParticleEmitter*> pes, visible_pes;
@@ -55,4 +58,6 @@ private:
 	vector<ScenePart*> parts;
 	vector<MeshInstance*> mesh_inst_pool;
 	Mesh* skybox;
+	delegate<void(DebugDrawer*)> debug_draw_handler;
+	bool debug_draw_enabled;
 };

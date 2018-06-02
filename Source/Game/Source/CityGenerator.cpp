@@ -12,15 +12,6 @@ const float CityGenerator::tile_size = 5.f;
 const float CityGenerator::floor_y = 0.05f;
 const float CityGenerator::wall_width = 0.2f;
 
-CityGenerator::CityGenerator() : map(nullptr)
-{
-}
-
-CityGenerator::~CityGenerator()
-{
-	delete[] map;
-}
-
 void CityGenerator::Init(Scene* scene, Level* level, ResourceManager* res_mgr, uint size, uint splits)
 {
 	this->scene = scene;
@@ -28,7 +19,7 @@ void CityGenerator::Init(Scene* scene, Level* level, ResourceManager* res_mgr, u
 	this->size = size;
 
 	scene->InitQuadTree(tile_size * size, splits);
-	map = new Tile[size * size];
+	map.resize(size * size);
 	map_size = tile_size * size;
 
 	mesh[T_ASPHALT] = res_mgr->GetMesh("asphalt.qmsh");
@@ -60,6 +51,7 @@ void CityGenerator::Generate()
 	level->SpawnPlayer(player_start_pos);
 	SpawnItems();
 	SpawnZombies();
+	GenerateNavmesh();
 }
 
 struct Leaf
@@ -540,4 +532,25 @@ Int2 CityGenerator::PosToPt(const Vec3& pos)
 	if(pos.x < 0 || pos.z < 0 || pos.x > map_size || pos.z > map_size)
 		return Int2(-1, -1);
 	return Int2(int(pos.x / tile_size), int(pos.z / tile_size));
+}
+
+void CityGenerator::GenerateNavmesh()
+{
+	Navmesh& navmesh = level->navmesh;
+	navmesh.Reset();
+	const float tile_size2 = tile_size / 2;
+	const float y = 0.25f;
+	const float pad = wall_width + Unit::radius;
+
+	for(Building& building : buildings)
+	{
+		Int2 pos = building.pos * 2;
+		Int2 size = building.size * 2;
+		Navmesh::Region* region = new Navmesh::Region;
+		region->pos[0] = Vec3(pos.x * tile_size2 + pad, y, pos.y * tile_size2 + pad);
+		region->pos[1] = Vec3((pos.x + size.x) * tile_size2 - pad, y, pos.y * tile_size2 + pad);
+		region->pos[2] = Vec3(pos.x * tile_size2 + pad, y, (pos.y + size.y) * tile_size2 - pad);
+		region->pos[3] = Vec3((pos.x + size.x) * tile_size2 - pad, y, (pos.y + size.y) * tile_size2 - pad);
+		navmesh.regions.push_back(region);
+	}
 }

@@ -23,6 +23,7 @@
 #include "ThirdPersonCamera.h"
 #include "MainMenu.h"
 #include "GameState.h"
+#include <DebugDrawer.h>
 
 
 const float Zombie::walk_speed = 1.5f;
@@ -135,6 +136,9 @@ void Game::InitGame()
 	scene->SetFogParams(5.f, 20.f);
 	scene->SetAmbientColor(Vec3(0.6f, 0.6f, 0.6f));
 	scene->SetLightDir(Vec3(10, 10, 10).Normalize());
+
+	scene->SetDebugDrawHandler(delegate<void(DebugDrawer*)>(this, &Game::OnDebugDraw));
+	scene->SetDebugDrawEnabled(true);
 
 	camera = new ThirdPersonCamera(scene->GetCamera(), level.get(), input);
 #ifdef _DEBUG
@@ -1146,4 +1150,11 @@ bool Game::CanSee(Unit& unit, const Vec3& pos)
 	Vec3 ray = to - from;
 	float t;
 	return !level->RayTest(from, ray, t, Level::COLLIDE_COLLIDERS, nullptr, nullptr);
+}
+
+void Game::OnDebugDraw(DebugDrawer* debug)
+{
+	debug->SetColor(Color(0, 0, 255, 128));
+	for(Navmesh::Region* region : level->navmesh.regions)
+		debug->DrawQuad(region->pos);
 }
