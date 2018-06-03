@@ -54,12 +54,14 @@ void QmshLoader::LoadInternal(Mesh& mesh, FileReader& f)
 		if(mesh.head.n_groups == 0)
 			throw "No bone groups.";
 	}
-	if(IS_SET(mesh.head.flags, Mesh::F_PHYSICS | Mesh::F_TANGENTS || Mesh::F_SPLIT))
+	if(IS_SET(mesh.head.flags, Mesh::F_TANGENTS | Mesh::F_SPLIT))
 		throw Format("Not implemented mesh flags used (%u).", mesh.head.flags);
 
 	// set vertex size
 	uint vertex_size;
-	if(IS_SET(mesh.head.flags, Mesh::F_ANIMATED))
+	if(IS_SET(mesh.head.flags, Mesh::F_PHYSICS))
+		vertex_size = sizeof(Vec3);
+	else if(IS_SET(mesh.head.flags, Mesh::F_ANIMATED))
 		vertex_size = sizeof(AniVertex);
 	else
 		vertex_size = sizeof(Vertex);

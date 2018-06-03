@@ -33,6 +33,7 @@ public:
 	bool RayTest(const Vec3& pos, const Vec3& ray, float& t, int flags, Unit* excluded, Unit** target);
 	void SpawnBlood(Unit& unit);
 	void Update(float dt);
+	void GatherColliders(vector<Collider>& results, const Box2d& box);
 
 	Scene* scene;
 	Player* player;

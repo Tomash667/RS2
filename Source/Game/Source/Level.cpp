@@ -322,3 +322,25 @@ void Level::Update(float dt)
 			return false;
 	});
 }
+
+void Level::GatherColliders(vector<Collider>& results, const Box2d& box)
+{
+	Rect rect(PosToPt(box.v1), PosToPt(box.v2));
+	if(rect.p1.x >= (int)grids || rect.p1.y >= (int)grids || rect.p2.x < 0 || rect.p2.y < 0)
+		return;
+	rect.p1.x = max(rect.p1.x, 0);
+	rect.p1.y = max(rect.p1.y, 0);
+	rect.p2.x = min(rect.p2.x, (int)grids - 1);
+	rect.p2.y = min(rect.p2.y, (int)grids - 1);
+	for(int y = rect.p1.y; y <= rect.p2.y; ++y)
+	{
+		for(int x = rect.p1.x; x <= rect.p2.x; ++x)
+		{
+			for(Collider& c : colliders[x + y * grids])
+			{
+				if(RectangleToRectangle(box, c.ToBox2d()))
+					results.push_back(c);
+			}
+		}
+	}
+}

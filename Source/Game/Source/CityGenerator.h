@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Collider.h"
+#include "Building.h"
 
 enum Tile
 {
@@ -13,7 +14,7 @@ enum Tile
 class CityGenerator
 {
 public:
-	void Init(Scene* scene, Level* level, ResourceManager* res_mgr, uint size, uint splits);
+	void Init(Scene* scene, Level* level, Pathfinding* pathfinding, ResourceManager* res_mgr, uint size, uint splits);
 	void Reset();
 	void Generate();
 	void DrawMap();
@@ -24,12 +25,6 @@ public:
 	static const float wall_width;
 
 private:
-	struct Building
-	{
-		Box2d box;
-		Int2 pos, size;
-	};
-
 	void GenerateMap();
 	void CreateScene();
 	void SpawnItems();
@@ -38,6 +33,7 @@ private:
 	void GenerateNavmesh();
 
 	Scene* scene;
+	Pathfinding* pathfinding;
 	Level* level;
 	vector<Tile> map;
 	uint size;

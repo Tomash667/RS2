@@ -236,6 +236,12 @@ bool CircleToRectangle(float circlex, float circley, float radius, float rectx, 
 }
 
 //=================================================================================================
+bool RectangleToRectangle(const Box2d& box1, const Box2d& box2)
+{
+	return (box1.v1.x <= box2.v2.x) && (box1.v2.x >= box2.v1.x) && (box1.v1.y <= box2.v2.y) && (box1.v2.y >= box2.v1.y);
+}
+
+//=================================================================================================
 bool RayToBox(const Vec3& ray_pos, const Vec3& ray_dir, const Box &box, float* out_t)
 {
 	bool inside = true;

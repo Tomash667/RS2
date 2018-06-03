@@ -5,7 +5,7 @@ class Scene
 public:
 	Scene();
 	~Scene();
-	void Init(Render* render);
+	void Init(Render* render, ResourceManager* res_mgr);
 	void Reset();
 	void InitQuadTree(float size, uint splits);
 	void Draw();

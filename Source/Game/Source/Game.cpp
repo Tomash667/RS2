@@ -23,7 +23,7 @@
 #include "ThirdPersonCamera.h"
 #include "MainMenu.h"
 #include "GameState.h"
-#include <DebugDrawer.h>
+#include "Pathfinding.h"
 
 
 const float Zombie::walk_speed = 1.5f;
@@ -130,6 +130,9 @@ void Game::InitGame()
 	level->Init(scene, res_mgr, &game_state, CityGenerator::tile_size * level_size);
 	game_state.level = level.get();
 
+	pathfinding.reset(new Pathfinding);
+	pathfinding->Init(level.get());
+
 	// fog
 	engine->GetRender()->SetClearColor(Color(200, 200, 200));
 	scene->SetFogColor(Color(200, 200, 200));
@@ -137,8 +140,8 @@ void Game::InitGame()
 	scene->SetAmbientColor(Vec3(0.6f, 0.6f, 0.6f));
 	scene->SetLightDir(Vec3(10, 10, 10).Normalize());
 
-	scene->SetDebugDrawHandler(delegate<void(DebugDrawer*)>(this, &Game::OnDebugDraw));
-	scene->SetDebugDrawEnabled(true);
+	//scene->SetDebugDrawHandler(delegate<void(DebugDrawer*)>(this, &Game::OnDebugDraw));
+	//scene->SetDebugDrawEnabled(true);
 
 	camera = new ThirdPersonCamera(scene->GetCamera(), level.get(), input);
 #ifdef _DEBUG
@@ -150,7 +153,7 @@ void Game::InitGame()
 	scene->SetSkybox(res_mgr->GetMesh("skybox.qmsh"));
 
 	city_generator.reset(new CityGenerator);
-	city_generator->Init(scene, level.get(), res_mgr, level_size, 3);
+	city_generator->Init(scene, level.get(), pathfinding.get(), res_mgr, level_size, 3);
 
 	main_menu = new MainMenu;
 	main_menu->Init(res_mgr, &game_state);
@@ -214,7 +217,7 @@ bool Game::OnTick(float dt)
 
 	if(input->Pressed(Key::U))
 		engine->GetWindow()->SetCursorLock(!engine->GetWindow()->IsCursorLocked());
-
+	
 	if(in_game)
 	{
 		if(change_state == GameState::EXIT_TO_MENU)
@@ -1154,7 +1157,6 @@ bool Game::CanSee(Unit& unit, const Vec3& pos)
 
 void Game::OnDebugDraw(DebugDrawer* debug)
 {
-	debug->SetColor(Color(0, 0, 255, 128));
-	for(Navmesh::Region* region : level->navmesh.regions)
-		debug->DrawQuad(region->pos);
+	//pathfinding->FillCollisionGrid(level->player->node->pos);
+	pathfinding->Draw(debug);
 }

@@ -164,6 +164,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Building.h" />
     <ClInclude Include="Source\CityGenerator.h" />
     <ClInclude Include="Source\Collider.h" />
     <ClInclude Include="Source\Game.h" />
@@ -176,6 +177,7 @@
     <ClInclude Include="Source\Level.h" />
     <ClInclude Include="Source\MainMenu.h" />
     <ClInclude Include="Source\Navmesh.h" />
+    <ClInclude Include="Source\Pathfinding.h" />
     <ClInclude Include="Source\Player.h" />
     <ClInclude Include="Source\ThirdPersonCamera.h" />
     <ClInclude Include="Source\Unit.h" />
@@ -191,6 +193,7 @@
     <ClCompile Include="Source\Level.cpp" />
     <ClCompile Include="Source\Main.cpp" />
     <ClCompile Include="Source\MainMenu.cpp" />
+    <ClCompile Include="Source\Pathfinding.cpp" />
     <ClCompile Include="Source\Player.cpp" />
     <ClCompile Include="Source\ThirdPersonCamera.cpp" />
     <ClCompile Include="Source\Unit.cpp" />

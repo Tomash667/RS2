@@ -7,15 +7,17 @@
 #include "Level.h"
 #include "Player.h"
 #include "Item.h"
+#include "Pathfinding.h"
 
 const float CityGenerator::tile_size = 5.f;
 const float CityGenerator::floor_y = 0.05f;
 const float CityGenerator::wall_width = 0.2f;
 
-void CityGenerator::Init(Scene* scene, Level* level, ResourceManager* res_mgr, uint size, uint splits)
+void CityGenerator::Init(Scene* scene, Level* level, Pathfinding* pathfinding, ResourceManager* res_mgr, uint size, uint splits)
 {
 	this->scene = scene;
 	this->level = level;
+	this->pathfinding = pathfinding;
 	this->size = size;
 
 	scene->InitQuadTree(tile_size * size, splits);
@@ -51,7 +53,7 @@ void CityGenerator::Generate()
 	level->SpawnPlayer(player_start_pos);
 	SpawnItems();
 	SpawnZombies();
-	GenerateNavmesh();
+	pathfinding->GenerateBlockedGrid(size, tile_size, buildings);
 }
 
 struct Leaf
@@ -317,6 +319,10 @@ void CityGenerator::CreateScene()
 		int right_hole = IS_SET(door_flags, 1 << 1) ? (pos.y + Random(1, size.y - 2)) : -1;
 		int bottom_hole = IS_SET(door_flags, 1 << 2) ? (pos.x + Random(1, size.x - 2)) : -1;
 		int top_hole = IS_SET(door_flags, 1 << 3) ? (pos.x + Random(1, size.x - 2)) : -1;
+		b.doors[Building::DOOR_LEFT] = left_hole;
+		b.doors[Building::DOOR_RIGHT] = right_hole;
+		b.doors[Building::DOOR_BOTTOM] = bottom_hole;
+		b.doors[Building::DOOR_TOP] = top_hole;
 
 		for(int x = pos.x + 1; x < pos.x + size.x - 1; ++x)
 		{

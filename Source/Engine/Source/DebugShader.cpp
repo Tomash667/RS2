@@ -1,6 +1,7 @@
 #include "EngineCore.h"
 #include "DebugShader.h"
 #include "Render.h"
+#include "Mesh.h"
 #include <d3d11_1.h>
 #include "InternalHelper.h"
 
@@ -43,6 +44,8 @@ void DebugShader::Prepare(const Matrix& mat_view_proj)
 {
 	assert(!locked);
 
+	this->mat_view_proj = mat_view_proj;
+
 	render->SetAlphaBlend(true);
 	render->SetDepthState(Render::DEPTH_READONLY);
 	render->SetCulling(false);
@@ -54,17 +57,7 @@ void DebugShader::Prepare(const Matrix& mat_view_proj)
 	device_context->PSSetShader(shader.pixel_shader, nullptr, 0);
 	device_context->PSSetConstantBuffers(0, 1, &shader.ps_buffer);
 
-	// set vertex shader constants
-	D3D11_MAPPED_SUBRESOURCE resource;
-	C(device_context->Map(shader.vs_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource));
-	Matrix& m = *(Matrix*)resource.pData;
-	m = mat_view_proj.Transpose();
-	device_context->Unmap(shader.vs_buffer, 0);
-
-	// set vb
-	uint stride = shader.vertex_stride,
-		offset = 0;
-	device_context->IASetVertexBuffers(0, 1, &vb, &stride, &offset);
+	current_vb = nullptr;
 }
 
 void DebugShader::SetColor(Color color)
@@ -79,6 +72,24 @@ void DebugShader::SetColor(Color color)
 Vec3* DebugShader::Lock()
 {
 	assert(!locked);
+
+	if(current_vb != vb)
+	{
+		// set vertex shader constants
+		D3D11_MAPPED_SUBRESOURCE resource;
+		C(device_context->Map(shader.vs_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource));
+		Matrix& m = *(Matrix*)resource.pData;
+		m = mat_view_proj.Transpose();
+		device_context->Unmap(shader.vs_buffer, 0);
+
+		// set vb
+		uint stride = shader.vertex_stride,
+			offset = 0;
+		device_context->IASetVertexBuffers(0, 1, &vb, &stride, &offset);
+
+		current_vb = vb;
+	}
+
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	C(device_context->Map(vb, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource));
 	locked = true;
@@ -91,4 +102,31 @@ void DebugShader::Draw(uint vertex_count)
 	locked = false;
 	device_context->Unmap(vb, 0);
 	device_context->Draw(vertex_count, 0);
+}
+
+void DebugShader::Draw(Mesh* mesh, const Matrix& mat_world)
+{
+	assert(!locked);
+
+	if(current_vb != mesh->vb)
+	{
+		// set vb
+		uint stride = shader.vertex_stride,
+			offset = 0;
+		device_context->IASetVertexBuffers(0, 1, &mesh->vb, &stride, &offset);
+		device_context->IASetIndexBuffer(mesh->ib, DXGI_FORMAT_R16_UINT, 0);
+
+		current_vb = mesh->vb;
+	}
+
+	// set vertex shader constants
+	D3D11_MAPPED_SUBRESOURCE resource;
+	C(device_context->Map(shader.vs_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource));
+	Matrix& m = *(Matrix*)resource.pData;
+	m = (mat_world * mat_view_proj).Transpose();
+	device_context->Unmap(shader.vs_buffer, 0);
+
+	// draw submeshes
+	for(Mesh::Submesh& sub : mesh->subs)
+		device_context->DrawIndexed(sub.tris * 3, sub.first * 3, sub.min_ind);
 }

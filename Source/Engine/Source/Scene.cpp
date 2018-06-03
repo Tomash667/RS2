@@ -40,7 +40,7 @@ Scene::~Scene()
 	DeleteElements(mesh_inst_pool);
 }
 
-void Scene::Init(Render* render)
+void Scene::Init(Render* render, ResourceManager* res_mgr)
 {
 	assert(render);
 	this->render = render;
@@ -54,7 +54,7 @@ void Scene::Init(Render* render)
 	skybox_shader.reset(new SkyboxShader(render));
 	skybox_shader->Init();
 
-	debug_drawer.reset(new DebugDrawer(render));
+	debug_drawer.reset(new DebugDrawer(render, res_mgr));
 	debug_drawer->Init();
 }
 
@@ -81,7 +81,7 @@ void Scene::Draw()
 	DrawNodes();
 	DrawParticles();
 	if(debug_draw_enabled)
-		debug_drawer->Draw(mat_view_proj, debug_draw_handler);
+		debug_drawer->Draw(mat_view, mat_view_proj, camera->from, debug_draw_handler);
 }
 
 void Scene::DrawSkybox()
