@@ -26,9 +26,6 @@
 #include "Pathfinding.h"
 
 
-const float Zombie::walk_speed = 1.5f;
-const float Zombie::rot_speed = 2.5f;
-const Vec2 Zombie::idle_timer = Vec2(4.f, 6.f);
 const int level_size = 32;
 
 
@@ -140,8 +137,9 @@ void Game::InitGame()
 	scene->SetAmbientColor(Vec3(0.6f, 0.6f, 0.6f));
 	scene->SetLightDir(Vec3(10, 10, 10).Normalize());
 
-	//scene->SetDebugDrawHandler(delegate<void(DebugDrawer*)>(this, &Game::OnDebugDraw));
-	//scene->SetDebugDrawEnabled(true);
+	// FIXME
+	scene->SetDebugDrawHandler(delegate<void(DebugDrawer*)>(this, &Game::OnDebugDraw));
+	scene->SetDebugDrawEnabled(true);
 
 	camera = new ThirdPersonCamera(scene->GetCamera(), level.get(), input);
 #ifdef _DEBUG
@@ -719,13 +717,6 @@ void Game::UpdatePlayer(float dt)
 		Vec3(sin(-player->node->rot.y + PI / 2), 0, cos(-player->node->rot.y + PI / 2)));
 }
 
-float AngleDiff(Unit& unit, const Vec3& target)
-{
-	float required_rot = Vec3::Angle2d(unit.node->pos, target);
-	float dif = AngleDiff(unit.node->rot.y, required_rot);
-	return dif;
-}
-
 void Game::UpdateZombies(float dt)
 {
 	Player* player = level->player;
@@ -746,11 +737,12 @@ void Game::UpdateZombies(float dt)
 			MOVE_NO,
 			MOVE_ROTATE,
 			MOVE_FORWARD,
-			MOVE_BACK
+			MOVE_BACK // no pf
 		};
 
 		Animation animation = ANI_STAND;
 		Move move = MOVE_NO;
+		Vec3 move_pos = Vec3::Zero;
 
 		if(zombie->state == AI_IDLE || zombie->state == AI_FALLOW)
 			SearchForTarget(zombie);
@@ -777,6 +769,7 @@ void Game::UpdateZombies(float dt)
 						float angle = Random(0.f, PI * 2);
 						float dist = Random(2.f, 5.f);
 						zombie->target_pos = zombie->node->pos + Vec3(cos(angle) * dist, 0, sin(angle) * dist);
+						zombie->start_pos = zombie->node->pos;
 					}
 					break;
 				case IDLE_ANIM:
@@ -794,7 +787,8 @@ void Game::UpdateZombies(float dt)
 					move = MOVE_ROTATE;
 					break;
 				case IDLE_WALK:
-					if(Vec3::Distance2d(zombie->target_pos, zombie->node->pos) < 0.1f)
+					if(Vec3::Distance2d(zombie->target_pos, zombie->node->pos) < 0.1f
+						|| Vec3::Distance2d(zombie->start_pos, zombie->node->pos) >= 6.f)
 						zombie->idle = IDLE_NONE;
 					else
 						move = MOVE_FORWARD;
@@ -816,9 +810,7 @@ void Game::UpdateZombies(float dt)
 			if(player->hp <= 0.f)
 			{
 				// target is dead
-				zombie->state = AI_IDLE;
-				zombie->idle = IDLE_NONE;
-				zombie->timer = Zombie::idle_timer.Random();
+				zombie->ChangeState(AI_IDLE);
 				continue;
 			}
 
@@ -827,12 +819,22 @@ void Game::UpdateZombies(float dt)
 			float dist = Vec3::Distance2d(zombie->node->pos, player->node->pos);
 			if(dist >= 10.f || !CanSee(*zombie, player->node->pos))
 			{
-				// lost target, go to last known pos
-				zombie->state = AI_FALLOW;
+				zombie->timer2 += dt;
+				if(zombie->timer2 >= 0.5f)
+				{
+					// lost target, go to last known pos
+					zombie->ChangeState(AI_FALLOW);
+				}
+				else
+				{
+					zombie->target_pos = player->node->pos;
+					move = MOVE_FORWARD;
+				}
 			}
 			else
 			{
 				zombie->target_pos = player->node->pos;
+				zombie->timer2 = 0.f;
 
 				if(dist > 1.2f)
 				{
@@ -843,10 +845,11 @@ void Game::UpdateZombies(float dt)
 				{
 					// move away player
 					move = MOVE_BACK;
-					zombie->target_pos = player->node->pos;
 				}
+				else
+					move = MOVE_ROTATE;
 
-				if(!zombie->attacking && dist < 1.5f && zombie->timer <= 0 && AngleDiff(*zombie, player->node->pos) < PI / 4)
+				if(!zombie->attacking && dist < 1.5f && zombie->timer <= 0 && zombie->GetAngleDiff(player->node->pos) < PI / 4)
 				{
 					// attack
 					zombie->attacking = true;
@@ -864,19 +867,52 @@ void Game::UpdateZombies(float dt)
 			float dist = Vec3::Distance2d(zombie->node->pos, zombie->target_pos);
 			if(dist < 0.1f)
 			{
-				// target list
-				zombie->state = AI_IDLE;
-				zombie->idle = IDLE_NONE;
-				zombie->timer = Zombie::idle_timer.Random();
+				// target lost
+				zombie->ChangeState(AI_IDLE);
 			}
 			else
 				move = MOVE_FORWARD;
 		}
 
+		// calculate path
+		if(move == MOVE_FORWARD)
+		{
+			zombie->pf_timer -= dt;
+			Int2 my_pt = pathfinding->GetPt(zombie->node->pos);
+			Int2 target_pt = pathfinding->GetPt(zombie->target_pos);
+			if(my_pt == target_pt)
+			{
+				// dont use pathfinding
+				zombie->pf_used = false;
+			}
+			else if(!zombie->pf_used || zombie->pf_target != target_pt || zombie->pf_timer <= 0)
+			{
+				// recalculate path
+				if(pathfinding->FindPath(zombie->node->pos, zombie->target_pos, zombie->path) == Pathfinding::FPR_FOUND)
+				{
+					zombie->pf_used = true;
+					zombie->pf_target = target_pt;
+				}
+				else
+					zombie->pf_used = false;
+				zombie->pf_timer = 0.3f;
+			}
+
+			if(zombie->pf_used)
+				move_pos = pathfinding->GetPathNextTarget(zombie->target_pos, zombie->path);
+			else
+				move_pos = zombie->target_pos;
+		}
+		else
+		{
+			zombie->pf_used = false;
+			move_pos = zombie->target_pos;
+		}
+
 		if(move != MOVE_NO)
 		{
 			// rotate towards target
-			float required_rot = Vec3::Angle2d(zombie->node->pos, zombie->target_pos);
+			float required_rot = Vec3::Angle2d(zombie->node->pos, move_pos);
 			int dir;
 			float dif = UnitRotateTo(zombie->node->rot.y, required_rot, dt * Zombie::rot_speed, &dir);
 			if(dir == 1)
@@ -942,7 +978,7 @@ void Game::SearchForTarget(Zombie* zombie)
 		float dist = Vec3::Distance2d(zombie->node->pos, player->node->pos);
 		if(dist <= 5.f)
 		{
-			float dif = AngleDiff(*zombie, player->node->pos);
+			float dif = zombie->GetAngleDiff(player->node->pos);
 			if((dist <= 2.5f || dif <= PI / 2) && CanSee(*zombie, player->node->pos))
 			{
 				ZombieAlert(zombie);
@@ -1142,8 +1178,7 @@ void Game::ZombieAlert(Zombie* zombie, bool first)
 		sound_mgr->PlaySound3d(sound_zombie_alert, zombie->GetSoundPos(), 2.f);
 		alert_pos.push_back({ zombie->node->pos, 1.f });
 	}
-	zombie->state = AI_COMBAT;
-	zombie->timer = 0.f;
+	zombie->ChangeState(AI_COMBAT);
 }
 
 bool Game::CanSee(Unit& unit, const Vec3& pos)
@@ -1157,6 +1192,9 @@ bool Game::CanSee(Unit& unit, const Vec3& pos)
 
 void Game::OnDebugDraw(DebugDrawer* debug)
 {
-	//pathfinding->FillCollisionGrid(level->player->node->pos);
-	pathfinding->Draw(debug);
+	for(Zombie* zombie : level->zombies)
+	{
+		if(zombie->hp > 0 && zombie->pf_used)
+			pathfinding->DrawPath(debug, zombie->node->pos, zombie->target_pos, zombie->path);
+	}
 }

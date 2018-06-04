@@ -20,6 +20,7 @@ struct Unit
 	float GetHpp() const { return float(hp) / 100; }
 	Box GetBox() const;
 	Vec3 GetSoundPos() const;
+	float GetAngleDiff(const Vec3& target) const;
 
 	SceneNode* node;
 	int hp;

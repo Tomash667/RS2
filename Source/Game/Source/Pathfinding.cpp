@@ -84,36 +84,45 @@ void Pathfinding::FillCollisionGrid(const Vec3& pos)
 	*/
 }
 
-void Pathfinding::Draw(DebugDrawer* debug_drawer)
+void Pathfinding::DrawPath(DebugDrawer* debug_drawer, const Vec3& from, const Vec3& to, const vector<Int2>& path)
 {
-	/*if(from_set)
-	{
-		debug_drawer->SetColor(Color(0, 0, 0, 128));
-		debug_drawer->DrawSphere(from + Vec3(0, 0.5f, 0), 0.15f);
-	}
+	debug_drawer->SetColor(Color(0, 0, 0, 128));
+	debug_drawer->DrawSphere(from + Vec3(0, 0.5f, 0), 0.15f);
 
-	if(to_set)
-	{
-		debug_drawer->SetColor(Color(255, 255, 255, 128));
-		debug_drawer->DrawSphere(to + Vec3(0, 0.5f, 0), 0.15f);
-	}
+	debug_drawer->SetColor(Color(255, 255, 255, 128));
+	debug_drawer->DrawSphere(to + Vec3(0, 0.5f, 0), 0.15f);
 
 	if(!path.empty())
 	{
-		const float width = 0.1f;
-		debug_drawer->SetColor(Color(0, 0, 255));
+		Color c[6] = {
+			Color(255,0,0),
+			Color(0,255,0),
+			Color(0,0,255),
+			Color(255,255,0),
+			Color(0,255,255),
+			Color(255,0,255)
+		};
+		int c_index = 0;
+
+		const float width = 0.02f;
+		debug_drawer->SetColor(c[c_index]);
+		c_index = (c_index + 1) % 6;
 		Int2 start = path.front();
 		debug_drawer->DrawLine(from + Vec3(0, 0.5f, 0), Vec3(tile_size * start.x + tile_size / 2, 0.5f, tile_size * start.y + tile_size / 2), width);
 		for(uint i = 1, count = path.size(); i < count; ++i)
 		{
+			debug_drawer->SetColor(c[c_index]);
+			c_index = (c_index + 1) % 6;
 			Int2 prev_pt = path[i - 1];
 			Int2 pt = path[i];
 			debug_drawer->DrawLine(Vec3(tile_size * prev_pt.x + tile_size / 2, 0.5f, tile_size * prev_pt.y + tile_size / 2),
 				Vec3(tile_size * pt.x + tile_size / 2, 0.5f, tile_size * pt.y + tile_size / 2), width);
 		}
+		debug_drawer->SetColor(c[c_index]);
+		c_index = (c_index + 1) % 6;
 		Int2 end = path.back();
 		debug_drawer->DrawLine(Vec3(tile_size * end.x + tile_size / 2, 0.5f, tile_size * end.y + tile_size / 2), to + Vec3(0, 0.5f, 0), width);
-	}*/
+	}
 
 	/*const int half_size = size / 2;
 	debug_drawer->SetColor(Color(0, 0, 255, 128));
@@ -243,15 +252,121 @@ Pathfinding::FindPathResult Pathfinding::FindPath(const Vec3& from, const Vec3& 
 	if(done)
 	{
 		Int2 pt = target_pt;
-		path.push_back(pt);
+		tmp_path.clear();
 		while(pt != start_pt)
 		{
+			tmp_path.push_back(pt);
 			pt = big_tiles[pt.x + pt.y * size].prev;
-			path.push_back(pt);
 		}
-		std::reverse(path.begin(), path.end());
+		tmp_path.push_back(start_pt);
+		std::reverse(tmp_path.begin(), tmp_path.end());
+		SimplifyPath(tmp_path, path);
 		return FPR_FOUND;
 	}
 	else
 		return FPR_NOT_FOUND;
+}
+
+void Pathfinding::SimplifyPath(vector<Int2>& path, vector<Int2>& results)
+{
+	if(path.size() <= 2u)
+	{
+		results = path;
+		return;
+	}
+	Int2 prev = path.front();
+	results.push_back(prev);
+	for(uint i = 0, count = path.size() - 2; i < count; ++i)
+	{
+		// if there is line of sight from prev to P(i+2) then P(i+1) can be removed 
+		if(!LineTest(prev, path[i + 2]))
+		{
+			results.push_back(path[i + 1]);
+			prev = path[i + 1];
+		}
+	}
+	results.push_back(path.back());
+}
+
+bool Pathfinding::LineTest(const Int2& pt1, const Int2& pt2)
+{
+	if(pt1.x == pt2.x)
+	{
+		// y test
+		if(pt1.y < pt2.y)
+		{
+			for(int y = pt1.y; y < pt2.y; ++y)
+			{
+				if(IS_SET(big_tiles[pt1.x + y * size].blocked, BLOCKED_BOTTOM))
+					return false;
+			}
+		}
+		else
+		{
+			for(int y = pt2.y; y > pt1.y; ++y)
+			{
+				if(IS_SET(big_tiles[pt1.x + y * size].blocked, BLOCKED_TOP))
+					return false;
+			}
+		}
+	}
+	else if(pt1.y == pt2.y)
+	{
+		// x test
+		if(pt1.x < pt2.x)
+		{
+			for(int x = pt1.x; x < pt2.x; ++x)
+			{
+				if(IS_SET(big_tiles[x + pt1.y * size].blocked, BLOCKED_RIGHT))
+					return false;
+			}
+		}
+		else
+		{
+			for(int x = pt2.x; x > pt1.x; ++x)
+			{
+				if(IS_SET(big_tiles[x + pt1.y * size].blocked, BLOCKED_LEFT))
+					return false;
+			}
+		}
+	}
+	else
+	{
+		// complex test...
+		int check_blocked;
+		if(pt1.x < pt2.x)
+		{
+			if(pt1.y < pt2.y)
+				check_blocked = BLOCKED_RIGHT | BLOCKED_TOP;
+			else
+				check_blocked = BLOCKED_RIGHT | BLOCKED_BOTTOM;
+		}
+		else
+		{
+			if(pt1.y < pt2.y)
+				check_blocked = BLOCKED_LEFT | BLOCKED_TOP;
+			else
+				check_blocked = BLOCKED_LEFT | BLOCKED_BOTTOM;
+		}
+		Int2 min, max;
+		Int2::MinMax(pt1, pt2, min, max);
+		for(int y = min.y; y <= max.y; ++y)
+		{
+			for(int x = min.x; x <= max.x; ++x)
+			{
+				if(IS_SET(big_tiles[x + y * size].blocked, check_blocked))
+					return false;
+			}
+		}
+	}
+
+	return true;
+}
+
+Vec3 Pathfinding::GetPathNextTarget(const Vec3& target, const vector<Int2>& path)
+{
+	if(path.size() <= 2u)
+		return target;
+	else
+		return PtToPos(path[1]);
 }

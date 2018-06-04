@@ -465,6 +465,7 @@ struct Int2
 	static Int2 Max(const Int2& i1, const Int2& i2);
 	static Int2 Min(const Int2& i1, const Int2& i2);
 	static void MinMax(Int2& i1, Int2& i2);
+	static void MinMax(const Int2& i1, const Int2& i2, Int2& min, Int2& max);
 	static Int2 Random(const Int2& i1, const Int2& i2);
 
 	// Constants

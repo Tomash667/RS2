@@ -57,3 +57,10 @@ Vec3 Unit::GetSoundPos() const
 	pos.y += 1.7f;
 	return pos;
 }
+
+float Unit::GetAngleDiff(const Vec3& target) const
+{
+	float required_rot = Vec3::Angle2d(node->pos, target);
+	float dif = AngleDiff(node->rot.y, required_rot);
+	return dif;
+}

@@ -197,6 +197,7 @@
     <ClCompile Include="Source\Player.cpp" />
     <ClCompile Include="Source\ThirdPersonCamera.cpp" />
     <ClCompile Include="Source\Unit.cpp" />
+    <ClCompile Include="Source\Zombie.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Source\Icon.ico" />
