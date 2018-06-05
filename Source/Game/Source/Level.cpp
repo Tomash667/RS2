@@ -29,6 +29,7 @@ void Level::Init(Scene* scene, ResourceManager* res_mgr, GameState* game_state, 
 	tile_size = level_size / grids;
 
 	colliders.resize(grids * grids);
+	alive_zombies = 0;
 }
 
 void Level::Reset()
@@ -41,7 +42,9 @@ void Level::Reset()
 	for(vector<Collider>& cols : colliders)
 		cols.clear();
 	barriers.clear();
+	active_bloods.clear();
 	bloods.clear();
+	alive_zombies = 0;
 }
 
 void Level::LoadResources()
@@ -80,6 +83,7 @@ void Level::SpawnZombie(const Vec3& pos)
 	zombies.push_back(zombie);
 
 	scene->Add(zombie->node);
+	++alive_zombies;
 }
 
 void Level::SpawnPlayer(const Vec3& pos)
@@ -115,7 +119,7 @@ void Level::SpawnPlayer(const Vec3& pos)
 	hair->mesh = res_mgr->GetMesh("hair.qmsh");
 	hair->pos = Vec3::Zero;
 	hair->rot = Vec3::Zero;
-	hair->tint = Color(86, 34, 0);
+	hair->tint = Color(86, 34, 0, 255);
 	player->node->Add(hair, SceneNode::USE_PARENT_BONES);
 	player->hair = hair;
 
@@ -305,20 +309,43 @@ void Level::SpawnBlood(Unit& unit)
 	node->scale = 0.f;
 	node->alpha = true;
 	scene->Add(node);
-	bloods.push_back(node);
+	active_bloods.push_back(node);
 }
 
 void Level::Update(float dt)
 {
-	LoopRemove(bloods, [dt](SceneNode* node)
+	LoopRemove(active_bloods, [this, dt](SceneNode* node)
 	{
 		node->scale += dt;
 		if(node->scale >= 1.f)
 		{
 			node->scale = 1.f;
+			bloods.push_back({ node, 0 });
 			return true;
 		}
 		else
 			return false;
 	});
+}
+
+void Level::GatherColliders(vector<Collider>& results, const Box2d& box)
+{
+	Rect rect(PosToPt(box.v1), PosToPt(box.v2));
+	if(rect.p1.x >= (int)grids || rect.p1.y >= (int)grids || rect.p2.x < 0 || rect.p2.y < 0)
+		return;
+	rect.p1.x = max(rect.p1.x, 0);
+	rect.p1.y = max(rect.p1.y, 0);
+	rect.p2.x = min(rect.p2.x, (int)grids - 1);
+	rect.p2.y = min(rect.p2.y, (int)grids - 1);
+	for(int y = rect.p1.y; y <= rect.p2.y; ++y)
+	{
+		for(int x = rect.p1.x; x <= rect.p2.x; ++x)
+		{
+			for(Collider& c : colliders[x + y * grids])
+			{
+				if(RectangleToRectangle(box, c.ToBox2d()))
+					results.push_back(c);
+			}
+		}
+	}
 }

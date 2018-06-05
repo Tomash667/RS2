@@ -7,7 +7,7 @@ public:
 	~MeshShader();
 	void Init();
 	void Prepare(const Vec3& fog_color, const Vec3& fog_params, const Vec3& light_dir, const Vec3& light_color, const Vec3& ambient_color);
-	void DrawMesh(Mesh* mesh, MeshInstance* mesh_inst, const Matrix& mat_combined, const Matrix& mat_world, const Vec3& tint, int subs);
+	void DrawMesh(Mesh* mesh, MeshInstance* mesh_inst, const Matrix& mat_combined, const Matrix& mat_world, const Vec4& tint, int subs);
 
 private:
 	enum Mode

@@ -34,7 +34,7 @@ void Engine::Init(GameHandler* handler)
 	render->Init(window.get());
 	sound_mgr->Init();
 	res_mgr->Init(render.get(), sound_mgr.get());
-	scene->Init(render.get());
+	scene->Init(render.get(), res_mgr.get());
 	gui->SetWindowSize(window->GetSize());
 	gui->Init(render.get(), res_mgr.get(), input.get());
 }
