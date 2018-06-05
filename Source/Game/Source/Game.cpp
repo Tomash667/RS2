@@ -1211,7 +1211,7 @@ void Game::UpdateWorld(float dt)
 			++zombie->death_timer;
 			if(zombie->death_timer > 10)
 			{
-				zombie->node->pos.y += 0.1f;
+				zombie->node->pos.y -= 0.1f;
 				if(zombie->death_timer >= 15)
 				{
 					scene->Remove(zombie->node);

@@ -3,7 +3,7 @@
 #include <DebugDrawer.h>
 #include "Level.h"
 
-void Pathfinding::GenerateBlockedGrid(uint big_size, float tile_size, const vector<Building>& buildings)
+void Pathfinding::GenerateBlockedGrid(uint size, float tile_size, const vector<Building>& buildings)
 {
 	uint s = size * 2;
 	this->size = s;
