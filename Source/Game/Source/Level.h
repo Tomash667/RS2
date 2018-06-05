@@ -2,6 +2,12 @@
 
 #include "Collider.h"
 
+struct Blood
+{
+	SceneNode* node;
+	int timer;
+};
+
 class Level
 {
 public:
@@ -32,6 +38,7 @@ public:
 	bool RayTest(const Vec3& pos, const Vec3& ray, float& t, int flags, Unit* excluded, Unit** target);
 	void SpawnBlood(Unit& unit);
 	void Update(float dt);
+	void GatherColliders(vector<Collider>& results, const Box2d& box);
 	void Save(FileWriter& f);
 	void Load(FileReader& f);
 
@@ -40,6 +47,8 @@ public:
 	vector<Zombie*> zombies;
 	vector<GroundItem> items;
 	vector<Box> camera_colliders;
+	vector<Blood> bloods;
+	uint alive_zombies;
 
 private:
 	Int2 PosToPt(const Vec2& pos)
@@ -52,7 +61,8 @@ private:
 	Mesh* mesh_zombie, *mesh_blood_pool, *mesh_zombie_blood_pool;
 	vector<vector<Collider>> colliders;
 	vector<Collider> barriers;
-	vector<SceneNode*> bloods;
+	vector<SceneNode*> active_bloods;
 	float level_size, tile_size;
+
 	static const uint grids = 8;
 };

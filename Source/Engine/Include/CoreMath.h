@@ -465,6 +465,7 @@ struct Int2
 	static Int2 Max(const Int2& i1, const Int2& i2);
 	static Int2 Min(const Int2& i1, const Int2& i2);
 	static void MinMax(Int2& i1, Int2& i2);
+	static void MinMax(const Int2& i1, const Int2& i2, Int2& min, Int2& max);
 	static Int2 Random(const Int2& i1, const Int2& i2);
 
 	// Constants
@@ -918,6 +919,10 @@ struct Box2d
 		box.Set(pos, size);
 		return box;
 	}
+	static Box2d Create(const Vec2& pos, const Vec2& size)
+	{
+		return Box2d(pos.x, pos.y, pos.x + size.x, pos.y + size.y);
+	}
 
 	// Methods
 	Vec2 GetRandomPoint() const;
@@ -1368,6 +1373,7 @@ struct FrustumPlanes
 //-----------------------------------------------------------------------------
 Vec3 RandomPointInsideSphere(float r);
 bool CircleToRectangle(float circlex, float circley, float radius, float rectx, float recty, float w, float h);
+bool RectangleToRectangle(const Box2d& box1, const Box2d& box2);
 bool RayToBox(const Vec3& ray_pos, const Vec3& ray_dir, const Box& box, float* out_t);
 bool RayToCylinder(const Vec3& sa, const Vec3& sb, const Vec3& p, const Vec3& q, float r, float& t);
 

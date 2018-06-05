@@ -174,7 +174,7 @@ void MeshShader::Prepare(const Vec3& fog_color, const Vec3& fog_params, const Ve
 	device_context->Unmap(ps_buffer, 0);
 }
 
-void MeshShader::DrawMesh(Mesh* mesh, MeshInstance* mesh_inst, const Matrix& mat_combined, const Matrix& mat_world, const Vec3& tint, int subs)
+void MeshShader::DrawMesh(Mesh* mesh, MeshInstance* mesh_inst, const Matrix& mat_combined, const Matrix& mat_world, const Vec4& tint, int subs)
 {
 	assert(mesh);
 
@@ -235,7 +235,7 @@ void MeshShader::DrawMesh(Mesh* mesh, MeshInstance* mesh_inst, const Matrix& mat
 	// set pixel shader constants
 	C(device_context->Map(ps_buffer_object, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource));
 	PixelShaderPerObject& pspo = *(PixelShaderPerObject*)resource.pData;
-	pspo.tint = Vec4(tint, 1.f);
+	pspo.tint = tint;
 	device_context->Unmap(ps_buffer_object, 0);
 
 	// set buffers

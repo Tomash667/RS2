@@ -186,6 +186,30 @@ inline void Int2::MinMax(Int2& i1, Int2& i2)
 		std::swap(i1.y, i2.y);
 }
 
+inline void Int2::MinMax(const Int2& i1, const Int2& i2, Int2& min, Int2& max)
+{
+	if(i1.x < i2.x)
+	{
+		min.x = i1.x;
+		max.x = i2.x;
+	}
+	else
+	{
+		min.x = i2.x;
+		max.x = i1.x;
+	}
+	if(i1.y < i2.y)
+	{
+		min.y = i1.y;
+		max.y = i2.y;
+	}
+	else
+	{
+		min.y = i2.y;
+		max.y = i1.y;
+	}
+}
+
 inline Int2 Int2::Random(const Int2& i1, const Int2& i2)
 {
 	return Int2(::Random(i1.x, i2.x), ::Random(i1.y, i2.y));

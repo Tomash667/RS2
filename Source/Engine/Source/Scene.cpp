@@ -10,6 +10,7 @@
 #include "QuadTree.h"
 #include "ScenePart.h"
 #include "SkyboxShader.h"
+#include "DebugDrawer.h"
 
 
 struct ScenePartFactory : QuadTree::Factory
@@ -26,7 +27,8 @@ struct ScenePartFactory : QuadTree::Factory
 } scene_part_factory;
 
 
-Scene::Scene() : fog_color(Color::White), fog_params(1000, 2000, 1000), skybox(nullptr), light_dir(0, 1, 0), light_color(1, 1, 1), ambient_color(1, 1, 1)
+Scene::Scene() : fog_color(Color::White), fog_params(1000, 2000, 1000), skybox(nullptr), light_dir(0, 1, 0), light_color(1, 1, 1), ambient_color(1, 1, 1),
+debug_draw_enabled(false)
 {
 	camera.reset(new Camera);
 }
@@ -38,7 +40,7 @@ Scene::~Scene()
 	DeleteElements(mesh_inst_pool);
 }
 
-void Scene::Init(Render* render)
+void Scene::Init(Render* render, ResourceManager* res_mgr)
 {
 	assert(render);
 	this->render = render;
@@ -51,6 +53,9 @@ void Scene::Init(Render* render)
 
 	skybox_shader.reset(new SkyboxShader(render));
 	skybox_shader->Init();
+
+	debug_drawer.reset(new DebugDrawer(render, res_mgr));
+	debug_drawer->Init();
 }
 
 void Scene::Reset()
@@ -75,6 +80,8 @@ void Scene::Draw()
 	DrawSkybox();
 	DrawNodes();
 	DrawParticles();
+	if(debug_draw_enabled)
+		debug_drawer->Draw(mat_view, mat_view_proj, camera->from, debug_draw_handler);
 }
 
 void Scene::DrawSkybox()

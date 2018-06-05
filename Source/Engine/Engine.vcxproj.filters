@@ -164,6 +164,12 @@
     <ClInclude Include="Source\SkyboxShader.h">
       <Filter>2. Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Include\DebugDrawer.h">
+      <Filter>1. Include\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\DebugShader.h">
+      <Filter>2. Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Text.cpp">
@@ -275,6 +281,12 @@
       <Filter>3. Source Files\Engine</Filter>
     </ClCompile>
     <ClCompile Include="Source\SkyboxShader.cpp">
+      <Filter>3. Source Files\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\DebugDrawer.cpp">
+      <Filter>3. Source Files\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\DebugShader.cpp">
       <Filter>3. Source Files\Engine</Filter>
     </ClCompile>
   </ItemGroup>

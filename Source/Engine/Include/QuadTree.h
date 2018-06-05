@@ -37,6 +37,7 @@ struct QuadTree
 
 	Part* GetPart(const Int2& pt);
 	Part* GetPart(const Vec2& pos);
+	Part* GetRoot() { return root; }
 
 private:
 	Factory* factory;
