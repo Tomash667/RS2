@@ -224,6 +224,10 @@ inline Rect::Rect()
 {
 }
 
+inline Rect::Rect(int x, int y) : p1(x, y), p2(x, y)
+{
+}
+
 inline Rect::Rect(int x1, int y1, int x2, int y2) : p1(x1, y1), p2(x2, y2)
 {
 }

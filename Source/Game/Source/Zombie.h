@@ -21,6 +21,8 @@ struct Zombie : Unit
 {
 	Zombie() : Unit(true), state(AI_IDLE), idle(IDLE_NONE), timer(idle_timer.Random()), attacking(false), pf_used(false), pf_timer(0) {}
 	void ChangeState(AiState new_state);
+	void Save(FileWriter& f);
+	void Load(FileReader& f);
 
 	AiState state;
 	IdleAction idle;

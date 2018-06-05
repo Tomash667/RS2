@@ -19,3 +19,59 @@ void Zombie::ChangeState(AiState new_state)
 	}
 	state = new_state;
 }
+
+void Zombie::Save(FileWriter& f)
+{
+	Unit::Save(f);
+	if(IsAlive())
+	{
+		f << state;
+		f << idle;
+		f << target_pos;
+		f << start_pos;
+		f << timer;
+		f << timer2;
+		f << pf_timer;
+
+		f << attacking;
+		if(attacking)
+			f << attack_index;
+
+		f << pf_used;
+		if(pf_used)
+		{
+			f << pf_target;
+			f << path;
+		}
+	}
+	else
+		f << death_timer;
+}
+
+void Zombie::Load(FileReader& f)
+{
+	Unit::Load(f);
+	if(IsAlive())
+	{
+		f >> state;
+		f >> idle;
+		f >> target_pos;
+		f >> start_pos;
+		f >> timer;
+		f >> timer2;
+		f >> pf_timer;
+
+		f >> attacking;
+		if(attacking)
+			f >> attack_index;
+
+		f >> pf_used;
+		if(pf_used)
+		{
+			f >> pf_target;
+			f >> path;
+		}
+	}
+	else
+		f >> death_timer;
+}

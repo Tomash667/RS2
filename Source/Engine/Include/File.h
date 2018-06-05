@@ -8,19 +8,9 @@ const FileHandle INVALID_FILE_HANDLE = (FileHandle)(IntPointer)-1;
 class FileReader
 {
 public:
-	FileReader() : file(INVALID_FILE_HANDLE), own_handle(false), ok(false)
-	{
-	}
-
-	explicit FileReader(FileHandle file) : file(file), own_handle(false), ok(false)
-	{
-	}
-
-	explicit FileReader(cstring filename)
-	{
-		Open(filename);
-	}
-
+	FileReader() : file(INVALID_FILE_HANDLE), own_handle(false), ok(false) {}
+	explicit FileReader(FileHandle file) : file(file), own_handle(false), ok(false) {}
+	explicit FileReader(cstring filename) { Open(filename); }
 	~FileReader();
 
 	bool Open(cstring filename);
@@ -47,11 +37,7 @@ public:
 	bool IsOk() const { return ok; }
 	operator bool() const { return IsOk(); }
 
-	template<typename T>
-	void operator >> (T& a)
-	{
-		Read(&a, sizeof(a));
-	}
+	
 
 	template<typename T>
 	T Read()
@@ -60,12 +46,18 @@ public:
 		Read(&a, sizeof(T));
 		return a;
 	}
-
 	template<typename T>
 	void Read(T& a)
 	{
 		Read(&a, sizeof(a));
 	}
+	template<typename T>
+	void operator >> (T& a)
+	{
+		Read(&a, sizeof(a));
+	}
+
+	
 
 	template<>
 	void Read(string& s)
@@ -159,6 +151,12 @@ public:
 			Read(&v[0], sizeof(T)*count);
 	}
 
+	template<typename T>
+	void operator >> (vector<T>& v)
+	{
+		ReadVector1(v);
+	}
+
 private:
 	FileHandle file;
 	uint size;
@@ -170,44 +168,25 @@ private:
 class FileWriter
 {
 public:
-	FileWriter() : file(INVALID_FILE_HANDLE), own_handle(true)
-	{
-	}
-
-	explicit FileWriter(FileHandle file) : file(file), own_handle(false)
-	{
-	}
-
-	explicit FileWriter(cstring filename) : own_handle(true)
-	{
-		Open(filename);
-	}
-
+	FileWriter() : file(INVALID_FILE_HANDLE), own_handle(true) {}
+	explicit FileWriter(FileHandle file) : file(file), own_handle(false) {}
+	explicit FileWriter(cstring filename) : own_handle(true) { Open(filename); }
 	~FileWriter();
 
 	bool Open(cstring filename);
 	void Write(const void* ptr, uint size);
 	void Flush();
 	uint GetSize() const;
-
-	bool IsOpen() const
-	{
-		return file != INVALID_FILE_HANDLE;
-	}
-
-	operator bool() const
-	{
-		return file != INVALID_FILE_HANDLE;
-	}
-
-	template<typename T>
-	void operator << (const T& a)
-	{
-		Write(&a, sizeof(a));
-	}
+	bool IsOpen() const { return file != INVALID_FILE_HANDLE; }
+	operator bool() const { return IsOpen(); }
 
 	template<typename T>
 	void Write(const T& a)
+	{
+		Write(&a, sizeof(a));
+	}
+	template<typename T>
+	void operator << (const T& a)
 	{
 		Write(&a, sizeof(a));
 	}
@@ -218,49 +197,53 @@ public:
 		Write(&a, sizeof(T));
 	}
 
+	template<typename SizeType>
+	void WriteString(const string& s)
+	{
+		assert(s.length() <= std::numeric_limits<SizeType>::max());
+		SizeType length = (SizeType)s.length();
+		Write(length);
+		Write(s.c_str(), length);
+	}
 	void WriteString1(const string& s)
 	{
-		uint length = (uint)s.length();
-		assert(length < 256);
-		WriteCasted<byte>(length);
-		if(length)
-			Write(s.c_str(), length);
+		WriteString<byte>(s);
 	}
-
-	void WriteString1(cstring str)
-	{
-		assert(str);
-		uint length = (uint)strlen(str);
-		assert(length < 256);
-		WriteCasted<byte>(length);
-		if(length)
-			Write(str, length);
-	}
-
 	void WriteString2(const string& s)
 	{
-		uint length = (uint)s.length();
-		assert(length < 256 * 256);
-		WriteCasted<word>(length);
-		if(length)
-			Write(s.c_str(), length);
+		WriteString<word>(s);
+	}
+	void WriteString4(const string& s)
+	{
+		WriteString<uint>(s);
 	}
 
-	void WriteString2(cstring str)
+	template<typename SizeType>
+	void WriteString(cstring str)
 	{
 		assert(str);
-		uint length = (uint)strlen(str);
-		assert(length < 256 * 256);
-		Write<word>(length);
-		if(length)
-			Write(str, length);
+		uint length = strlen(str);
+		assert(length <= std::numeric_limits<SizeType>::max());
+		WriteCasted<SizeType>(length);
+		Write(str, length);
+	}
+	void WriteString1(cstring str)
+	{
+		WriteString<byte>(str);
+	}
+	void WriteString2(cstring str)
+	{
+		WriteString<word>(str);
+	}
+	void WriteString4(cstring str)
+	{
+		WriteString<uint>(str);
 	}
 
 	void operator << (const string& s)
 	{
 		WriteString1(s);
 	}
-
 	void operator << (cstring str)
 	{
 		assert(str);
@@ -272,20 +255,33 @@ public:
 		WriteCasted<byte>(0);
 	}
 
+	template<typename SizeType, typename T>
+	void WriteVector(const vector<T>& v)
+	{
+		assert(v.size() <= std::numeric_limits<SizeType>::max());
+		SizeType size = (SizeType)v.size();
+		Write(size);
+		Write(v.data(), size);
+	}
 	template<typename T>
 	void WriteVector1(const vector<T>& v)
 	{
-		WriteCasted<byte>(v.size());
-		if(!v.empty())
-			Write(&v[0], sizeof(T)*v.size());
+		WriteVector<byte>(v);
 	}
-
 	template<typename T>
 	void WriteVector2(const vector<T>& v)
 	{
-		WriteCasted<word>(v.size());
-		if(!v.empty())
-			Write(&v[0], sizeof(T)*v.size());
+		WriteVector<word>(v);
+	}
+	template<typename T>
+	void WriteVector4(const vector<T>& v)
+	{
+		WriteVector<short>(v);
+	}
+	template<typename T>
+	void operator << (const vector<T>& v)
+	{
+		WriteVector1(v);
 	}
 
 private:

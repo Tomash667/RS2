@@ -41,6 +41,11 @@ void MainMenu::Init(ResourceManager* res_mgr, GameState* game_state)
 	Button::default_layout.font_color_disabled = Color(50, 50, 50);
 	Button::default_layout.corners = Int2(6, 32);
 
+	DialogBox::default_layout.background = res_mgr->GetTexture("panel.png");
+	DialogBox::default_layout.corners = Int2(6, 32);
+	DialogBox::default_layout.background_color = Color(255, 255, 255, 200);
+	DialogBox::default_layout.font_color = Color(0, 255, 33);
+
 	cstring texts[BUTTON_MAX] = {
 		"Continue",
 		"New game",

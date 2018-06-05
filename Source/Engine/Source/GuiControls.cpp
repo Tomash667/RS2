@@ -6,14 +6,17 @@
 
 
 Button::Layout Button::default_layout;
+DialogBox::Layout DialogBox::default_layout;
 
 
+//-----------------------------------------------------------------------------
 void Sprite::Draw()
 {
 	gui->DrawSprite(image, pos, size, color);
 }
 
 
+//-----------------------------------------------------------------------------
 void Label::Draw()
 {
 	gui->DrawText(text, font, color, flags, Rect::Create(pos, size));
@@ -26,6 +29,7 @@ Int2 Label::CalculateSize() const
 }
 
 
+//-----------------------------------------------------------------------------
 void Panel::Draw()
 {
 	gui->DrawSpriteGrid(image, color, corners.y, corners.x, pos, size);
@@ -33,6 +37,7 @@ void Panel::Draw()
 }
 
 
+//-----------------------------------------------------------------------------
 void ProgressBar::Draw()
 {
 	gui->DrawSprite(background, pos, size);
@@ -41,6 +46,7 @@ void ProgressBar::Draw()
 }
 
 
+//-----------------------------------------------------------------------------
 void Button::Draw()
 {
 	Color font_color = layout.font_color;
@@ -68,7 +74,7 @@ void Button::Update(float dt)
 {
 	if(state == DISABLED)
 		return;
-	if(Rect::IsInside(pos, size, gui->GetCursorPos()))
+	if(mouse_focus && Rect::IsInside(pos, size, gui->GetCursorPos()))
 	{
 		state = HOVER;
 		if(gui->GetInput()->PressedOnce(Key::LeftButton) && event)
@@ -76,6 +82,12 @@ void Button::Update(float dt)
 	}
 	else
 		state = UP;
+}
+
+void Button::CalculateSize(const Int2& padding)
+{
+	Font* font = (layout.font ? layout.font : gui->GetDefaultFont());
+	size = font->CalculateSize(text) + padding;
 }
 
 void Button::NormalizeSize(Button* buttons[], uint count, const Int2& padding)
@@ -95,4 +107,28 @@ void Button::NormalizeSize(Button* buttons[], uint count, const Int2& padding)
 
 	for(uint i = 0; i < count; ++i)
 		buttons[i]->size = max_size;
+}
+
+
+//-----------------------------------------------------------------------------
+void DialogBox::Draw()
+{
+	gui->DrawSpriteGrid(layout.background, layout.background_color, layout.corners.y, layout.corners.x, pos, size);
+	gui->DrawText(text, layout.font, layout.font_color, Font::Left, rect);
+	button.Draw();
+}
+
+void DialogBox::Update(float dt)
+{
+	button.mouse_focus = mouse_focus;
+	button.Update(dt);
+
+	Input* input = gui->GetInput();
+	if(input->PressedOnce(Key::Escape) || input->PressedOnce(Key::Enter) || input->PressedOnce(Key::Spacebar))
+		gui->CloseDialog();
+}
+
+void DialogBox::OnEvent(int)
+{
+	gui->CloseDialog();
 }

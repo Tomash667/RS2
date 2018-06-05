@@ -539,3 +539,15 @@ Int2 CityGenerator::PosToPt(const Vec3& pos)
 		return Int2(-1, -1);
 	return Int2(int(pos.x / tile_size), int(pos.z / tile_size));
 }
+
+void CityGenerator::Save(FileWriter& f)
+{
+	f << map;
+	f << buildings;
+}
+
+void CityGenerator::Load(FileReader& f)
+{
+	f >> map;
+	f >> buildings;
+}

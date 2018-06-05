@@ -30,6 +30,9 @@ void Container::Update(float dt)
 	for(Control* control : controls)
 	{
 		if(control->visible)
+		{
+			control->mouse_focus = mouse_focus;
 			control->Update(dt);
+		}
 	}
 }

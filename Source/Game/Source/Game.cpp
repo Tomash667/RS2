@@ -1283,6 +1283,9 @@ void Game::SaveAndExit()
 
 void Game::Save(FileWriter& f)
 {
+	if(!f)
+		throw "Failed to open file.";
+
 	// header
 	char sign[] = { 'R','S','A','V' };
 	f << sign;
@@ -1290,6 +1293,8 @@ void Game::Save(FileWriter& f)
 
 	// level
 	level->Save(f);
+	f << world_tick;
+	f << alert_pos;
 
 	// camera
 	camera->Save(f);
@@ -1343,12 +1348,17 @@ void Game::Load(FileReader& f)
 
 	// level
 	level->Load(f);
+	f >> world_tick;
+	f >> alert_pos;
 
 	// camera
 	camera->Load(f);
+
+	if(!f)
+		throw "Broken file.";
 }
 
 void Game::ShowErrorMessage(cstring err)
 {
-
+	engine->GetGui()->ShowMessageBox(err);
 }

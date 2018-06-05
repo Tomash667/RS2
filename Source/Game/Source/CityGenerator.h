@@ -20,6 +20,8 @@ public:
 	void DrawMap();
 	float GetY(const Vec3& pos);
 	float GetMapSize() { return map_size; }
+	void Save(FileWriter& f);
+	void Load(FileReader& f);
 
 	static const float tile_size;
 	static const float floor_y;
