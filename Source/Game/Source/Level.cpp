@@ -325,34 +325,54 @@ void Level::Update(float dt)
 
 void Level::Save(FileWriter& f)
 {
+	// player
 	player->Save(f);
 
+	// zombies
+	f << zombies.size();
 	for(Zombie* zombie : zombies)
 		zombie->Save(f);
 
+	// ground items
 	f << items.size();
 	for(GroundItem& item : items)
 	{
-		f << item.node->pos;
-		f << item.node->rot.y;
+		f << item.item->id;
+		f << item.pos;
 	}
+
+	// bloods
+	f << bloods.size();
 }
 
 void Level::Load(FileReader& f)
 {
+	// player
+	player = new Player(this);
 	player->Load(f);
 
-	for(Zombie* zombie : zombies)
+	// zombies
+	uint count;
+	f >> count;
+	zombies.reserve(count);
+	for(uint i = 0; i < count; ++i)
+	{
+		Zombie* zombie = new Zombie;
 		zombie->Load(f);
+		zombies.push_back(zombie);
+		scene->Add(zombie->node);
+	}
 
+	// ground items
 	items.resize(f.Read<uint>());
 	for(GroundItem& item : items)
 	{
+		item.item = Item::Get(f.ReadString1());
+		f >> item.pos;
 		item.node = new SceneNode;
-		item.node->mesh = mesh_medkit;
-		f >> item.node->pos;
-		f >> item.node->rot.y;
-		item.node->rot.x = 0;
-		item.node->rot.z = 0;
+		item.node->mesh = item.item->mesh;
+		item.node->pos = item.item->ground_offset + item.pos;
+		item.node->rot = item.item->ground_rot;
+		scene->Add(item.node);
 	}
 }

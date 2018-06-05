@@ -92,10 +92,40 @@ Vec3 Player::GetShootPos()
 
 void Player::Save(FileWriter& f)
 {
+	f << action;
+	f << action_state;
+	f << idle_timer;
+	f << idle_timer_max;
+	f << rot_buf;
+	f << last_rot;
+	f << shot_delay;
+	f << aim;
 
+	f << food;
+	f << hungry_timer;
+	f << death_starved;
+
+	// inventory
+	f << melee_weapon ? melee_weapon->id : "";
+	f << ranged_weapon ? ranged_weapon->id : "";
+	f << medkits;
+	f << food_cans;
+	f << ammo;
+	f << current_ammo;
+	f << use_melee;
 }
 
 void Player::Load(FileReader& f)
 {
+	// inventory
+	melee_weapon = Item::Get(f.ReadString1());
+	ranged_weapon = Item::Get(f.ReadString1());
+	f >> medkits;
+	f >> food_cans;
+	f >> ammo;
+	f >> current_ammo;
+	f >> use_melee;
 
+	// weapon, hair
+	item_before = nullptr;
 }

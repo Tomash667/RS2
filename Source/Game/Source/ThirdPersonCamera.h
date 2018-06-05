@@ -5,6 +5,8 @@ struct ThirdPersonCamera
 	ThirdPersonCamera(Camera* cam, Level* level, Input* input);
 	void Update(float dt, bool allow_mouse);
 	void SetAim(bool enabled);
+	void Save(FileWriter& f);
+	void Load(FileReader& f);
 
 	Camera* cam;
 	Level* level;

@@ -27,7 +27,6 @@ private:
 	bool CheckMove(Unit& uint, const Vec3& dir);
 	void Save(FileWriter& f);
 	void Load(FileReader& f);
-	void NewGame();
 
 	unique_ptr<Engine> engine;
 	Scene* scene;

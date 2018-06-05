@@ -14,12 +14,14 @@ Item items[] = {
 
 Item* Item::Get(cstring id)
 {
+	if(id[0] == 0)
+		return nullptr;
 	for(Item& item : items)
 	{
 		if(item.id == id)
 			return &item;
 	}
-	return nullptr;
+	throw Format("Missing item '%s'.", id);
 }
 
 void Item::LoadData(ResourceManager* res_mgr)

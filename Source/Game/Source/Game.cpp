@@ -155,14 +155,6 @@ void Game::InitGame()
 	game_gui->visible = false;
 }
 
-void Game::NewGame()
-{
-	// camera
-	cam_rot = Vec2(0, 4.47908592f);
-	cam_dist = 1.5f;
-	cam_shift = 0.25f;
-}
-
 void Game::LoadResources()
 {
 	// particle texture
@@ -1000,9 +992,7 @@ void Game::Save(FileWriter& f)
 	level->Save(f);
 
 	// camera
-	f << cam_rot;
-	f << cam_dist;
-	f << cam_shift;
+	camera->Save(f);
 }
 
 cstring VersionToString(int version)
@@ -1038,7 +1028,5 @@ void Game::Load(FileReader& f)
 	level->Load(f);
 
 	// camera
-	f >> cam_rot;
-	f >> cam_dist;
-	f >> cam_shift;
+	camera->Load(f);
 }
