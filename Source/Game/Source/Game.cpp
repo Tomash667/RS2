@@ -23,6 +23,7 @@
 #include "ThirdPersonCamera.h"
 #include "MainMenu.h"
 #include "GameState.h"
+#include <Gui.h>
 
 
 const float Zombie::walk_speed = 1.5f;
@@ -181,11 +182,15 @@ void Game::LoadResources()
 	Item::LoadData(res_mgr);
 }
 
-void Game::StartGame()
+void Game::StartGame(bool load)
 {
 	main_menu->Hide();
 	game_gui->visible = true;
-	city_generator->Generate();
+	if(!load)
+	{
+		Info("Generating world.");
+		city_generator->Generate();
+	}
 	camera->reset = true;
 	game_state.SetPaused(false);
 	in_game = true;
@@ -213,16 +218,14 @@ bool Game::OnTick(float dt)
 	if(in_game)
 	{
 		if(change_state == GameState::EXIT_TO_MENU)
-			ExitToMenu();
+			SaveAndExit();
 		else
 			UpdateGame(dt);
 	}
 	else
 	{
 		if(change_state == GameState::CONTINUE)
-		{
-			// TODO
-		}
+			LoadGame();
 		else if(change_state == GameState::NEW_GAME || quickstart)
 		{
 			quickstart = false;
@@ -981,6 +984,22 @@ bool Game::CheckMove(Unit& unit, const Vec3& dir)
 	return false;
 }
 
+void Game::SaveAndExit()
+{
+	try
+	{
+		FileWriter f("save");
+		Save(f);
+	}
+	catch(cstring err)
+	{
+		ShowErrorMessage(Format("Failed to save game.\n%s", err));
+		return;
+	}
+
+	ExitToMenu();
+}
+
 void Game::Save(FileWriter& f)
 {
 	// header
@@ -993,6 +1012,23 @@ void Game::Save(FileWriter& f)
 
 	// camera
 	camera->Save(f);
+}
+
+void Game::LoadGame()
+{
+	try
+	{
+		FileReader f("save");
+		Load(f);
+	}
+	catch(cstring err)
+	{
+		ShowErrorMessage(Format("Failed to load game.\n%s", err));
+		ExitToMenu();
+		return;
+	}
+
+	StartGame(true);
 }
 
 cstring VersionToString(int version)
@@ -1029,4 +1065,9 @@ void Game::Load(FileReader& f)
 
 	// camera
 	camera->Load(f);
+}
+
+void Game::ShowErrorMessage(cstring err)
+{
+
 }

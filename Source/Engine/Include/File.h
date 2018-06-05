@@ -292,3 +292,9 @@ private:
 	FileHandle file;
 	bool own_handle;
 };
+
+//-----------------------------------------------------------------------------
+namespace io
+{
+	bool FileExists(Cstring path);
+}

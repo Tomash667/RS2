@@ -15,7 +15,7 @@ private:
 	void InitEngine();
 	void InitGame();
 	void LoadResources();
-	void StartGame();
+	void StartGame(bool load = false);
 	void ExitToMenu();
 	bool OnTick(float dt) override;
 	void UpdateGame(float dt);
@@ -25,8 +25,11 @@ private:
 	bool CheckForHit(Unit& unit, MeshPoint& hitbox, MeshPoint* bone, Unit*& target, Vec3& hitpoint);
 	void HitUnit(Unit& unit, int dmg, const Vec3& hitpoint);
 	bool CheckMove(Unit& uint, const Vec3& dir);
+	void SaveAndExit();
 	void Save(FileWriter& f);
+	void LoadGame();
 	void Load(FileReader& f);
+	void ShowErrorMessage(cstring err);
 
 	unique_ptr<Engine> engine;
 	Scene* scene;

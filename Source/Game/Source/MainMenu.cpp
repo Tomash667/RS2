@@ -64,16 +64,16 @@ void MainMenu::Init(ResourceManager* res_mgr, GameState* game_state)
 	for(int i = 0; i < 3; ++i)
 		buttons[i]->pos = Int2(part * i + (part - buttons[0]->size.x) / 2, pos_y);
 
-	buttons[0]->state = Button::DISABLED;
-
 	gui->Add(this);
-	gui->SetCursorVisible(true);
+
+	Show();
 }
 
 void MainMenu::Show()
 {
 	visible = true;
 	gui->SetCursorVisible(true);
+	buttons[0]->state = (io::FileExists("save") ? Button::UP : Button::DISABLED);
 }
 
 void MainMenu::Hide()

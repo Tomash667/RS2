@@ -196,8 +196,6 @@ void GameGui::Draw()
 		gui->DrawText(text, nullptr, Color::Black, Font::Top | Font::Center, Rect::Create(text_pos, text_size));
 	}
 
-	
-
 	if(death_timer > 1.f)
 	{
 		// death screen

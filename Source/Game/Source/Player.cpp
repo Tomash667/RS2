@@ -106,8 +106,8 @@ void Player::Save(FileWriter& f)
 	f << death_starved;
 
 	// inventory
-	f << melee_weapon ? melee_weapon->id : "";
-	f << ranged_weapon ? ranged_weapon->id : "";
+	f << (melee_weapon ? melee_weapon->id : "");
+	f << (ranged_weapon ? ranged_weapon->id : "");
 	f << medkits;
 	f << food_cans;
 	f << ammo;

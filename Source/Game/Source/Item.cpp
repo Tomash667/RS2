@@ -12,7 +12,7 @@ Item items[] = {
 	Item(Item::FOOD, "canned_food", "Canned food", "canned_food.qmsh", "canned_food.png")
 };
 
-Item* Item::Get(cstring id)
+Item* Item::Get(Cstring id)
 {
 	if(id[0] == 0)
 		return nullptr;
