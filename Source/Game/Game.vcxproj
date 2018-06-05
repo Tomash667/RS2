@@ -176,7 +176,6 @@
     <ClInclude Include="Source\Item.h" />
     <ClInclude Include="Source\Level.h" />
     <ClInclude Include="Source\MainMenu.h" />
-    <ClInclude Include="Source\Navmesh.h" />
     <ClInclude Include="Source\Pathfinding.h" />
     <ClInclude Include="Source\Player.h" />
     <ClInclude Include="Source\ThirdPersonCamera.h" />

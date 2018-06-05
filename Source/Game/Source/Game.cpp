@@ -128,7 +128,6 @@ void Game::InitGame()
 	game_state.level = level.get();
 
 	pathfinding.reset(new Pathfinding);
-	pathfinding->Init(level.get());
 
 	// fog
 	engine->GetRender()->SetClearColor(Color(200, 200, 200));
@@ -137,9 +136,8 @@ void Game::InitGame()
 	scene->SetAmbientColor(Vec3(0.6f, 0.6f, 0.6f));
 	scene->SetLightDir(Vec3(10, 10, 10).Normalize());
 
-	// FIXME
-	scene->SetDebugDrawHandler(delegate<void(DebugDrawer*)>(this, &Game::OnDebugDraw));
-	scene->SetDebugDrawEnabled(true);
+	//scene->SetDebugDrawHandler(delegate<void(DebugDrawer*)>(this, &Game::OnDebugDraw));
+	//scene->SetDebugDrawEnabled(true);
 
 	camera = new ThirdPersonCamera(scene->GetCamera(), level.get(), input);
 #ifdef _DEBUG
@@ -215,7 +213,7 @@ bool Game::OnTick(float dt)
 
 	if(input->Pressed(Key::U))
 		engine->GetWindow()->SetCursorLock(!engine->GetWindow()->IsCursorLocked());
-	
+
 	if(in_game)
 	{
 		if(change_state == GameState::EXIT_TO_MENU)

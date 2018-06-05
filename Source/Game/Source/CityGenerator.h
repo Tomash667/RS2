@@ -30,7 +30,6 @@ private:
 	void SpawnItems();
 	void SpawnZombies();
 	Int2 PosToPt(const Vec3& pos);
-	void GenerateNavmesh();
 
 	Scene* scene;
 	Pathfinding* pathfinding;

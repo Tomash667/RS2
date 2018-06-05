@@ -2,16 +2,6 @@
 #include "Pathfinding.h"
 #include <DebugDrawer.h>
 #include "Level.h"
-#include "Unit.h"
-
-//const float tile_size = 0.3125f;
-
-void Pathfinding::Init(Level* level)
-{
-	this->level = level;
-	size = 32 + 1;
-	tiles.resize(size * size);
-}
 
 void Pathfinding::GenerateBlockedGrid(uint big_size, float tile_size, const vector<Building>& buildings)
 {
@@ -20,8 +10,8 @@ void Pathfinding::GenerateBlockedGrid(uint big_size, float tile_size, const vect
 	this->tile_size = tile_size / 2;
 	calculation_id = 0;
 
-	big_tiles.resize(s * s);
-	memset(big_tiles.data(), 0, sizeof(BigTile) * s * s);
+	tiles.resize(s * s);
+	memset(tiles.data(), 0, sizeof(Tile) * s * s);
 
 	for(const Building& b : buildings)
 	{
@@ -32,14 +22,14 @@ void Pathfinding::GenerateBlockedGrid(uint big_size, float tile_size, const vect
 			// bottom
 			if(x != b.doors[Building::DOOR_BOTTOM])
 			{
-				big_tiles[x + pos.y * s].blocked |= BLOCKED_BOTTOM;
-				big_tiles[x + (pos.y - 1) * s].blocked |= BLOCKED_TOP;
+				tiles[x + pos.y * s].blocked |= BLOCKED_BOTTOM;
+				tiles[x + (pos.y - 1) * s].blocked |= BLOCKED_TOP;
 			}
 			// top
 			if(x != b.doors[Building::DOOR_TOP])
 			{
-				big_tiles[x + (pos.y + size.y - 1) * s].blocked |= BLOCKED_TOP;
-				big_tiles[x + (pos.y + size.y) * s].blocked |= BLOCKED_BOTTOM;
+				tiles[x + (pos.y + size.y - 1) * s].blocked |= BLOCKED_TOP;
+				tiles[x + (pos.y + size.y) * s].blocked |= BLOCKED_BOTTOM;
 			}
 		}
 		for(int y = pos.y; y < pos.y + size.y; ++y)
@@ -47,41 +37,17 @@ void Pathfinding::GenerateBlockedGrid(uint big_size, float tile_size, const vect
 			// left
 			if(y != b.doors[Building::DOOR_LEFT])
 			{
-				big_tiles[pos.x + y * s].blocked |= BLOCKED_LEFT;
-				big_tiles[pos.x - 1 + y * s].blocked |= BLOCKED_RIGHT;
+				tiles[pos.x + y * s].blocked |= BLOCKED_LEFT;
+				tiles[pos.x - 1 + y * s].blocked |= BLOCKED_RIGHT;
 			}
 			// right
 			if(y != b.doors[Building::DOOR_RIGHT])
 			{
-				big_tiles[pos.x + size.x - 1 + y * s].blocked |= BLOCKED_RIGHT;
-				big_tiles[pos.x + size.x + y * s].blocked |= BLOCKED_LEFT;
+				tiles[pos.x + size.x - 1 + y * s].blocked |= BLOCKED_RIGHT;
+				tiles[pos.x + size.x + y * s].blocked |= BLOCKED_LEFT;
 			}
 		}
 	}
-}
-
-void Pathfinding::FillCollisionGrid(const Vec3& pos)
-{
-	/*
-	const float radius = 0.3f;
-	const int half_size = size / 2;
-	Int2 tile_pos = Int2(pos.x / tile_size, pos.z / tile_size);
-	memset(tiles.data(), 0, sizeof(Tile) * size * size);
-	colliders.clear();
-	level->GatherColliders(colliders, Box2d(pos.x - half_size * tile_size - radius, pos.z - half_size * tile_size - radius,
-		pos.x + half_size * tile_size + radius, pos.z + half_size * tile_size + radius));
-	for(uint y = 0; y < size; ++y)
-	{
-		for(uint x = 0; x < size; ++x)
-		{
-			Box2d box = Box2d(tile_size * (x + tile_pos.x - half_size) - radius, tile_size * (y + tile_pos.y - half_size) - radius);
-			box.v2 += Vec2(radius * 2 + tile_size);
-			if(Collide(box))
-				tiles[x + y * size].blocked = true;
-		}
-	}
-	last_pos = tile_pos;
-	*/
 }
 
 void Pathfinding::DrawPath(DebugDrawer* debug_drawer, const Vec3& from, const Vec3& to, const vector<Int2>& path)
@@ -123,34 +89,6 @@ void Pathfinding::DrawPath(DebugDrawer* debug_drawer, const Vec3& from, const Ve
 		Int2 end = path.back();
 		debug_drawer->DrawLine(Vec3(tile_size * end.x + tile_size / 2, 0.5f, tile_size * end.y + tile_size / 2), to + Vec3(0, 0.5f, 0), width);
 	}
-
-	/*const int half_size = size / 2;
-	debug_drawer->SetColor(Color(0, 0, 255, 128));
-	Vec3 pos[4];
-	for(int y = 0; y < size; ++y)
-	{
-		for(int x = 0; x < size; ++x)
-		{
-			if(!tiles[x + y * size].blocked)
-			{
-				pos[0] = Vec3(tile_size * (x + last_pos.x - half_size), 0.5f, tile_size * (y + last_pos.y - half_size));
-				pos[1] = pos[0] + Vec3(tile_size, 0, 0);
-				pos[2] = pos[0] + Vec3(0, 0, tile_size);
-				pos[3] = pos[0] + Vec3(tile_size, 0, tile_size);
-				debug_drawer->DrawQuad(pos);
-			}
-		}
-	}*/
-}
-
-bool Pathfinding::Collide(Box2d& box)
-{
-	for(Collider& c : colliders)
-	{
-		if(RectangleToRectangle(box, c.ToBox2d()))
-			return true;
-	}
-	return false;
 }
 
 Pathfinding::FindPathResult Pathfinding::FindPath(const Vec3& from, const Vec3& to, vector<Int2>& path)
@@ -166,7 +104,7 @@ Pathfinding::FindPathResult Pathfinding::FindPath(const Vec3& from, const Vec3& 
 		return FPR_OUTSIDE;
 
 	++calculation_id;
-	BigTile& tile = big_tiles[start_pt.x + start_pt.y * size];
+	Tile& tile = tiles[start_pt.x + start_pt.y * size];
 	tile.dist = Int2::Distance(start_pt, target_pt) * 10;
 	tile.cost = 0;
 	tile.total_cost = tile.dist;
@@ -179,7 +117,7 @@ Pathfinding::FindPathResult Pathfinding::FindPath(const Vec3& from, const Vec3& 
 	{
 		Int2 pt = to_check.back();
 		to_check.pop_back();
-		BigTile& current_tile = big_tiles[pt.x + pt.y * size];
+		Tile& current_tile = tiles[pt.x + pt.y * size];
 
 		struct Dir
 		{
@@ -207,7 +145,7 @@ Pathfinding::FindPathResult Pathfinding::FindPath(const Vec3& from, const Vec3& 
 			Int2 new_pt = pt + dir.dir;
 			if(new_pt.x < 0 || new_pt.y < 0 || new_pt.x >= (int)size || new_pt.y >= (int)size)
 				continue;
-			BigTile& new_tile = big_tiles[new_pt.x + new_pt.y * size];
+			Tile& new_tile = tiles[new_pt.x + new_pt.y * size];
 			if(IS_SET(new_tile.blocked, dir.reverse_blocked))
 				continue;
 			if(new_pt == target_pt)
@@ -234,7 +172,7 @@ Pathfinding::FindPathResult Pathfinding::FindPath(const Vec3& from, const Vec3& 
 				new_tile.prev = pt;
 			}
 		}
-		
+
 		if(done)
 			break;
 
@@ -242,8 +180,8 @@ Pathfinding::FindPathResult Pathfinding::FindPath(const Vec3& from, const Vec3& 
 		{
 			std::sort(to_check.begin(), to_check.end(), [&](const Int2& pt1, const Int2& pt2)
 			{
-				const BigTile& bt1 = big_tiles[pt1.x + pt1.y * size];
-				const BigTile& bt2 = big_tiles[pt2.x + pt2.y * size];
+				const Tile& bt1 = tiles[pt1.x + pt1.y * size];
+				const Tile& bt2 = tiles[pt2.x + pt2.y * size];
 				return bt1.total_cost > bt2.total_cost;
 			});
 		}
@@ -256,7 +194,7 @@ Pathfinding::FindPathResult Pathfinding::FindPath(const Vec3& from, const Vec3& 
 		while(pt != start_pt)
 		{
 			tmp_path.push_back(pt);
-			pt = big_tiles[pt.x + pt.y * size].prev;
+			pt = tiles[pt.x + pt.y * size].prev;
 		}
 		tmp_path.push_back(start_pt);
 		std::reverse(tmp_path.begin(), tmp_path.end());
@@ -278,7 +216,7 @@ void Pathfinding::SimplifyPath(vector<Int2>& path, vector<Int2>& results)
 	results.push_back(prev);
 	for(uint i = 0, count = path.size() - 2; i < count; ++i)
 	{
-		// if there is line of sight from prev to P(i+2) then P(i+1) can be removed 
+		// if there is line of sight from prev to P(i+2) then P(i+1) can be removed
 		if(!LineTest(prev, path[i + 2]))
 		{
 			results.push_back(path[i + 1]);
@@ -297,7 +235,7 @@ bool Pathfinding::LineTest(const Int2& pt1, const Int2& pt2)
 		{
 			for(int y = pt1.y; y < pt2.y; ++y)
 			{
-				if(IS_SET(big_tiles[pt1.x + y * size].blocked, BLOCKED_BOTTOM))
+				if(IS_SET(tiles[pt1.x + y * size].blocked, BLOCKED_BOTTOM))
 					return false;
 			}
 		}
@@ -305,7 +243,7 @@ bool Pathfinding::LineTest(const Int2& pt1, const Int2& pt2)
 		{
 			for(int y = pt2.y; y > pt1.y; ++y)
 			{
-				if(IS_SET(big_tiles[pt1.x + y * size].blocked, BLOCKED_TOP))
+				if(IS_SET(tiles[pt1.x + y * size].blocked, BLOCKED_TOP))
 					return false;
 			}
 		}
@@ -317,7 +255,7 @@ bool Pathfinding::LineTest(const Int2& pt1, const Int2& pt2)
 		{
 			for(int x = pt1.x; x < pt2.x; ++x)
 			{
-				if(IS_SET(big_tiles[x + pt1.y * size].blocked, BLOCKED_RIGHT))
+				if(IS_SET(tiles[x + pt1.y * size].blocked, BLOCKED_RIGHT))
 					return false;
 			}
 		}
@@ -325,7 +263,7 @@ bool Pathfinding::LineTest(const Int2& pt1, const Int2& pt2)
 		{
 			for(int x = pt2.x; x > pt1.x; ++x)
 			{
-				if(IS_SET(big_tiles[x + pt1.y * size].blocked, BLOCKED_LEFT))
+				if(IS_SET(tiles[x + pt1.y * size].blocked, BLOCKED_LEFT))
 					return false;
 			}
 		}
@@ -354,7 +292,7 @@ bool Pathfinding::LineTest(const Int2& pt1, const Int2& pt2)
 		{
 			for(int x = min.x; x <= max.x; ++x)
 			{
-				if(IS_SET(big_tiles[x + y * size].blocked, check_blocked))
+				if(IS_SET(tiles[x + y * size].blocked, check_blocked))
 					return false;
 			}
 		}

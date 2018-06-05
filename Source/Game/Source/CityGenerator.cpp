@@ -539,24 +539,3 @@ Int2 CityGenerator::PosToPt(const Vec3& pos)
 		return Int2(-1, -1);
 	return Int2(int(pos.x / tile_size), int(pos.z / tile_size));
 }
-
-void CityGenerator::GenerateNavmesh()
-{
-	Navmesh& navmesh = level->navmesh;
-	navmesh.Reset();
-	const float tile_size2 = tile_size / 2;
-	const float y = 0.25f;
-	const float pad = wall_width + Unit::radius;
-
-	for(Building& building : buildings)
-	{
-		Int2 pos = building.pos * 2;
-		Int2 size = building.size * 2;
-		Navmesh::Region* region = new Navmesh::Region;
-		region->pos[0] = Vec3(pos.x * tile_size2 + pad, y, pos.y * tile_size2 + pad);
-		region->pos[1] = Vec3((pos.x + size.x) * tile_size2 - pad, y, pos.y * tile_size2 + pad);
-		region->pos[2] = Vec3(pos.x * tile_size2 + pad, y, (pos.y + size.y) * tile_size2 - pad);
-		region->pos[3] = Vec3((pos.x + size.x) * tile_size2 - pad, y, (pos.y + size.y) * tile_size2 - pad);
-		navmesh.regions.push_back(region);
-	}
-}
