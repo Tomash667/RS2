@@ -193,6 +193,7 @@ void Game::StartGame()
 	camera->reset = true;
 	game_state.SetPaused(false);
 	in_game = true;
+	world_tick = 0.f;
 }
 
 void Game::ExitToMenu()
@@ -248,6 +249,7 @@ void Game::UpdateGame(float dt)
 	UpdateZombies(dt);
 	camera->Update(dt, allow_mouse);
 	level->Update(dt);
+	UpdateWorld(dt);
 
 	scene->Update(dt);
 }
@@ -264,12 +266,6 @@ void Game::UpdatePlayer(float dt)
 				level->SpawnBlood(*player);
 		}
 		return;
-	}
-
-	if(input->Pressed(Key::Spacebar))
-	{
-		// FIXME
-		level->SpawnZombie(player->node->pos + Vec3(cos(player->node->rot.y) * 10, 0, sin(player->node->rot.y) * 10));
 	}
 
 	player->last_damage -= dt;
@@ -316,13 +312,13 @@ void Game::UpdatePlayer(float dt)
 		}
 		if(player->item_before && player->item_before != best_item)
 		{
-			player->item_before->node->tint = Vec3::One;
+			player->item_before->node->tint = Vec4::One;
 			player->item_before = nullptr;
 		}
 		if(best_item && best_item != player->item_before)
 		{
 			player->item_before = best_item;
-			best_item->node->tint = Vec3(2, 2, 2);
+			best_item->node->tint = Vec4(2, 2, 2, 1);
 		}
 
 		if(player->action == A_NONE && player->item_before && input->Pressed(Key::E))
@@ -725,7 +721,9 @@ void Game::UpdateZombies(float dt)
 			if(zombie->dying && zombie->node->mesh_inst->GetEndResult(0))
 			{
 				zombie->dying = false;
+				zombie->death_timer = 0;
 				level->SpawnBlood(*zombie);
+				--level->alive_zombies;
 			}
 			continue;
 		}
@@ -1194,5 +1192,72 @@ void Game::OnDebugDraw(DebugDrawer* debug)
 	{
 		if(zombie->hp > 0 && zombie->pf_used)
 			pathfinding->DrawPath(debug, zombie->node->pos, zombie->target_pos, zombie->path);
+	}
+}
+
+void Game::UpdateWorld(float dt)
+{
+	world_tick += dt;
+	if(world_tick < 10.f)
+		return;
+
+	world_tick -= 10.f;
+
+	// remove zombie corpses
+	LoopRemove(level->zombies, [this](Zombie* zombie)
+	{
+		if(!zombie->IsAlive())
+		{
+			++zombie->death_timer;
+			if(zombie->death_timer > 10)
+			{
+				zombie->node->pos.y += 0.1f;
+				if(zombie->death_timer >= 15)
+				{
+					scene->Remove(zombie->node);
+					return true;
+				}
+			}
+		}
+		return false;
+	});
+
+	// remove blood
+	LoopRemove(level->bloods, [this](Blood& blood)
+	{
+		++blood.timer;
+		if(blood.timer >= 15)
+		{
+			blood.node->alpha = true;
+			blood.node->tint.w -= 0.1f;
+			if(blood.node->tint.w <= 0.f)
+			{
+				scene->Remove(blood.node);
+				return true;
+			}
+		}
+		return false;
+	});
+
+	// spawn new zombies
+	if(level->alive_zombies < 25)
+	{
+		if(Rand() % max(1, ((int)level->alive_zombies - 15)) == 0)
+		{
+			Vec2 player_pos = level->player->node->pos.XZ();
+			for(int tries = 0; tries < 5; ++tries)
+			{
+				Vec2 pos = Vec2::Random(0, city_generator->GetMapSize());
+				if(Vec2::Distance(player_pos, pos) < 15.f)
+					continue;
+				if(level->CheckCollision(nullptr, pos))
+				{
+					Vec3 spawn_pos(pos.x, 0, pos.y);
+					spawn_pos.y = city_generator->GetY(spawn_pos);
+					level->SpawnZombie(spawn_pos);
+					break;
+				}
+			}
+		}
 	}
 }

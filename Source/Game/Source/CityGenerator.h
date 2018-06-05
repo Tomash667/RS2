@@ -19,6 +19,7 @@ public:
 	void Generate();
 	void DrawMap();
 	float GetY(const Vec3& pos);
+	float GetMapSize() { return map_size; }
 
 	static const float tile_size;
 	static const float floor_y;

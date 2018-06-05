@@ -16,7 +16,7 @@ struct SceneNode
 		bool is_sphere;
 	};
 
-	SceneNode() : parent(nullptr), parent_point(nullptr), mesh(nullptr), mesh_inst(nullptr), tint(Vec3::One), subs(0xFFFFFFFF), visible(true),
+	SceneNode() : parent(nullptr), parent_point(nullptr), mesh(nullptr), mesh_inst(nullptr), tint(Vec4::One), subs(0xFFFFFFFF), visible(true),
 		container(nullptr), scale(1.f), alpha(false) {}
 	~SceneNode();
 	void Add(SceneNode* node, MeshPoint* point = nullptr);
@@ -32,7 +32,8 @@ struct SceneNode
 	Mesh* mesh;
 	MeshInstance* mesh_inst;
 	Container* container;
-	Vec3 pos, rot, tint;
+	Vec4 tint;
+	Vec3 pos, rot;
 	float scale;
 	int subs;
 	bool visible, alpha;

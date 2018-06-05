@@ -28,7 +28,7 @@ struct Zombie : Unit
 	float timer, timer2, pf_timer;
 	vector<Int2> path;
 	Int2 pf_target;
-	int attack_index;
+	int attack_index, death_timer;
 	bool attacking, pf_used;
 
 	static const float walk_speed;

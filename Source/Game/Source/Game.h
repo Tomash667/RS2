@@ -29,6 +29,7 @@ private:
 	void SearchForTarget(Zombie* zombie);
 	bool CanSee(Unit& unit, const Vec3& pos);
 	void OnDebugDraw(DebugDrawer* debug);
+	void UpdateWorld(float dt);
 
 	unique_ptr<Engine> engine;
 	Scene* scene;
@@ -43,6 +44,7 @@ private:
 	unique_ptr<CityGenerator> city_generator;
 	unique_ptr<Pathfinding> pathfinding;
 	vector<std::pair<Vec3, float>> alert_pos;
+	float world_tick;
 	bool in_game, allow_mouse, quickstart;
 
 	// resources

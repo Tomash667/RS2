@@ -21,6 +21,7 @@ struct Unit
 	Box GetBox() const;
 	Vec3 GetSoundPos() const;
 	float GetAngleDiff(const Vec3& target) const;
+	bool IsAlive() const { return hp > 0; }
 
 	SceneNode* node;
 	int hp;
