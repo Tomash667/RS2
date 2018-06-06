@@ -119,10 +119,11 @@ void Window::CreateWindow()
 
 void Window::CenterWindow()
 {
-	MoveWindow((HWND)hwnd,
-		(GetSystemMetrics(SM_CXSCREEN) - real_size.x) / 2,
-		(GetSystemMetrics(SM_CYSCREEN) - real_size.y) / 2,
-		real_size.x, real_size.y, false);
+	if(!fullscreen)
+		MoveWindow((HWND)hwnd,
+			(GetSystemMetrics(SM_CXSCREEN) - real_size.x) / 2,
+			(GetSystemMetrics(SM_CYSCREEN) - real_size.y) / 2,
+			real_size.x, real_size.y, false);
 }
 
 void Window::RegisterRawInput()
@@ -312,4 +313,42 @@ void Window::ShowCursor(bool show)
 		return;
 	cursor_visible = show;
 	::ShowCursor(show);
+}
+
+void Window::SetFullscreen(bool fullscreen)
+{
+	if(this->fullscreen == fullscreen)
+		return;
+	this->fullscreen = fullscreen;
+	if(!hwnd)
+		return;
+	if(fullscreen)
+	{
+
+	}
+	else
+	{
+		SetWindowLong((HWND)hwnd, GWL_STYLE, WS_OVERLAPPEDWINDOW);
+		SetWindowPos((HWND)hwnd, HWND_NOTOPMOST,
+			(GetSystemMetrics(SM_CXSCREEN) - real_size.x) / 2,
+			(GetSystemMetrics(SM_CYSCREEN) - real_size.y) / 2,
+			real_size.x, real_size.y,
+			SWP_FRAMECHANGED | SWP_NOACTIVATE);
+		ShowWindow((HWND)hwnd, SW_NORMAL);
+	}
+}
+
+void Window::SetSize(const Int2& size)
+{
+	if(this->size == size)
+		return;
+	this->size = size;
+	if(!hwnd)
+		return;
+	AdjustWindowSize();
+	SetWindowPos((HWND)hwnd, HWND_NOTOPMOST,
+		(GetSystemMetrics(SM_CXSCREEN) - real_size.x) / 2,
+		(GetSystemMetrics(SM_CYSCREEN) - real_size.y) / 2,
+		real_size.x, real_size.y,
+		SWP_NOACTIVATE);
 }

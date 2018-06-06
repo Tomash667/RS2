@@ -97,7 +97,7 @@ void Render::CreateDeviceAndSwapChain()
 
 	IDXGIFactory* factory;
 	C(adapter->GetParent(IID_PPV_ARGS(&factory)));
-	C(factory->MakeWindowAssociation(swap_desc.OutputWindow, DXGI_MWA_NO_WINDOW_CHANGES));
+	C(factory->MakeWindowAssociation(swap_desc.OutputWindow, DXGI_MWA_NO_ALT_ENTER));
 
 	factory->Release();
 	adapter->Release();
