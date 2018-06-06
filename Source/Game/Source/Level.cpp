@@ -392,7 +392,7 @@ void Level::Save(FileWriter& f)
 void Level::Load(FileReader& f)
 {
 	// player
-	player = new Player(this);
+	SpawnPlayer(Vec3::Zero);
 	player->Load(f);
 
 	// zombies

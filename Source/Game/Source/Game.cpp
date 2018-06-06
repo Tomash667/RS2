@@ -108,6 +108,7 @@ void Game::InitLogger()
 
 void Game::InitEngine()
 {
+	Info("Initializing engine.");
 	engine->GetWindow()->SetTitle("Rouge Survival v" VERSION_STR);
 	engine->Init(this);
 
@@ -119,6 +120,7 @@ void Game::InitEngine()
 
 void Game::InitGame()
 {
+	Info("Initializing game.");
 	in_game = false;
 
 	Srand();
@@ -192,7 +194,7 @@ void Game::StartGame(bool load)
 	game_gui->visible = true;
 	if(!load)
 	{
-		Info("Generating world.");
+		Info("Starting new game.");
 		city_generator->Generate();
 		camera->reset = true;
 		world_tick = 0.f;
@@ -222,8 +224,10 @@ bool Game::OnTick(float dt)
 
 	if(in_game)
 	{
-		if(change_state == GameState::EXIT_TO_MENU)
+		if(change_state == GameState::SAVE_AND_EXIT)
 			SaveAndExit();
+		else if(change_state == GameState::EXIT_TO_MENU)
+			ExitToMenu();
 		else
 			UpdateGame(dt);
 	}
@@ -1277,6 +1281,7 @@ void Game::SaveAndExit()
 		return;
 	}
 
+	Info("Saved game.");
 	ExitToMenu();
 }
 
@@ -1286,7 +1291,7 @@ void Game::Save(FileWriter& f)
 		throw "Failed to open file.";
 
 	// header
-	char sign[] = { 'R','S','A','V' };
+	byte sign[] = { 'R','S','A','V' };
 	f << sign;
 	f << VERSION;
 
@@ -1314,6 +1319,8 @@ void Game::LoadGame()
 		return;
 	}
 
+	Info("Loaded game.");
+	io::DeleteFile("save");
 	StartGame(true);
 }
 
@@ -1333,8 +1340,8 @@ void Game::Load(FileReader& f)
 		throw "Failed to open file.";
 
 	// file sign
-	char sign[] = { 'R','S','A','V' };
-	char sign2[4];
+	byte sign[] = { 'R','S','A','V' };
+	byte sign2[4];
 	f >> sign2;
 	if(memcmp(sign, sign2, sizeof(sign)) != 0)
 		throw "Invalid save header.";

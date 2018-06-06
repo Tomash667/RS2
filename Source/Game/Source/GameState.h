@@ -9,6 +9,7 @@ public:
 		NEW_GAME,
 		CONTINUE,
 		EXIT_TO_MENU,
+		SAVE_AND_EXIT,
 		QUIT
 	};
 

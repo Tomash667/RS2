@@ -305,7 +305,7 @@ void GameGui::Update(float dt)
 	else if(game_state->IsPaused())
 	{
 		if(input->Pressed(Key::Enter))
-			game_state->SetChangeState(GameState::EXIT_TO_MENU);
+			game_state->SetChangeState(GameState::SAVE_AND_EXIT);
 		else if(input->Pressed(Key::Escape))
 			game_state->SetPaused(false);
 	}

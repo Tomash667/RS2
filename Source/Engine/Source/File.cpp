@@ -1,6 +1,8 @@
 #include "Core.h"
 #include <Windows.h>
 
+#undef DeleteFile
+
 static DWORD tmp;
 string FileReader::buf;
 
@@ -104,5 +106,10 @@ namespace io
 		if(attrib == INVALID_FILE_ATTRIBUTES)
 			return false;
 		return !IS_SET(attrib, FILE_ATTRIBUTE_DIRECTORY);
+	}
+
+	void DeleteFile(Cstring path)
+	{
+		DeleteFileA(path);
 	}
 }

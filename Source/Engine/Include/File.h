@@ -141,7 +141,7 @@ public:
 			v.clear();
 		else
 		{
-			v.resize(sizeof(T) * size);
+			v.resize(size);
 			Read(v.data(), sizeof(T) * size);
 		}
 	}
@@ -163,12 +163,12 @@ public:
 	template<typename T>
 	void Read(vector<T>& v)
 	{
-		ReadVector1(v);
+		ReadVector2(v);
 	}
 	template<typename T>
 	void operator >> (vector<T>& v)
 	{
-		ReadVector1(v);
+		ReadVector2(v);
 	}
 
 private:
@@ -281,10 +281,10 @@ public:
 	template<typename SizeType, typename T>
 	void WriteVector(const vector<T>& v)
 	{
-		assert(v.size() <= std::numeric_limits<SizeType>::max());
+		assert(v.size() <= (size_t)std::numeric_limits<SizeType>::max());
 		SizeType size = (SizeType)v.size();
 		Write(size);
-		Write(v.data(), size);
+		Write(v.data(), size * sizeof(T));
 	}
 	template<typename T>
 	void WriteVector1(const vector<T>& v)
@@ -304,12 +304,12 @@ public:
 	template<typename T>
 	void Write(const vector<T>& v)
 	{
-		WriteVector1(v);
+		WriteVector2(v);
 	}
 	template<typename T>
 	void operator << (const vector<T>& v)
 	{
-		WriteVector1(v);
+		WriteVector2(v);
 	}
 
 private:
@@ -321,4 +321,5 @@ private:
 namespace io
 {
 	bool FileExists(Cstring path);
+	void DeleteFile(Cstring path);
 }
