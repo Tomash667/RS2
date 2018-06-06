@@ -41,6 +41,11 @@ void MainMenu::Init(ResourceManager* res_mgr, GameState* game_state)
 	Button::default_layout.font_color_disabled = Color(50, 50, 50);
 	Button::default_layout.corners = Int2(6, 32);
 
+	DialogBox::default_layout.background = res_mgr->GetTexture("panel.png");
+	DialogBox::default_layout.corners = Int2(6, 32);
+	DialogBox::default_layout.background_color = Color(255, 255, 255, 200);
+	DialogBox::default_layout.font_color = Color(0, 255, 33);
+
 	cstring texts[BUTTON_MAX] = {
 		"Continue",
 		"New game",
@@ -64,16 +69,16 @@ void MainMenu::Init(ResourceManager* res_mgr, GameState* game_state)
 	for(int i = 0; i < 3; ++i)
 		buttons[i]->pos = Int2(part * i + (part - buttons[0]->size.x) / 2, pos_y);
 
-	buttons[0]->state = Button::DISABLED;
-
 	gui->Add(this);
-	gui->SetCursorVisible(true);
+
+	Show();
 }
 
 void MainMenu::Show()
 {
 	visible = true;
 	gui->SetCursorVisible(true);
+	buttons[0]->state = (io::FileExists("save") ? Button::UP : Button::DISABLED);
 }
 
 void MainMenu::Hide()

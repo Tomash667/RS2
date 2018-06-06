@@ -23,6 +23,8 @@ struct Unit
 	Vec3 GetSoundPos() const;
 	float GetAngleDiff(const Vec3& target) const;
 	bool IsAlive() const { return hp > 0; }
+	void Save(FileWriter& f);
+	void Load(FileReader& f);
 
 	SceneNode* node;
 	int hp;

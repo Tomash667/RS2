@@ -589,3 +589,40 @@ void MeshInstance::SetProgress(uint group_index, float progress)
 		need_update = true;
 	}
 }
+
+//=================================================================================================
+void MeshInstance::Save(FileWriter& f)
+{
+	assert(mesh);
+
+	for(Group& group : groups)
+	{
+		f << group.time;
+		f << group.speed;
+		f << (group.state & ~FLAG_BLENDING);
+		f << group.prio;
+		f << group.used_group;
+		f << (group.anim ? group.anim->name : "");
+		f << group.frame_end_info;
+	}
+}
+
+//=================================================================================================
+void MeshInstance::Load(FileReader& f)
+{
+	assert(mesh);
+
+	for(Group& group : groups)
+	{
+		f >> group.time;
+		f >> group.speed;
+		f >> group.state;
+		f >> group.prio;
+		f >> group.used_group;
+		const string& anim_name = f.ReadString1();
+		group.anim = (anim_name.empty() ? nullptr : mesh->GetAnimation(anim_name.c_str()));
+		f >> group.frame_end_info;
+	}
+
+	need_update = true;
+}

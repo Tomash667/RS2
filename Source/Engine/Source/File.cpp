@@ -1,10 +1,13 @@
 #include "Core.h"
 #include <Windows.h>
 
+#undef DeleteFile
+
 static DWORD tmp;
 string FileReader::buf;
 
 
+//-----------------------------------------------------------------------------
 FileReader::~FileReader()
 {
 	if(own_handle && file != INVALID_HANDLE_VALUE)
@@ -60,6 +63,7 @@ uint FileReader::GetPos() const
 }
 
 
+//-----------------------------------------------------------------------------
 FileWriter::~FileWriter()
 {
 	if(own_handle && file != INVALID_HANDLE_VALUE)
@@ -90,4 +94,22 @@ void FileWriter::Flush()
 uint FileWriter::GetSize() const
 {
 	return GetFileSize(file, nullptr);
+}
+
+
+//-----------------------------------------------------------------------------
+namespace io
+{
+	bool FileExists(Cstring path)
+	{
+		DWORD attrib = GetFileAttributes(path);
+		if(attrib == INVALID_FILE_ATTRIBUTES)
+			return false;
+		return !IS_SET(attrib, FILE_ATTRIBUTE_DIRECTORY);
+	}
+
+	void DeleteFile(Cstring path)
+	{
+		DeleteFileA(path);
+	}
 }

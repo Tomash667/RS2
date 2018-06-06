@@ -87,6 +87,8 @@ public:
 	void Reset();
 	void ResetAnimation();
 	void SetProgress(uint group, float progress);
+	void Save(FileWriter& f);
+	void Load(FileReader& f);
 
 	bool IsBlending() const;
 

@@ -68,6 +68,7 @@ struct Button : Control
 	Button(Layout& layout) : layout(layout), id(0), event(nullptr), state(UP) {}
 	void Draw() override;
 	void Update(float dt) override;
+	void CalculateSize(const Int2& padding = Int2(10, 10));
 
 	Layout& layout;
 	int id;
@@ -76,5 +77,30 @@ struct Button : Control
 	string text;
 
 	static void NormalizeSize(Button* buttons[], uint count, const Int2& padding);
+	static Layout default_layout;
+};
+
+//-----------------------------------------------------------------------------
+struct DialogBox : Control
+{
+	struct Layout
+	{
+		Font* font;
+		Texture* background;
+		Color background_color, font_color;
+		Int2 corners;
+	};
+
+	DialogBox() : layout(default_layout) {}
+	DialogBox(Layout& layout) : layout(layout) {}
+	void Draw() override;
+	void Update(float dt) override;
+	void OnEvent(int);
+
+	Layout& layout;
+	string text;
+	Button button;
+	Rect rect;
+
 	static Layout default_layout;
 };

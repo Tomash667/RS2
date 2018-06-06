@@ -349,3 +349,112 @@ void Level::GatherColliders(vector<Collider>& results, const Box2d& box)
 		}
 	}
 }
+
+void Level::Save(FileWriter& f)
+{
+	// player
+	player->Save(f);
+
+	// zombies
+	f << zombies.size();
+	for(Zombie* zombie : zombies)
+		zombie->Save(f);
+	f << alive_zombies;
+
+	// ground items
+	f << items.size();
+	for(GroundItem& item : items)
+	{
+		f << item.item->id;
+		f << item.pos;
+	}
+
+	// bloods
+	f << active_bloods.size();
+	for(SceneNode* node : active_bloods)
+	{
+		f << node->pos;
+		f << node->rot.y;
+		f << node->scale;
+		f << (node->mesh == mesh_blood_pool);
+	}
+	f << bloods.size();
+	for(Blood& blood : bloods)
+	{
+		f << blood.node->pos;
+		f << blood.node->rot.y;
+		f << blood.node->tint.w;
+		f << (blood.node->mesh == mesh_blood_pool);
+		f << blood.timer;
+	}
+}
+
+void Level::Load(FileReader& f)
+{
+	// player
+	SpawnPlayer(Vec3::Zero);
+	player->Load(f);
+
+	// zombies
+	uint count;
+	f >> count;
+	zombies.reserve(count);
+	for(uint i = 0; i < count; ++i)
+	{
+		Zombie* zombie = new Zombie;
+		zombie->node = new SceneNode;
+		zombie->node->mesh = mesh_zombie;
+		zombie->node->mesh_inst = new MeshInstance(mesh_zombie);
+		zombie->Load(f);
+		zombies.push_back(zombie);
+		scene->Add(zombie->node);
+	}
+	f >> alive_zombies;
+
+	// ground items
+	items.resize(f.Read<uint>());
+	for(GroundItem& item : items)
+	{
+		item.item = Item::Get(f.ReadString1());
+		f >> item.pos;
+		item.node = new SceneNode;
+		item.node->mesh = item.item->mesh;
+		item.node->pos = item.item->ground_offset + item.pos;
+		item.node->rot = item.item->ground_rot;
+		scene->Add(item.node);
+	}
+
+	// bloods
+	f >> count;
+	active_bloods.reserve(count);
+	for(uint i = 0; i < count; ++i)
+	{
+		SceneNode* node = new SceneNode;
+		f >> node->pos;
+		f >> node->rot.y;
+		node->rot.x = 0;
+		node->rot.z = 0;
+		f >> node->scale;
+		node->mesh = (f.Read<bool>() ? mesh_blood_pool : mesh_zombie_blood_pool);
+		node->alpha = true;
+		active_bloods.push_back(node);
+		scene->Add(node);
+	}
+	f >> count;
+	bloods.reserve(count);
+	for(uint i = 0; i < count; ++i)
+	{
+		SceneNode* node = new SceneNode;
+		f >> node->pos;
+		f >> node->rot.y;
+		node->rot.x = 0;
+		node->rot.z = 0;
+		f >> node->tint.w;
+		node->mesh = (f.Read<bool>() ? mesh_blood_pool : mesh_zombie_blood_pool);
+		node->alpha = true;
+		int timer;
+		f >> timer;
+		bloods.push_back({ node, timer });
+		scene->Add(node);
+	}
+}

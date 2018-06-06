@@ -35,6 +35,7 @@ struct Texture;
 struct Button;
 struct Container;
 struct Control;
+struct DialogBox;
 struct Label;
 struct Panel;
 struct ProgressBar;

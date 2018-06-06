@@ -9,5 +9,5 @@ v1 (2018-05-??):
 + simple inventory
 + playing sounds
 + simple lighting, skybox
-+ main menu, death screen
++ main menu, death screen, save & load game
 + blood pools

@@ -24,6 +24,7 @@
 #include "MainMenu.h"
 #include "GameState.h"
 #include "Pathfinding.h"
+#include <Gui.h>
 
 
 const int level_size = 32;
@@ -107,6 +108,7 @@ void Game::InitLogger()
 
 void Game::InitEngine()
 {
+	Info("Initializing engine.");
 	engine->GetWindow()->SetTitle("Rouge Survival v" VERSION_STR);
 	engine->Init(this);
 
@@ -118,6 +120,7 @@ void Game::InitEngine()
 
 void Game::InitGame()
 {
+	Info("Initializing game.");
 	in_game = false;
 
 	Srand();
@@ -185,15 +188,19 @@ void Game::LoadResources()
 	Item::LoadData(res_mgr);
 }
 
-void Game::StartGame()
+void Game::StartGame(bool load)
 {
 	main_menu->Hide();
 	game_gui->visible = true;
-	city_generator->Generate();
-	camera->reset = true;
+	if(!load)
+	{
+		Info("Starting new game.");
+		city_generator->Generate();
+		camera->reset = true;
+		world_tick = 0.f;
+	}
 	game_state.SetPaused(false);
 	in_game = true;
-	world_tick = 0.f;
 }
 
 void Game::ExitToMenu()
@@ -217,7 +224,9 @@ bool Game::OnTick(float dt)
 
 	if(in_game)
 	{
-		if(change_state == GameState::EXIT_TO_MENU)
+		if(change_state == GameState::SAVE_AND_EXIT)
+			SaveAndExit();
+		else if(change_state == GameState::EXIT_TO_MENU)
 			ExitToMenu();
 		else
 			UpdateGame(dt);
@@ -225,9 +234,7 @@ bool Game::OnTick(float dt)
 	else
 	{
 		if(change_state == GameState::CONTINUE)
-		{
-			// TODO
-		}
+			LoadGame();
 		else if(change_state == GameState::NEW_GAME || quickstart)
 		{
 			quickstart = false;
@@ -411,7 +418,7 @@ void Game::UpdatePlayer(float dt)
 					{
 						player->ranged_weapon = player->item_before->item;
 						player->current_ammo = 10;
-					}
+				}
 					else
 						player->ammo += 10;
 					break;
@@ -460,7 +467,7 @@ void Game::UpdatePlayer(float dt)
 		{
 			sound_mgr->PlaySound3d(sound_reload, player->GetSoundPos(), 2.f);
 			player->action_state = 1;
-		}
+	}
 		if(player->node->mesh_inst->GetEndResult(1))
 		{
 			uint ammo = min(player->ammo, 10u - player->current_ammo);
@@ -1106,7 +1113,7 @@ void Game::HitUnit(Unit& unit, int dmg, const Vec3& hitpoint)
 	else
 	{
 		if(unit.last_damage <= 0.f && Rand() % 3 == 0)
-			sound_mgr->PlaySound3d(unit.is_zombie ? sound_zombie_hurt : sound_player_hurt, unit.GetSoundPos(), 2.f);
+		sound_mgr->PlaySound3d(unit.is_zombie ? sound_zombie_hurt : sound_player_hurt, unit.GetSoundPos(), 2.f);
 
 		if(unit.is_zombie)
 		{
@@ -1228,7 +1235,6 @@ void Game::UpdateWorld(float dt)
 		++blood.timer;
 		if(blood.timer >= 15)
 		{
-			blood.node->alpha = true;
 			blood.node->tint.w -= 0.1f;
 			if(blood.node->tint.w <= 0.f)
 			{
@@ -1260,4 +1266,107 @@ void Game::UpdateWorld(float dt)
 			}
 		}
 	}
+}
+
+void Game::SaveAndExit()
+{
+	try
+	{
+		FileWriter f("save");
+		Save(f);
+	}
+	catch(cstring err)
+	{
+		ShowErrorMessage(Format("Failed to save game.\n%s", err));
+		return;
+	}
+
+	Info("Saved game.");
+	ExitToMenu();
+}
+
+void Game::Save(FileWriter& f)
+{
+	if(!f)
+		throw "Failed to open file.";
+
+	// header
+	byte sign[] = { 'R','S','A','V' };
+	f << sign;
+	f << VERSION;
+
+	// level
+	level->Save(f);
+	city_generator->Save(f);
+	f << world_tick;
+	f << alert_pos;
+
+	// camera
+	camera->Save(f);
+}
+
+void Game::LoadGame()
+{
+	try
+	{
+		FileReader f("save");
+		Load(f);
+	}
+	catch(cstring err)
+	{
+		ShowErrorMessage(Format("Failed to load game.\n%s", err));
+		ExitToMenu();
+		return;
+	}
+
+	Info("Loaded game.");
+	io::DeleteFile("save");
+	StartGame(true);
+}
+
+cstring VersionToString(int version)
+{
+	int major = (version & 0xFF00) >> 8;
+	int minor = version & 0xFF;
+	if(minor == 0)
+		return Format("%d", major);
+	else
+		return Format("%d.%d", major, minor);
+}
+
+void Game::Load(FileReader& f)
+{
+	if(!f)
+		throw "Failed to open file.";
+
+	// file sign
+	byte sign[] = { 'R','S','A','V' };
+	byte sign2[4];
+	f >> sign2;
+	if(memcmp(sign, sign2, sizeof(sign)) != 0)
+		throw "Invalid save header.";
+
+	// version
+	int version;
+	f >> version;
+	version &= 0xFFFF;
+	if(version != VERSION)
+		throw Format("Invalid save version %s.", VersionToString(version));
+
+	// level
+	level->Load(f);
+	city_generator->Load(f);
+	f >> world_tick;
+	f >> alert_pos;
+
+	// camera
+	camera->Load(f);
+
+	if(!f)
+		throw "Broken file.";
+}
+
+void Game::ShowErrorMessage(cstring err)
+{
+	engine->GetGui()->ShowMessageBox(err);
 }

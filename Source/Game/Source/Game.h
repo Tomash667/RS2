@@ -15,7 +15,7 @@ private:
 	void InitEngine();
 	void InitGame();
 	void LoadResources();
-	void StartGame();
+	void StartGame(bool load = false);
 	void ExitToMenu();
 	bool OnTick(float dt) override;
 	void UpdateGame(float dt);
@@ -30,6 +30,11 @@ private:
 	bool CanSee(Unit& unit, const Vec3& pos);
 	void OnDebugDraw(DebugDrawer* debug);
 	void UpdateWorld(float dt);
+	void SaveAndExit();
+	void Save(FileWriter& f);
+	void LoadGame();
+	void Load(FileReader& f);
+	void ShowErrorMessage(cstring err);
 
 	unique_ptr<Engine> engine;
 	Scene* scene;

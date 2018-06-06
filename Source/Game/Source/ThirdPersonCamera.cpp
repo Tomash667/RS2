@@ -117,3 +117,25 @@ void ThirdPersonCamera::SetAim(bool enabled)
 		shift = 0.25f;
 	}
 }
+
+void ThirdPersonCamera::Save(FileWriter& f)
+{
+	f << cam->from;
+	f << cam->to;
+	f << rot;
+	f << dist;
+	f << shift;
+	f << aim;
+	f << reset;
+}
+
+void ThirdPersonCamera::Load(FileReader& f)
+{
+	f >> cam->from;
+	f >> cam->to;
+	f >> rot;
+	f >> dist;
+	f >> shift;
+	f >> aim;
+	f >> reset;
+}

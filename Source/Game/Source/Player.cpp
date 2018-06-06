@@ -89,3 +89,77 @@ Vec3 Player::GetShootPos()
 		* Matrix::Translation(node->pos);
 	return Vec3::TransformZero(m);
 }
+
+void Player::Save(FileWriter& f)
+{
+	Unit::Save(f);
+
+	if(IsAlive())
+	{
+		f << action;
+		f << action_state;
+		f << idle_timer;
+		f << idle_timer_max;
+		f << rot_buf;
+		f << last_rot;
+		f << shot_delay;
+		f << aim;
+		f << food;
+		f << hungry_timer;
+	}
+	else
+	{
+		f << dying;
+		f << death_starved;
+	}
+
+	// inventory
+	f << (melee_weapon ? melee_weapon->id : "");
+	f << (ranged_weapon ? ranged_weapon->id : "");
+	f << medkits;
+	f << food_cans;
+	f << ammo;
+	f << current_ammo;
+	f << use_melee;
+}
+
+void Player::Load(FileReader& f)
+{
+	Unit::Load(f);
+
+	if(IsAlive())
+	{
+		f >> action;
+		f >> action_state;
+		f >> idle_timer;
+		f >> idle_timer_max;
+		f >> rot_buf;
+		f >> last_rot;
+		f >> shot_delay;
+		f >> aim;
+		f >> food;
+		f >> hungry_timer;
+	}
+	else
+	{
+		f >> dying;
+		f >> death_starved;
+	}
+
+	// inventory
+	melee_weapon = Item::Get(f.ReadString1());
+	ranged_weapon = Item::Get(f.ReadString1());
+	f >> medkits;
+	f >> food_cans;
+	f >> ammo;
+	f >> current_ammo;
+	f >> use_melee;
+
+	item_before = nullptr;
+	if(!use_melee)
+	{
+		weapon->mesh = ranged_weapon->mesh;
+		weapon->SetParentPoint(node->mesh->GetPoint("pistol"));
+		level->scene->RecycleMeshInstance(weapon);
+	}
+}

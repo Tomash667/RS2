@@ -9,7 +9,7 @@ struct Control
 	virtual void Update(float dt) {}
 
 	Int2 pos, size;
-	bool visible;
+	bool visible, mouse_focus;
 	static Gui* gui;
 };
 

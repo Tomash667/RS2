@@ -196,8 +196,6 @@ void GameGui::Draw()
 		gui->DrawText(text, nullptr, Color::Black, Font::Top | Font::Center, Rect::Create(text_pos, text_size));
 	}
 
-	
-
 	if(death_timer > 1.f)
 	{
 		// death screen
@@ -307,7 +305,7 @@ void GameGui::Update(float dt)
 	else if(game_state->IsPaused())
 	{
 		if(input->Pressed(Key::Enter))
-			game_state->SetChangeState(GameState::EXIT_TO_MENU);
+			game_state->SetChangeState(GameState::SAVE_AND_EXIT);
 		else if(input->Pressed(Key::Escape))
 			game_state->SetPaused(false);
 	}

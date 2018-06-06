@@ -6,12 +6,13 @@
 #include "Font.h"
 #include "Input.h"
 
-Gui::Gui() : v(nullptr), cursor_visible(false), tex_cursor(nullptr)
+Gui::Gui() : v(nullptr), cursor_visible(false), tex_cursor(nullptr), dialog(nullptr)
 {
 }
 
 Gui::~Gui()
 {
+	delete dialog;
 }
 
 void Gui::Init(Render* render, ResourceManager* res_mgr, Input* input)
@@ -36,20 +37,34 @@ void Gui::Draw(const Matrix& mat_view_proj)
 
 	Container::Draw();
 
-	if(cursor_visible && tex_cursor)
+	if(HaveDialog())
+		dialog->Draw();
+
+	if((cursor_visible || HaveDialog()) && tex_cursor)
 		DrawSprite(tex_cursor, cursor_pos, Int2(32, 32));
 }
 
 void Gui::Update(float dt)
 {
-	if(cursor_visible)
+	if(cursor_visible || HaveDialog())
 	{
 		cursor_pos += input->GetMouseDif();
 		cursor_pos.x = Clamp(cursor_pos.x, 0, wnd_size.x - 1);
 		cursor_pos.y = Clamp(cursor_pos.y, 0, wnd_size.y - 1);
 	}
 
-	Container::Update(dt);
+	if(!HaveDialog())
+	{
+		mouse_focus = true;
+		Container::Update(dt);
+	}
+	else
+	{
+		mouse_focus = false;
+		Container::Update(dt);
+		dialog->mouse_focus = true;
+		dialog->Update(dt);
+	}
 }
 
 void Gui::DrawSprite(Texture* image, const Int2& pos, const Int2& size, Color color)
@@ -337,4 +352,29 @@ void Gui::SetWindowSize(const Int2& wnd_size)
 	if(gui_shader)
 		gui_shader->SetWindowSize(wnd_size);
 	cursor_pos = wnd_size / 2;
+}
+
+void Gui::ShowMessageBox(Cstring text)
+{
+	assert(!dialog); // max 1 dialog at once currently
+	dialog = new DialogBox;
+	dialog->text = text;
+	dialog->button.text = "OK";
+	dialog->button.CalculateSize();
+	Font* font = dialog->layout.font ? dialog->layout.font : GetDefaultFont();
+	Int2 text_size = font->CalculateSize(dialog->text, wnd_size.x - 100);
+	dialog->size.x = max(text_size.x, dialog->button.size.x) + 10 + dialog->layout.corners.x * 2;
+	dialog->size.y = text_size.y + dialog->button.size.y + 15 + dialog->layout.corners.x * 2;
+	dialog->pos = (wnd_size - dialog->size) / 2;
+	dialog->button.pos = Int2((wnd_size.x - dialog->button.size.x) / 2, dialog->pos.y + 10 + dialog->layout.corners.x + text_size.y);
+	dialog->rect = Rect(dialog->pos.x + dialog->layout.corners.x + 5, dialog->pos.y + dialog->layout.corners.x + 5);
+	dialog->rect.p2 += text_size;
+	dialog->button.event = delegate<void(int)>(dialog, &DialogBox::OnEvent);
+}
+
+void Gui::CloseDialog()
+{
+	assert(HaveDialog());
+	delete dialog;
+	dialog = nullptr;
 }

@@ -12,6 +12,8 @@ public:
 	void Draw(const Matrix& mat_view_proj);
 	void Update(float dt) override;
 	bool To2dPoint(const Vec3& pos, Int2& pt);
+	void ShowMessageBox(Cstring text);
+	void CloseDialog();
 
 	void DrawSprite(Texture* image, const Int2& pos, const Int2& size, Color color = Color::White);
 	void DrawSpritePart(Texture* image, const Int2& pos, const Int2& size, const Vec2& part, Color color = Color::White);
@@ -24,6 +26,7 @@ public:
 	void SetCursorVisible(bool visible) { cursor_visible = visible; }
 	void SetWindowSize(const Int2& wnd_size);
 
+	bool HaveDialog() { return dialog != nullptr; }
 	bool IsCursorVisible() { return cursor_visible; }
 	const Int2& GetCursorPos() { return cursor_pos; }
 	Font* GetDefaultFont() { return default_font; }
@@ -65,5 +68,6 @@ private:
 	Int2 wnd_size, cursor_pos;
 	Matrix mat_view_proj;
 	Texture* tex_cursor;
+	DialogBox* dialog;
 	bool cursor_visible;
 };

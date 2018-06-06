@@ -22,6 +22,6 @@ struct Item
 	int value, value2;
 	Vec3 ground_offset, ground_rot;
 
-	static Item* Get(cstring id);
+	static Item* Get(Cstring id);
 	static void LoadData(ResourceManager* res_mgr);
 };

@@ -39,6 +39,8 @@ public:
 	void SpawnBlood(Unit& unit);
 	void Update(float dt);
 	void GatherColliders(vector<Collider>& results, const Box2d& box);
+	void Save(FileWriter& f);
+	void Load(FileReader& f);
 
 	Scene* scene;
 	Player* player;
