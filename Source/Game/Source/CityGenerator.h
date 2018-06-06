@@ -29,6 +29,7 @@ public:
 
 private:
 	void GenerateMap();
+	void FillBuildings();
 	void CreateScene();
 	void SpawnItems();
 	void SpawnZombies();

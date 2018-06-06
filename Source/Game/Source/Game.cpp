@@ -194,11 +194,11 @@ void Game::StartGame(bool load)
 	{
 		Info("Generating world.");
 		city_generator->Generate();
+		camera->reset = true;
+		world_tick = 0.f;
 	}
-	camera->reset = true;
 	game_state.SetPaused(false);
 	in_game = true;
-	world_tick = 0.f;
 }
 
 void Game::ExitToMenu()
@@ -1231,7 +1231,6 @@ void Game::UpdateWorld(float dt)
 		++blood.timer;
 		if(blood.timer >= 15)
 		{
-			blood.node->alpha = true;
 			blood.node->tint.w -= 0.1f;
 			if(blood.node->tint.w <= 0.f)
 			{
@@ -1293,6 +1292,7 @@ void Game::Save(FileWriter& f)
 
 	// level
 	level->Save(f);
+	city_generator->Save(f);
 	f << world_tick;
 	f << alert_pos;
 
@@ -1348,6 +1348,7 @@ void Game::Load(FileReader& f)
 
 	// level
 	level->Load(f);
+	city_generator->Load(f);
 	f >> world_tick;
 	f >> alert_pos;
 

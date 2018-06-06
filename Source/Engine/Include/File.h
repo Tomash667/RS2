@@ -37,8 +37,6 @@ public:
 	bool IsOk() const { return ok; }
 	operator bool() const { return IsOk(); }
 
-	
-
 	template<typename T>
 	T Read()
 	{
@@ -55,14 +53,6 @@ public:
 	void operator >> (T& a)
 	{
 		Read(&a, sizeof(a));
-	}
-
-	
-
-	template<>
-	void Read(string& s)
-	{
-		ReadString1(s);
 	}
 
 	template<typename T, typename T2>
@@ -84,23 +74,17 @@ public:
 		}
 		return buf;
 	}
-
 	const string& ReadString1()
 	{
 		return ReadString<byte>();
 	}
-
-	template<typename T>
-	void Skip(typename std::enable_if<(sizeof(T) <= 8)>::type* = 0)
+	const string& ReadString2()
 	{
-		T val;
-		Read(val);
+		return ReadString<word>();
 	}
-
-	template<typename T>
-	void Skip(typename std::enable_if<(sizeof(T) > 8)>::type* = 0)
+	const string& ReadString4()
 	{
-		Skip(sizeof(T));
+		return ReadString<uint>();
 	}
 
 	template<typename SizeType>
@@ -115,42 +99,72 @@ public:
 			Read((char*)s.c_str(), len);
 		}
 	}
-
 	void ReadString1(string& s)
 	{
 		ReadString<byte>(s);
 	}
-
-	bool ReadString2(string& s)
+	void ReadString2(string& s)
 	{
 		ReadString<word>(s);
 	}
-
+	void ReadString4(string& s)
+	{
+		ReadString<uint>(s);
+	}
+	template<>
+	void Read(string& s)
+	{
+		ReadString1(s);
+	}
 	void operator >> (string& s)
 	{
 		ReadString1(s);
 	}
 
 	template<typename T>
-	void ReadVector1(vector<T>& v)
+	void Skip(typename std::enable_if<(sizeof(T) <= 8)>::type* = 0)
 	{
-		byte count;
-		Read(count);
-		v.resize(count);
-		if(count)
-			Read(&v[0], sizeof(T)*count);
+		T val;
+		Read(val);
+	}
+	template<typename T>
+	void Skip(typename std::enable_if<(sizeof(T) > 8)>::type* = 0)
+	{
+		Skip(sizeof(T));
 	}
 
+	template<typename SizeType, typename T>
+	void ReadVector(vector<T>& v)
+	{
+		SizeType size = Read<SizeType>();
+		if(!ok || size == 0)
+			v.clear();
+		else
+		{
+			v.resize(sizeof(T) * size);
+			Read(v.data(), sizeof(T) * size);
+		}
+	}
+	template<typename T>
+	void ReadVector1(vector<T>& v)
+	{
+		ReadVector<byte>(v);
+	}
 	template<typename T>
 	void ReadVector2(vector<T>& v)
 	{
-		word count;
-		Read(count);
-		v.resize(count);
-		if(count)
-			Read(&v[0], sizeof(T)*count);
+		ReadVector<word>(v);
 	}
-
+	template<typename T>
+	void ReadVector4(vector<T>& v)
+	{
+		ReadVector<uint>(v);
+	}
+	template<typename T>
+	void Read(vector<T>& v)
+	{
+		ReadVector1(v);
+	}
 	template<typename T>
 	void operator >> (vector<T>& v)
 	{
@@ -240,6 +254,15 @@ public:
 		WriteString<uint>(str);
 	}
 
+	template<>
+	void Write(const string& s)
+	{
+		WriteString1(s);
+	}
+	void Write(cstring str)
+	{
+		WriteString1(str);
+	}
 	void operator << (const string& s)
 	{
 		WriteString1(s);
@@ -277,6 +300,11 @@ public:
 	void WriteVector4(const vector<T>& v)
 	{
 		WriteVector<short>(v);
+	}
+	template<typename T>
+	void Write(const vector<T>& v)
+	{
+		WriteVector1(v);
 	}
 	template<typename T>
 	void operator << (const vector<T>& v)

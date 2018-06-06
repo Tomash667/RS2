@@ -42,8 +42,6 @@ private:
 	vector<Tile> tiles;
 	uint size;
 	float tile_size;
-	vector<Collider> colliders;
-	Int2 last_pos;
 	int calculation_id;
 	vector<Int2> to_check, tmp_path;
 };

@@ -51,6 +51,7 @@ void Zombie::Save(FileWriter& f)
 void Zombie::Load(FileReader& f)
 {
 	Unit::Load(f);
+
 	if(IsAlive())
 	{
 		f >> state;

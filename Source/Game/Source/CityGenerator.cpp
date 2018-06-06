@@ -46,8 +46,8 @@ void CityGenerator::Reset()
 
 void CityGenerator::Generate()
 {
-	const Vec3 player_pos(map_size / 2, 0, map_size / 2);
 	GenerateMap();
+	FillBuildings();
 	CreateScene();
 	level->SpawnBarriers();
 	level->SpawnPlayer(player_start_pos);
@@ -190,6 +190,62 @@ void CityGenerator::DrawMap()
 	putchar('\n');
 }
 
+void CityGenerator::FillBuildings()
+{
+	for(Building& b : buildings)
+	{
+		int doors;
+		switch(Rand() % 10)
+		{
+		case 0:
+		case 1:
+			doors = 1;
+			break;
+		case 2:
+		case 3:
+		case 4:
+		case 5:
+			doors = 2;
+			break;
+		case 6:
+		case 7:
+		case 8:
+			doors = 3;
+			break;
+		case 9:
+			doors = 4;
+			break;
+		}
+
+		int door_flags;
+		switch(doors)
+		{
+		case 1:
+			door_flags = 1 << (Rand() % 4);
+			break;
+		case 2:
+			{
+				int index = Rand() % 4;
+				door_flags = (1 << index) | (1 << ((index + 1 + Rand() % 3) % 4));
+			}
+			break;
+		case 3:
+			door_flags = ~(1 << (Rand() % 4));
+			break;
+		case 4:
+			door_flags = 0b1111;
+			break;
+		}
+
+		Int2 size = b.size * 2;
+		Int2 pos = b.pos * 2;
+		b.doors[Building::DOOR_LEFT] = IS_SET(door_flags, 1 << 0) ? (pos.y + Random(1, size.y - 2)) : -1;
+		b.doors[Building::DOOR_RIGHT] = IS_SET(door_flags, 1 << 1) ? (pos.y + Random(1, size.y - 2)) : -1;
+		b.doors[Building::DOOR_BOTTOM] = IS_SET(door_flags, 1 << 2) ? (pos.x + Random(1, size.x - 2)) : -1;
+		b.doors[Building::DOOR_TOP] = IS_SET(door_flags, 1 << 3) ? (pos.x + Random(1, size.x - 2)) : -1;
+	}
+}
+
 void CityGenerator::CreateScene()
 {
 	Int2 pt, prev_pt = Int2(-1, -1);
@@ -270,59 +326,12 @@ void CityGenerator::CreateScene()
 		building_node->container->box = Box::CreateXZ(b.box, 0.f, 4.f);
 		building_node->container->is_sphere = false;
 
-		int doors;
-		switch(Rand() % 10)
-		{
-		case 0:
-		case 1:
-			doors = 1;
-			break;
-		case 2:
-		case 3:
-		case 4:
-		case 5:
-			doors = 2;
-			break;
-		case 6:
-		case 7:
-		case 8:
-			doors = 3;
-			break;
-		case 9:
-			doors = 4;
-			break;
-		}
-
-		int door_flags;
-		switch(doors)
-		{
-		case 1:
-			door_flags = 1 << (Rand() % 4);
-			break;
-		case 2:
-			{
-				int index = Rand() % 4;
-				door_flags = (1 << index) | (1 << ((index + 1 + Rand() % 3) % 4));
-			}
-			break;
-		case 3:
-			door_flags = ~(1 << (Rand() % 4));
-			break;
-		case 4:
-			door_flags = 0b1111;
-			break;
-		}
-
 		Int2 size = b.size * 2;
 		Int2 pos = b.pos * 2;
-		int left_hole = IS_SET(door_flags, 1 << 0) ? (pos.y + Random(1, size.y - 2)) : -1;
-		int right_hole = IS_SET(door_flags, 1 << 1) ? (pos.y + Random(1, size.y - 2)) : -1;
-		int bottom_hole = IS_SET(door_flags, 1 << 2) ? (pos.x + Random(1, size.x - 2)) : -1;
-		int top_hole = IS_SET(door_flags, 1 << 3) ? (pos.x + Random(1, size.x - 2)) : -1;
-		b.doors[Building::DOOR_LEFT] = left_hole;
-		b.doors[Building::DOOR_RIGHT] = right_hole;
-		b.doors[Building::DOOR_BOTTOM] = bottom_hole;
-		b.doors[Building::DOOR_TOP] = top_hole;
+		int left_hole = b.doors[Building::DOOR_LEFT];
+		int right_hole = b.doors[Building::DOOR_RIGHT];
+		int bottom_hole = b.doors[Building::DOOR_BOTTOM];
+		int top_hole = b.doors[Building::DOOR_TOP];
 
 		for(int x = pos.x + 1; x < pos.x + size.x - 1; ++x)
 		{
@@ -550,4 +559,7 @@ void CityGenerator::Load(FileReader& f)
 {
 	f >> map;
 	f >> buildings;
+	CreateScene();
+	level->SpawnBarriers();
+	pathfinding->GenerateBlockedGrid(size, tile_size, buildings);
 }

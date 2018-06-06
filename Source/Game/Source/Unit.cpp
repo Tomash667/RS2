@@ -67,15 +67,28 @@ float Unit::GetAngleDiff(const Vec3& target) const
 
 void Unit::Save(FileWriter& f)
 {
-	//node->mesh_inst->Save(f);
+	node->mesh_inst->Save(f);
 	f << node->pos;
 	f << node->rot.y;
+
 	f << hp;
+	if(!IsAlive())
+		f << dying;
 	f << last_damage;
 	f << animation;
 }
 
 void Unit::Load(FileReader& f)
 {
+	node->mesh_inst->Load(f);
+	f >> node->pos;
+	f >> node->rot.y;
+	node->rot.x = 0;
+	node->rot.z = 0;
 
+	f >> hp;
+	if(!IsAlive())
+		f >> dying;
+	f >> last_damage;
+	f >> animation;
 }

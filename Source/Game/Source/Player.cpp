@@ -92,6 +92,8 @@ Vec3 Player::GetShootPos()
 
 void Player::Save(FileWriter& f)
 {
+	Unit::Save(f);
+
 	f << action;
 	f << action_state;
 	f << idle_timer;
@@ -117,6 +119,8 @@ void Player::Save(FileWriter& f)
 
 void Player::Load(FileReader& f)
 {
+	Unit::Load(f);
+
 	// inventory
 	melee_weapon = Item::Get(f.ReadString1());
 	ranged_weapon = Item::Get(f.ReadString1());

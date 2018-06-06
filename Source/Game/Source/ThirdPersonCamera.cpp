@@ -120,8 +120,8 @@ void ThirdPersonCamera::SetAim(bool enabled)
 
 void ThirdPersonCamera::Save(FileWriter& f)
 {
-	f << from;
-	f << to;
+	f << cam->from;
+	f << cam->to;
 	f << rot;
 	f << dist;
 	f << shift;
@@ -131,8 +131,8 @@ void ThirdPersonCamera::Save(FileWriter& f)
 
 void ThirdPersonCamera::Load(FileReader& f)
 {
-	f >> from;
-	f >> to;
+	f >> cam->from;
+	f >> cam->to;
 	f >> rot;
 	f >> dist;
 	f >> shift;
