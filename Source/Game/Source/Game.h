@@ -9,7 +9,7 @@ public:
 	Game();
 	~Game();
 	int Start(bool quickstart);
-
+	
 private:
 	void InitLogger();
 	void InitEngine();

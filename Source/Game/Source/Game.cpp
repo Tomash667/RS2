@@ -109,8 +109,10 @@ void Game::InitLogger()
 void Game::InitEngine()
 {
 	Info("Initializing engine.");
-	engine->GetWindow()->SetTitle("Rouge Survival v" VERSION_STR);
+	Window* window = engine->GetWindow();
+	window->SetTitle("Rouge Survival v" VERSION_STR);
 	engine->Init(this);
+	//window->SetFullscreen(true);
 
 	scene = engine->GetScene();
 	input = engine->GetInput();
@@ -219,8 +221,12 @@ bool Game::OnTick(float dt)
 		|| change_state == GameState::QUIT)
 		return false;
 
+	Window* window = engine->GetWindow();
+	if(input->Down(Key::Alt) && input->Pressed(Key::Enter))
+		window->SetFullscreen(!window->IsFullscreen());
+	
 	if(input->Pressed(Key::U))
-		engine->GetWindow()->SetCursorLock(!engine->GetWindow()->IsCursorLocked());
+		window->SetCursorLock(!window->IsCursorLocked());
 
 	if(in_game)
 	{

@@ -20,6 +20,7 @@ R - reload
 1 - switch to melee weapon
 2 - switch to ranged weapon
 U - lock/unlock cursor
+Alt+Enter - toggle fullscreen
 F1 - show/hide fps
 
 3. Inventory controls

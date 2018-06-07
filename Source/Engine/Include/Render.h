@@ -1,6 +1,8 @@
 #pragma once
 
-class Render
+#include "WindowHandler.h"
+
+class Render : public WindowHandler
 {
 public:
 	enum DepthState
@@ -12,7 +14,7 @@ public:
 
 	Render();
 	~Render();
-	void Init(Window* window);
+	void Init(const Int2& wnd_size, void* wnd_handle);
 	void BeginScene();
 	void EndScene();
 	void CreateShader(Shader& shader, cstring filename, D3D11_INPUT_ELEMENT_DESC* desc, uint desc_count, uint cbuffer_size[2]);
@@ -29,14 +31,16 @@ public:
 	const Vec4& GetClearColor() { return clear_color; }
 
 private:
-	void CreateDeviceAndSwapChain();
+	void CreateDeviceAndSwapChain(void* wnd_handle);
+	void CreateSizeDependentResources();
 	void CreateRenderTarget();
 	void CreateDepthStencilView();
 	void SetViewport();
+	void CreateDepthStencilState();
 	void CreateRasterState();
 	void CreateBlendState();
+	void OnSizeChange(const Int2& new_wnd_size) override;
 
-	Window* window;
 	IDXGISwapChain* swap_chain;
 	ID3D11Device* device;
 	ID3D11DeviceContext* device_context;
@@ -46,6 +50,7 @@ private:
 	ID3D11RasterizerState* raster_state, *no_cull_raster_state;
 	ID3D11BlendState* blend_state, *no_blend_state;
 	Vec4 clear_color;
+	Int2 wnd_size;
 	bool vsync, alpha_blend, culling;
 	DepthState current_depth_state;
 };
