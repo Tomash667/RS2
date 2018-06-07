@@ -126,9 +126,12 @@ void Scene::DrawNodes(vector<SceneNode*>& nodes, const Matrix* parent_matrix)
 		else
 		{
 			// convert right handed rotation to left handed
-			mat_world = Matrix::Scale(node->scale)
-				* Matrix::Rotation(-node->rot.y, node->rot.x, node->rot.z)
-				* Matrix::Translation(node->pos);
+			if(node->use_matrix)
+				mat_world = node->mat;
+			else
+				mat_world = Matrix::Scale(node->scale)
+					* Matrix::Rotation(-node->rot.y, node->rot.x, node->rot.z)
+					* Matrix::Translation(node->pos);
 			if(parent_matrix)
 				mat_world *= (*parent_matrix);
 		}

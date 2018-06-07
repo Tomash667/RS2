@@ -57,17 +57,19 @@ void Level::LoadResources()
 void Level::SpawnItem(const Vec3& pos, Item* item)
 {
 	assert(item && item->mesh);
-	SceneNode* node = new SceneNode;
-	node->mesh = item->mesh;
-	node->pos = pos + item->ground_offset;
-	node->rot = item->ground_rot;
-	scene->Add(node);
 
 	GroundItem ground_item;
-	ground_item.node = node;
 	ground_item.item = item;
 	ground_item.pos = pos;
+	ground_item.rot = Random(PI * 2);
+	ground_item.node = new SceneNode;
+	ground_item.node->mesh = item->mesh;
+	ground_item.node->use_matrix = true;
+	ground_item.node->mat = Matrix::RotationY(ground_item.rot)
+		* Matrix::Rotation(item->ground_rot)
+		* Matrix::Translation(pos + item->ground_offset);
 	items.push_back(ground_item);
+	scene->Add(ground_item.node);
 }
 
 void Level::SpawnZombie(const Vec3& pos)
@@ -367,6 +369,7 @@ void Level::Save(FileWriter& f)
 	{
 		f << item.item->id;
 		f << item.pos;
+		f << item.rot;
 	}
 
 	// bloods
@@ -413,15 +416,18 @@ void Level::Load(FileReader& f)
 
 	// ground items
 	items.resize(f.Read<uint>());
-	for(GroundItem& item : items)
+	for(GroundItem& ground_item : items)
 	{
-		item.item = Item::Get(f.ReadString1());
-		f >> item.pos;
-		item.node = new SceneNode;
-		item.node->mesh = item.item->mesh;
-		item.node->pos = item.item->ground_offset + item.pos;
-		item.node->rot = item.item->ground_rot;
-		scene->Add(item.node);
+		ground_item.item = Item::Get(f.ReadString1());
+		f >> ground_item.pos;
+		f >> ground_item.rot;
+		ground_item.node = new SceneNode;
+		ground_item.node->mesh = ground_item.item->mesh;
+		ground_item.node->use_matrix = true;
+		ground_item.node->mat = Matrix::RotationY(ground_item.rot)
+			* Matrix::Rotation(ground_item.item->ground_rot)
+			* Matrix::Translation(ground_item.pos + ground_item.item->ground_offset);
+		scene->Add(ground_item.node);
 	}
 
 	// bloods

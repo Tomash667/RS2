@@ -10,4 +10,5 @@ v1 (2018-05-??):
 + playing sounds
 + simple lighting, skybox
 + main menu, death screen, save & load game
++ building improvements (rooms, tables)
 + blood pools
