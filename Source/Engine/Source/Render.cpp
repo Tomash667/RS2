@@ -6,9 +6,9 @@
 #include <d3dcompiler.h>
 #include "InternalHelper.h"
 
-Render::Render() : window(nullptr), swap_chain(nullptr), device(nullptr), device_context(nullptr), render_target(nullptr), depth_stencil_view(nullptr),
-depth_state(nullptr), no_depth_state(nullptr), readonly_depth_state(nullptr), raster_state(nullptr), no_cull_raster_state(nullptr), blend_state(nullptr),
-no_blend_state(nullptr), clear_color(Color::Black), vsync(true), current_depth_state(DEPTH_YES), alpha_blend(false), culling(true)
+Render::Render() : swap_chain(nullptr), device(nullptr), device_context(nullptr), render_target(nullptr), depth_stencil_view(nullptr), depth_state(nullptr),
+no_depth_state(nullptr), readonly_depth_state(nullptr), raster_state(nullptr), no_cull_raster_state(nullptr), blend_state(nullptr), no_blend_state(nullptr),
+clear_color(Color::Black), vsync(true), current_depth_state(DEPTH_YES), alpha_blend(false), culling(true)
 {
 #ifdef _DEBUG
 	vsync = false;
@@ -46,31 +46,30 @@ Render::~Render()
 	}
 }
 
-void Render::Init(Window* window)
+void Render::Init(const Int2& wnd_size, void* wnd_handle)
 {
-	assert(window);
-	this->window = window;
+	assert(wnd_handle);
+	this->wnd_size = wnd_size;
 
-	CreateDeviceAndSwapChain();
-	CreateRenderTarget();
-	CreateDepthStencilView();
-	device_context->OMSetRenderTargets(1, &render_target, depth_stencil_view);
+	CreateDeviceAndSwapChain(wnd_handle);
+	CreateSizeDependentResources();
 	SetViewport();
 	CreateRasterState();
 	CreateBlendState();
+	CreateDepthStencilState();
 }
 
-void Render::CreateDeviceAndSwapChain()
+void Render::CreateDeviceAndSwapChain(void* wnd_handle)
 {
 	DXGI_SWAP_CHAIN_DESC swap_desc = {};
 	swap_desc.BufferCount = 1;
-	swap_desc.BufferDesc.Width = window->GetSize().x;
-	swap_desc.BufferDesc.Height = window->GetSize().y;
+	swap_desc.BufferDesc.Width = wnd_size.x;
+	swap_desc.BufferDesc.Height = wnd_size.y;
 	swap_desc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	swap_desc.BufferDesc.RefreshRate.Numerator = 0;
 	swap_desc.BufferDesc.RefreshRate.Denominator = 1;
 	swap_desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-	swap_desc.OutputWindow = (HWND)window->GetHandle();
+	swap_desc.OutputWindow = (HWND)wnd_handle;
 	swap_desc.SampleDesc.Count = 1;
 	swap_desc.SampleDesc.Quality = 0;
 	swap_desc.Windowed = true;
@@ -97,11 +96,19 @@ void Render::CreateDeviceAndSwapChain()
 
 	IDXGIFactory* factory;
 	C(adapter->GetParent(IID_PPV_ARGS(&factory)));
-	C(factory->MakeWindowAssociation(swap_desc.OutputWindow, DXGI_MWA_NO_ALT_ENTER));
+	C(factory->MakeWindowAssociation(swap_desc.OutputWindow, DXGI_MWA_NO_WINDOW_CHANGES));
 
 	factory->Release();
 	adapter->Release();
 	dxgi_device->Release();
+}
+
+void Render::CreateSizeDependentResources()
+{
+	CreateRenderTarget();
+	CreateDepthStencilView();
+	device_context->OMSetRenderTargets(1, &render_target, depth_stencil_view);
+	SetViewport();
 }
 
 void Render::CreateRenderTarget()
@@ -122,6 +129,52 @@ void Render::CreateRenderTarget()
 }
 
 void Render::CreateDepthStencilView()
+{
+	// create depth buffer texture
+	D3D11_TEXTURE2D_DESC tex_desc = {};
+
+	tex_desc.Width = wnd_size.x;
+	tex_desc.Height = wnd_size.y;
+	tex_desc.MipLevels = 1;
+	tex_desc.ArraySize = 1;
+	tex_desc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	tex_desc.SampleDesc.Count = 1;
+	tex_desc.SampleDesc.Quality = 0;
+	tex_desc.Usage = D3D11_USAGE_DEFAULT;
+	tex_desc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+	tex_desc.CPUAccessFlags = 0;
+	tex_desc.MiscFlags = 0;
+
+	ID3D11Texture2D* depth_tex;
+	C(device->CreateTexture2D(&tex_desc, nullptr, &depth_tex));
+
+	//==================================================================
+	// create depth stencil view from texture
+	D3D11_DEPTH_STENCIL_VIEW_DESC view_desc = {};
+
+	view_desc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	view_desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+	view_desc.Texture2D.MipSlice = 0;
+
+	C(device->CreateDepthStencilView(depth_tex, &view_desc, &depth_stencil_view));
+
+	depth_tex->Release();
+}
+
+void Render::SetViewport()
+{
+	D3D11_VIEWPORT viewport;
+	viewport.Width = (float)wnd_size.x;
+	viewport.Height = (float)wnd_size.y;
+	viewport.MinDepth = 0.0f;
+	viewport.MaxDepth = 1.0f;
+	viewport.TopLeftX = 0.0f;
+	viewport.TopLeftY = 0.0f;
+
+	device_context->RSSetViewports(1, &viewport);
+}
+
+void Render::CreateDepthStencilState()
 {
 	// create depth stencil state
 	D3D11_DEPTH_STENCIL_DESC desc = {};
@@ -155,54 +208,6 @@ void Render::CreateDepthStencilView()
 	desc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
 	desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
 	C(device->CreateDepthStencilState(&desc, &readonly_depth_state));
-
-	//==================================================================
-	// create depth buffer texture
-	auto& wnd_size = window->GetSize();
-
-	D3D11_TEXTURE2D_DESC tex_desc = {};
-
-	tex_desc.Width = wnd_size.x;
-	tex_desc.Height = wnd_size.y;
-	tex_desc.MipLevels = 1;
-	tex_desc.ArraySize = 1;
-	tex_desc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	tex_desc.SampleDesc.Count = 1;
-	tex_desc.SampleDesc.Quality = 0;
-	tex_desc.Usage = D3D11_USAGE_DEFAULT;
-	tex_desc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-	tex_desc.CPUAccessFlags = 0;
-	tex_desc.MiscFlags = 0;
-
-	ID3D11Texture2D* depth_tex;
-	C(device->CreateTexture2D(&tex_desc, nullptr, &depth_tex));
-
-	//==================================================================
-	// create depth stencil view from texture
-	D3D11_DEPTH_STENCIL_VIEW_DESC view_desc = {};
-
-	view_desc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	view_desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
-	view_desc.Texture2D.MipSlice = 0;
-
-	C(device->CreateDepthStencilView(depth_tex, &view_desc, &depth_stencil_view));
-
-	depth_tex->Release();
-}
-
-void Render::SetViewport()
-{
-	const Int2& wnd_size = window->GetSize();
-
-	D3D11_VIEWPORT viewport;
-	viewport.Width = (float)wnd_size.x;
-	viewport.Height = (float)wnd_size.y;
-	viewport.MinDepth = 0.0f;
-	viewport.MaxDepth = 1.0f;
-	viewport.TopLeftX = 0.0f;
-	viewport.TopLeftY = 0.0f;
-
-	device_context->RSSetViewports(1, &viewport);
 }
 
 void Render::CreateRasterState()
@@ -393,4 +398,21 @@ void Render::SetCulling(bool enabled)
 		culling = enabled;
 		device_context->RSSetState(enabled ? raster_state : no_cull_raster_state);
 	}
+}
+
+void Render::OnSizeChange(const Int2& wnd_size)
+{
+	if(this->wnd_size == wnd_size || !swap_chain)
+		return;
+
+	this->wnd_size = wnd_size;
+
+	render_target->Release();
+	depth_stencil_view->Release();
+
+	DXGI_SWAP_CHAIN_DESC desc = {};
+	swap_chain->GetDesc(&desc);
+	C(swap_chain->ResizeBuffers(1, wnd_size.x, wnd_size.y, DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH));
+
+	CreateSizeDependentResources();
 }

@@ -6,7 +6,7 @@ public:
 	typedef void* Handle;
 
 	Window();
-	void Init(Input* input);
+	void Init(Input* input, WindowHandler* handler);
 	bool Update();
 	void ShowError(cstring err);
 
@@ -35,9 +35,10 @@ private:
 	void ShowCursor(bool show);
 
 	Input* input;
+	WindowHandler* handler;
 	Handle hwnd;
 	string title;
-	Int2 size, real_size, cursor_move;
+	Int2 size, real_size, prev_size, cursor_move;
 	int mouse_wheel;
 	bool fullscreen, active, cursor_locked, cursor_visible;
 };

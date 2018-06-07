@@ -30,7 +30,7 @@
 const int level_size = 32;
 
 
-Game::Game() : camera(nullptr), start_fullscree(false), start_hd(false)
+Game::Game() : camera(nullptr)
 {
 }
 
@@ -111,11 +111,8 @@ void Game::InitEngine()
 	Info("Initializing engine.");
 	Window* window = engine->GetWindow();
 	window->SetTitle("Rouge Survival v" VERSION_STR);
-	if(start_fullscree)
-		window->SetFullscreen(true);
-	if(start_hd)
-		window->SetSize(Int2(1960, 1080));
 	engine->Init(this);
+	//window->SetFullscreen(true);
 
 	scene = engine->GetScene();
 	input = engine->GetInput();
@@ -227,13 +224,7 @@ bool Game::OnTick(float dt)
 	Window* window = engine->GetWindow();
 	if(input->Down(Key::Alt) && input->Pressed(Key::Enter))
 		window->SetFullscreen(!window->IsFullscreen());
-
-	// FIXME
-	if(input->Pressed(Key::F5))
-		window->SetSize(Int2(1024, 768));
-	if(input->Pressed(Key::F6))
-		window->SetSize(Int2(1960, 1080));
-
+	
 	if(input->Pressed(Key::U))
 		window->SetCursorLock(!window->IsCursorLocked());
 

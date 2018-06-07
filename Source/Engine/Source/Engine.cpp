@@ -30,8 +30,8 @@ void Engine::Init(GameHandler* handler)
 	if(!XMVerifyCPUSupport())
 		throw "Unsupported CPU.";
 
-	window->Init(input.get());
-	render->Init(window.get());
+	window->Init(input.get(), render.get());
+	render->Init(window->GetSize(), window->GetHandle());
 	sound_mgr->Init();
 	res_mgr->Init(render.get(), sound_mgr.get());
 	scene->Init(render.get(), res_mgr.get());

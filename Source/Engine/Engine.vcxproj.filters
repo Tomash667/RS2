@@ -170,6 +170,9 @@
     <ClInclude Include="Source\DebugShader.h">
       <Filter>2. Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Include\WindowHandler.h">
+      <Filter>1. Include\Engine</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Text.cpp">

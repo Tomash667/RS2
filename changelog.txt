@@ -11,3 +11,4 @@ v1 (2018-05-??):
 + simple lighting, skybox
 + main menu, death screen, save & load game
 + blood pools
++ fullscreen mode

@@ -9,10 +9,7 @@ public:
 	Game();
 	~Game();
 	int Start(bool quickstart);
-
-	// FIXME
-	bool start_fullscree, start_hd;
-
+	
 private:
 	void InitLogger();
 	void InitEngine();
