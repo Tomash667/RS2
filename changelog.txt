@@ -12,3 +12,4 @@ v1 (2018-05-??):
 + main menu, death screen, save & load game
 + building improvements (rooms, tables)
 + blood pools
++ fullscreen mode
