@@ -8,6 +8,7 @@
 #include "Player.h"
 #include "Item.h"
 #include "Pathfinding.h"
+#include <Tree.h>
 
 const float CityGenerator::tile_size = 5.f;
 const float CityGenerator::floor_y = 0.05f;
@@ -56,52 +57,6 @@ void CityGenerator::Generate()
 	pathfinding->GenerateBlockedGrid(size, tile_size, buildings);
 }
 
-struct Leaf
-{
-	Leaf(const Int2& pos, const Int2& size) : pos(pos), size(size), child1(nullptr), child2(nullptr) {}
-	bool CanSplit()
-	{
-		return size.x > max_size
-			|| size.y > max_size
-			|| (size.x >= min_size_before_split && size.y >= min_size_before_split && Rand() % 4 != 0);
-	}
-	void Split()
-	{
-		bool horizontal;
-		float ratio = float(size.x) / size.y;
-		if(ratio >= 1.25f)
-			horizontal = true;
-		else if(ratio <= 0.75f)
-			horizontal = false;
-		else
-			horizontal = Rand() % 2 == 0;
-
-		if(horizontal)
-		{
-			int split = Random(min_size, size.x - min_size - 1);
-			line_pos = Int2(pos.x + split, pos.y);
-			line_size = Int2(1, size.y);
-			child1 = new Leaf(pos, Int2(split, size.y));
-			child2 = new Leaf(Int2(pos.x + split + 1, pos.y), Int2(size.x - split - 1, size.y));
-		}
-		else
-		{
-			int split = Random(min_size, size.y - min_size - 1);
-			line_pos = Int2(pos.x, pos.y + split);
-			line_size = Int2(size.x, 1);
-			child1 = new Leaf(pos, Int2(size.x, split));
-			child2 = new Leaf(Int2(pos.x, pos.y + split + 1), Int2(size.x, size.y - split - 1));
-		}
-	}
-
-	Int2 pos, size, line_pos, line_size;
-	Leaf* child1, *child2;
-
-	static const int max_size = 12;
-	static const int min_size = 4;
-	static const int min_size_before_split = min_size * 2 + 1;
-};
-
 void CityGenerator::GenerateMap()
 {
 	// init
@@ -109,40 +64,27 @@ void CityGenerator::GenerateMap()
 		map[i] = T_PAVEMENT;
 
 	// generate roads
-	vector<Leaf*> leafs, to_check;
-	to_check.push_back(new Leaf(Int2(0, 0), Int2(size, size)));
-	while(!to_check.empty())
+	Tree roads_tree(4, 12, size, 1);
+	roads_tree.SplitAll();
+	for(Tree::Node* node : roads_tree.nodes)
 	{
-		Leaf* leaf = to_check.back();
-		to_check.pop_back();
-		leafs.push_back(leaf);
-		if(leaf->CanSplit())
+		for(int y = 0; y < node->split_size.y; ++y)
 		{
-			leaf->Split();
-			to_check.push_back(leaf->child1);
-			to_check.push_back(leaf->child2);
-
-			for(int y = 0; y < leaf->line_size.y; ++y)
-			{
-				for(int x = 0; x < leaf->line_size.x; ++x)
-					map[leaf->line_pos.x + x + (leaf->line_pos.y + y) * size] = T_ASPHALT;
-			}
+			for(int x = 0; x < node->split_size.x; ++x)
+				map[node->split_pos.x + x + (node->split_pos.y + y) * size] = T_ASPHALT;
 		}
 	}
 
 	// buildings
 	const int building_min_size = 2;
-	for(Leaf* leaf : leafs)
+	for(Tree::Node* node : roads_tree.leafs)
 	{
-		if(leaf->child1)
-			continue;
-
-		Int2 b_size(leaf->size.x - 2, leaf->size.y - 2);
+		Int2 b_size(node->size.x - 2, node->size.y - 2);
 		if(b_size.x != building_min_size && Rand() % 2 == 0)
 			--b_size.x;
 		if(b_size.y != building_min_size && Rand() % 2 == 0)
 			--b_size.y;
-		Int2 b_pos = leaf->pos + Int2(1 + Random(0, leaf->size.x - b_size.x - 2), 1 + Random(0, leaf->size.y - b_size.y - 2));
+		Int2 b_pos = node->pos + Int2(1 + Random(0, node->size.x - b_size.x - 2), 1 + Random(0, node->size.y - b_size.y - 2));
 
 		for(int y = 0; y < b_size.y; ++y)
 		{
@@ -158,11 +100,9 @@ void CityGenerator::GenerateMap()
 	}
 
 	// player start pos
-	Leaf* first = leafs.front();
-	player_start_pos = Vec3(tile_size * first->line_pos.x + tile_size / 2 * first->line_size.x,
-		0, tile_size * first->line_pos.y + tile_size / 2 * first->line_size.y);
-
-	DeleteElements(leafs);
+	Tree::Node* first = roads_tree.nodes.front();
+	player_start_pos = Vec3(tile_size * first->split_pos.x + tile_size / 2 * first->split_size.x,
+		0, tile_size * first->split_pos.y + tile_size / 2 * first->split_size.y);
 }
 
 void CityGenerator::DrawMap()

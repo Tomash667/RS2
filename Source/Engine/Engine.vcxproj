@@ -174,6 +174,7 @@
     <ClInclude Include="Include\Text.h" />
     <ClInclude Include="Include\Texture.h" />
     <ClInclude Include="Include\Timer.h" />
+    <ClInclude Include="Include\Tree.h" />
     <ClInclude Include="Include\Vertex.h" />
     <ClInclude Include="Include\Window.h" />
     <ClInclude Include="Include\WindowHandler.h" />
@@ -228,6 +229,7 @@
     <ClCompile Include="Source\Texture.cpp" />
     <ClCompile Include="Source\TextureLoader.cpp" />
     <ClCompile Include="Source\Timer.cpp" />
+    <ClCompile Include="Source\Tree.cpp" />
     <ClCompile Include="Source\WICTextureLoader.cpp" />
     <ClCompile Include="Source\Window.cpp" />
   </ItemGroup>
