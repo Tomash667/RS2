@@ -252,12 +252,28 @@ void Scene::ListVisibleNodes(vector<SceneNode*>& nodes)
 					ListVisibleNodes(node->childs);
 			}
 		}
-		else if(frustum_planes.SphereToFrustum(node->pos, node->mesh->head.radius * node->scale))
+		else
 		{
-			if(node->alpha)
-				visible_alpha_nodes.push_back(node);
+			bool ok = false;
+			if(node->use_matrix)
+			{
+				Vec3 center = Vec3::TransformZero(node->mat);
+				if(frustum_planes.SphereToFrustum(center, node->mesh->head.radius))
+					ok = true;
+			}
 			else
-				visible_nodes.push_back(node);
+			{
+				if(frustum_planes.SphereToFrustum(node->pos, node->mesh->head.radius * node->scale))
+					ok = true;
+			}
+
+			if(ok)
+			{
+				if(node->alpha)
+					visible_alpha_nodes.push_back(node);
+				else
+					visible_nodes.push_back(node);
+			}
 		}
 	}
 }

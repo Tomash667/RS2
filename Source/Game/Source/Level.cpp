@@ -65,9 +65,10 @@ void Level::SpawnItem(const Vec3& pos, Item* item)
 	ground_item.node = new SceneNode;
 	ground_item.node->mesh = item->mesh;
 	ground_item.node->use_matrix = true;
-	ground_item.node->mat = Matrix::RotationY(ground_item.rot)
-		* Matrix::Rotation(item->ground_rot)
-		* Matrix::Translation(pos + item->ground_offset);
+	ground_item.node->mat =	Matrix::Rotation(-item->ground_rot.y, item->ground_rot.x, item->ground_rot.z)
+		* Matrix::Translation(item->ground_offset)
+		* Matrix::RotationY(-ground_item.rot)
+		* Matrix::Translation(ground_item.pos);
 	items.push_back(ground_item);
 	scene->Add(ground_item.node);
 }
@@ -424,9 +425,10 @@ void Level::Load(FileReader& f)
 		ground_item.node = new SceneNode;
 		ground_item.node->mesh = ground_item.item->mesh;
 		ground_item.node->use_matrix = true;
-		ground_item.node->mat = Matrix::RotationY(ground_item.rot)
-			* Matrix::Rotation(ground_item.item->ground_rot)
-			* Matrix::Translation(ground_item.pos + ground_item.item->ground_offset);
+		ground_item.node->mat = Matrix::Rotation(-ground_item.item->ground_rot.y, ground_item.item->ground_rot.x, ground_item.item->ground_rot.z)
+			* Matrix::Translation(ground_item.item->ground_offset)
+			* Matrix::RotationY(-ground_item.rot)
+			* Matrix::Translation(ground_item.pos);
 		scene->Add(ground_item.node);
 	}
 
