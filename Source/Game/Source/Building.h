@@ -49,9 +49,15 @@ struct Building
 		room.connected.push_back(index);
 	}
 
+	bool IsDoors(const Int2& pt, DIR dir) const
+	{
+		int f = is_doors[pt.x + pt.y * (size.x * 2)];
+		return IS_SET(f, 1 << dir);
+	}
+
 	Box2d box;
 	Int2 pos, size;
 	vector<Room> rooms;
-	vector<Int2> doors2;
-	vector<bool> is_doors;
+	vector<std::pair<Int2, DIR>> doors;
+	vector<int> is_doors;
 };

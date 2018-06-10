@@ -21,13 +21,13 @@ void Pathfinding::GenerateBlockedGrid(uint size, float tile_size, const vector<B
 		for(int x = 0; x < size.x; ++x)
 		{
 			// bottom
-			if(!b.is_doors[x])
+			if(!b.IsDoors(Int2(x, 0), DIR_BOTTOM))
 			{
 				tiles[x + pos.x + pos.y * s].blocked |= BLOCKED_BOTTOM;
 				tiles[x + pos.x + (pos.y - 1) * s].blocked |= BLOCKED_TOP;
 			}
 			// top
-			if(!b.is_doors[x + size.y * (size.x + 1)])
+			if(!b.IsDoors(Int2(x, size.y - 1), DIR_TOP))
 			{
 				tiles[x + pos.x + (pos.y + size.y - 1) * s].blocked |= BLOCKED_TOP;
 				tiles[x + pos.x + (pos.y + size.y) * s].blocked |= BLOCKED_BOTTOM;
@@ -36,13 +36,13 @@ void Pathfinding::GenerateBlockedGrid(uint size, float tile_size, const vector<B
 		for(int y = 0; y < size.y; ++y)
 		{
 			// left
-			if(!b.is_doors[y * (size.x + 1)])
+			if(!b.IsDoors(Int2(0, y), DIR_LEFT))
 			{
 				tiles[pos.x + (y + pos.y) * s].blocked |= BLOCKED_LEFT;
 				tiles[pos.x - 1 + (y + pos.y) * s].blocked |= BLOCKED_RIGHT;
 			}
 			// right
-			if(!b.is_doors[size.x + y * (size.x + 1)])
+			if(!b.IsDoors(Int2(size.x - 1, y), DIR_RIGHT))
 			{
 				tiles[pos.x + size.x - 1 + (y + pos.y) * s].blocked |= BLOCKED_RIGHT;
 				tiles[pos.x + size.x + (y + pos.y) * s].blocked |= BLOCKED_LEFT;

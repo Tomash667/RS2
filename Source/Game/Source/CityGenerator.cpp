@@ -53,7 +53,7 @@ void CityGenerator::Generate()
 	level->SpawnBarriers();
 	level->SpawnPlayer(player_start_pos);
 	SpawnItems();
-	SpawnZombies();
+	//SpawnZombies(); FIXME
 	pathfinding->GenerateBlockedGrid(size, tile_size, buildings);
 }
 
@@ -158,9 +158,9 @@ void CityGenerator::FillBuildings()
 			room.visited = false;
 
 			// mark indices
-			for(int y = 0; y < room.size.y; ++y)
+			for(int y = room.pos.y; y < room.pos.y + room.size.y; ++y)
 			{
-				for(int x = 0; x < room.size.x; ++x)
+				for(int x = room.pos.x; x <room.pos.x + room.size.x; ++x)
 					indices[x + y * size.x] = i;
 			}
 		}
@@ -253,16 +253,16 @@ void CityGenerator::FillBuildings()
 					switch(j)
 					{
 					case DIR_LEFT:
-						rect = Rect(room->pos.x, room->pos.y, room->pos.x, room->pos.y + room->size.y);
+						rect = Rect(room->pos.x, room->pos.y, room->pos.x, room->pos.y + room->size.y - 1);
 						break;
 					case DIR_RIGHT:
-						rect = Rect(room->pos.x + room->size.x, room->pos.y, room->pos.x + room->size.x, room->pos.y + room->size.y);
+						rect = Rect(room->pos.x + room->size.x - 1, room->pos.y, room->pos.x + room->size.x - 1, room->pos.y + room->size.y - 1);
 						break;
 					case DIR_BOTTOM:
-						rect = Rect(room->pos.x, room->pos.y, room->pos.x + room->size.x, room->pos.y);
+						rect = Rect(room->pos.x, room->pos.y, room->pos.x + room->size.x - 1, room->pos.y);
 						break;
 					case DIR_TOP:
-						rect = Rect(room->pos.x, room->pos.y + room->size.y, room->pos.x + room->size.x, room->pos.y + room->size.y);
+						rect = Rect(room->pos.x, room->pos.y + room->size.y - 1, room->pos.x + room->size.x - 1, room->pos.y + room->size.y - 1);
 						break;
 					}
 
@@ -281,7 +281,7 @@ void CityGenerator::FillBuildings()
 						if(pt.x == rect.p1.x || pt.x == rect.p2.x)
 							pt.x = Random(rect.p1.x, rect.p2.x);
 					}
-					building->doors2.push_back(pt);
+					building->doors.push_back(std::make_pair(pt, (DIR)j));
 
 					room->outside_used |= 1 << j;
 					if(room->outside_used == room->outside)
@@ -344,6 +344,7 @@ void CityGenerator::FillBuildings()
 					Building::Room& room2 = building->rooms[i];
 					if(room2.visited)
 					{
+						room.visited = true;
 						room.connected2.push_back(i);
 						room2.connected2.push_back(my_index);
 						ok = true;
@@ -360,9 +361,9 @@ void CityGenerator::FillBuildings()
 		}
 
 		// set is_doors map
-		building->is_doors.resize((size.x + 1) * (size.y + 1));
-		for(Int2& pt : building->doors2)
-			building->is_doors[pt.x + pt.y * (size.x + 1)] = true;
+		building->is_doors.resize(size.x * size.y, 0);
+		for(std::pair<Int2, DIR>& door : building->doors)
+			building->is_doors[door.first.x + door.first.y * size.x] = door.second;
 	}
 }
 
@@ -453,7 +454,7 @@ void CityGenerator::CreateScene()
 		for(int x = 1; x < size.x - 1; ++x)
 		{
 			// bottom wall
-			if(!b.is_doors[x])
+			if(!b.IsDoors(Int2(x, 0), DIR_BOTTOM))
 			{
 				node = new SceneNode;
 				node->mesh = mesh_wall;
@@ -463,7 +464,7 @@ void CityGenerator::CreateScene()
 			}
 
 			// top wall
-			if(!b.is_doors[x + size.y * (size.x + 1)])
+			if(!b.IsDoors(Int2(x, size.y - 1), DIR_TOP))
 			{
 				node = new SceneNode;
 				node->mesh = mesh_wall;
@@ -476,7 +477,7 @@ void CityGenerator::CreateScene()
 		for(int y = 1; y < size.y - 1; ++y)
 		{
 			// left wall
-			if(!b.is_doors[y * (size.x + 1)])
+			if(!b.IsDoors(Int2(0, y), DIR_LEFT))
 			{
 				node = new SceneNode;
 				node->mesh = mesh_wall;
@@ -486,7 +487,7 @@ void CityGenerator::CreateScene()
 			}
 
 			// right wall
-			if(!b.is_doors[size.x + y * (size.x + 1)])
+			if(!b.IsDoors(Int2(size.x - 1, y), DIR_RIGHT))
 			{
 				node = new SceneNode;
 				node->mesh = mesh_wall;
@@ -533,11 +534,11 @@ void CityGenerator::CreateScene()
 		{
 			// bottom wall
 			c.center = Vec2(tile_size2 * (x + pos.x) + tile_size2 / 2, tile_size2 * pos.y + wall_width / 2);
-			if(!b.is_doors[x])
+			if(!b.IsDoors(Int2(x, 0), DIR_BOTTOM))
 				level->AddCollider(c);
 
 			// top wall
-			if(!b.is_doors[x + size.y * (size.x + 1)])
+			if(!b.IsDoors(Int2(x, size.y - 1), DIR_TOP))
 			{
 				c.center.y = tile_size2 * (pos.y + size.y) - wall_width / 2;
 				level->AddCollider(c);
@@ -548,11 +549,11 @@ void CityGenerator::CreateScene()
 		{
 			// left wall
 			c.center = Vec2(tile_size2 * pos.x + wall_width / 2, tile_size2 * (y + pos.y) + tile_size2 / 2);
-			if(!b.is_doors[y * (size.x + 1)])
+			if(!b.IsDoors(Int2(0, y), DIR_LEFT))
 				level->AddCollider(c);
 
 			// right wall
-			if(!b.is_doors[size.x + y * (size.x + 1)])
+			if(!b.IsDoors(Int2(size.x - 1, y), DIR_RIGHT))
 			{
 				c.center.x = tile_size2 * (pos.x + size.x) - wall_width / 2;
 				level->AddCollider(c);
