@@ -11,7 +11,7 @@ struct Tree
 		bool horizontal;
 	};
 
-	Tree(int min_size, int max_size, int size, int split_width);
+	Tree(int min_size, int max_size, const Int2& size, int split_width);
 	~Tree();
 	bool CanSplit(Node& node);
 	void Split(Node& node);

@@ -40,7 +40,7 @@ void CityGenerator::Init(Scene* scene, Level* level, Pathfinding* pathfinding, R
 
 void CityGenerator::Reset()
 {
-	buildings.clear();
+	DeleteElements(buildings);
 	scene->Reset();
 	level->Reset();
 }
@@ -64,7 +64,7 @@ void CityGenerator::GenerateMap()
 		map[i] = T_PAVEMENT;
 
 	// generate roads
-	Tree roads_tree(4, 12, size, 1);
+	Tree roads_tree(4, 12, Int2(size), 1);
 	roads_tree.SplitAll();
 	for(Tree::Node* node : roads_tree.nodes)
 	{
@@ -92,10 +92,10 @@ void CityGenerator::GenerateMap()
 				map[b_pos.x + x + (b_pos.y + y) * size] = T_BUILDING;
 		}
 
-		Building b;
-		b.box = Box2d::Create(b_pos, b_size) * tile_size;
-		b.pos = b_pos;
-		b.size = b_size;
+		Building* b = new Building;
+		b->box = Box2d::Create(b_pos, b_size) * tile_size;
+		b->pos = b_pos;
+		b->size = b_size;
 		buildings.push_back(b);
 	}
 
@@ -132,11 +132,85 @@ void CityGenerator::DrawMap()
 
 void CityGenerator::FillBuildings()
 {
-	for(Building& b : buildings)
-	{
-		//Tree tree(2, 4, b.size * 2, 0);
-		//tree.SplitAll();
+	vector<uint> indices;
+	vector<Building::Room*> outside_rooms, rooms_to_check;
 
+	for(Building* building : buildings)
+	{
+		const Int2 size = building->size * 2;
+
+		Tree tree(3, 6, size, 0);
+		tree.SplitAll();
+
+		indices.resize(size.x * size.y);
+		outside_rooms.clear();
+
+		building->rooms.resize(tree.leafs.size());
+		for(uint i = 0, count = tree.leafs.size(); i < count; ++i)
+		{
+			// copy room data from node
+			Building::Room& room = building->rooms[i];
+			Tree::Node* node = tree.leafs[i];
+			room.pos = node->pos;
+			room.size = node->size;
+			room.outside = 0;
+			room.outside_used = 0;
+			room.visited = false;
+
+			// mark indices
+			for(int y = 0; y < room.size.y; ++y)
+			{
+				for(int x = 0; x < room.size.x; ++x)
+					indices[x + y * size.x] = i;
+			}
+		}
+
+		// list connected rooms/outside
+		for(Building::Room& room : building->rooms)
+		{
+			uint last = 9999;
+
+			// left
+			if(room.pos.x != 0)
+			{
+				for(uint y = room.pos.y, count = room.pos.y + room.size.y; y < count; ++y)
+					building->CheckConnect(room, indices[room.pos.x - 1 + y * size.x], last);
+			}
+			else
+				room.outside |= DIR_F_LEFT;
+
+			// right
+			if(room.pos.x + room.size.x != size.x)
+			{
+				for(uint y = room.pos.y, count = room.pos.y + room.size.y; y < count; ++y)
+					building->CheckConnect(room, indices[room.pos.x + room.size.x + y * size.x], last);
+			}
+			else
+				room.outside |= DIR_F_RIGHT;
+
+			// bottom
+			if(room.pos.y != 0)
+			{
+				for(uint x = room.pos.x, count = room.pos.x + room.size.x; x < count; ++x)
+					building->CheckConnect(room, indices[x + (room.pos.y - 1) * size.x], last);
+			}
+			else
+				room.outside |= DIR_F_BOTTOM;
+
+			// top
+			if(room.pos.y + room.size.y != size.y)
+			{
+				for(uint x = room.pos.x, count = room.pos.x + room.size.x; x < count; ++x)
+					building->CheckConnect(room, indices[x + (room.pos.y + room.size.y) * size.x], last);
+			}
+			else
+				room.outside |= DIR_F_BOTTOM;
+
+			if(room.outside != 0)
+				outside_rooms.push_back(&room);
+		}
+
+		// random count of doors
 		int doors;
 		switch(Rand() % 10)
 		{
@@ -159,33 +233,136 @@ void CityGenerator::FillBuildings()
 			doors = 4;
 			break;
 		}
-
-		int door_flags;
-		switch(doors)
+		if(size.x * size.y > 30)
 		{
-		case 1:
-			door_flags = 1 << (Rand() % 4);
-			break;
-		case 2:
-			{
-				int index = Rand() % 4;
-				door_flags = (1 << index) | (1 << ((index + 1 + Rand() % 3) % 4));
-			}
-			break;
-		case 3:
-			door_flags = ~(1 << (Rand() % 4));
-			break;
-		case 4:
-			door_flags = 0b1111;
-			break;
+			++doors;
+			if(size.x * size.y > 60)
+				++doors;
 		}
 
-		Int2 size = b.size * 2;
-		Int2 pos = b.pos * 2;
-		b.doors[Building::DOOR_LEFT] = IS_SET(door_flags, 1 << 0) ? (pos.y + Random(1, size.y - 2)) : -1;
-		b.doors[Building::DOOR_RIGHT] = IS_SET(door_flags, 1 << 1) ? (pos.y + Random(1, size.y - 2)) : -1;
-		b.doors[Building::DOOR_BOTTOM] = IS_SET(door_flags, 1 << 2) ? (pos.x + Random(1, size.x - 2)) : -1;
-		b.doors[Building::DOOR_TOP] = IS_SET(door_flags, 1 << 3) ? (pos.x + Random(1, size.x - 2)) : -1;
+		// add outside doors
+		for(int i = 0; i < doors && !outside_rooms.empty(); ++i)
+		{
+			Building::Room* room = outside_rooms[Rand() % outside_rooms.size()];
+			int j = Rand() % 4;
+			while(true)
+			{
+				if(IS_SET(room->outside, 1 << j) && !IS_SET(room->outside_used, 1 << j))
+				{
+					Rect rect;
+					switch(j)
+					{
+					case DIR_LEFT:
+						rect = Rect(room->pos.x, room->pos.y, room->pos.x, room->pos.y + room->size.y);
+						break;
+					case DIR_RIGHT:
+						rect = Rect(room->pos.x + room->size.x, room->pos.y, room->pos.x + room->size.x, room->pos.y + room->size.y);
+						break;
+					case DIR_BOTTOM:
+						rect = Rect(room->pos.x, room->pos.y, room->pos.x + room->size.x, room->pos.y);
+						break;
+					case DIR_TOP:
+						rect = Rect(room->pos.x, room->pos.y + room->size.y, room->pos.x + room->size.x, room->pos.y + room->size.y);
+						break;
+					}
+
+					Int2 pt;
+					if(rect.p1.x == rect.p2.x)
+					{
+						pt.x = rect.p1.x;
+						pt.y = Random(rect.p1.y, rect.p2.y);
+						if(pt.y == rect.p1.y || pt.y == rect.p2.y)
+							pt.y = Random(rect.p1.y, rect.p2.y);
+					}
+					else
+					{
+						pt.y = rect.p1.y;
+						pt.x = Random(rect.p1.x, rect.p2.x);
+						if(pt.x == rect.p1.x || pt.x == rect.p2.x)
+							pt.x = Random(rect.p1.x, rect.p2.x);
+					}
+					building->doors2.push_back(pt);
+
+					room->outside_used |= 1 << j;
+					if(room->outside_used == room->outside)
+						RemoveElement(outside_rooms, room);
+					break;
+				}
+				j = (j + 1) % 4;
+			}
+		}
+
+		// connect rooms
+		for(uint i = 0, count = building->rooms.size(); i < count; ++i)
+		{
+			Building::Room& room = building->rooms[i];
+			for(uint j : room.connected)
+			{
+				if(i < j && Rand() % 2 == 0)
+				{
+					room.connected2.push_back(j);
+					building->rooms[j].connected2.push_back(i);
+				}
+			}
+		}
+
+		// verify all rooms are connected
+		rooms_to_check.clear();
+		rooms_to_check.push_back(&building->rooms.front());
+		building->rooms.front().visited = true;
+		while(!rooms_to_check.empty())
+		{
+			Building::Room* room = rooms_to_check.back();
+			rooms_to_check.pop_back();
+			for(uint i : room->connected2)
+			{
+				Building::Room* room2 = &building->rooms[i];
+				if(room2->visited)
+					continue;
+				rooms_to_check.push_back(room2);
+				room2->visited = true;
+			}
+		}
+		bool all_ok = false;
+		while(!all_ok)
+		{
+			all_ok = true;
+			uint my_index = 0;
+			for(Building::Room& room : building->rooms)
+			{
+				if(room.visited)
+				{
+					++my_index;
+					continue;
+				}
+
+				uint index = Rand() % room.connected.size(), start_index = index;
+				bool ok = false;
+				do
+				{
+					uint i = room.connected[index];
+					Building::Room& room2 = building->rooms[i];
+					if(room2.visited)
+					{
+						room.connected2.push_back(i);
+						room2.connected2.push_back(my_index);
+						ok = true;
+						break;
+					}
+					index = (index + 1) % room.connected.size();
+				}
+				while(index != start_index);
+
+				if(!ok)
+					all_ok = false;
+				++my_index;
+			}
+		}
+
+		// set is_doors map
+		building->is_doors.resize((size.x + 1) * (size.y + 1));
+		for(Int2& pt : building->doors2)
+			building->is_doors[pt.x + pt.y * (size.x + 1)] = true;
 	}
 }
 
@@ -262,8 +439,9 @@ void CityGenerator::CreateScene()
 	}
 
 	// buildings
-	for(Building& b : buildings)
+	for(Building* p_b : buildings)
 	{
+		Building& b = *p_b;
 		SceneNode* building_node = new SceneNode;
 		building_node->container = new SceneNode::Container;
 		building_node->container->box = Box::CreateXZ(b.box, 0.f, 4.f);
@@ -271,52 +449,48 @@ void CityGenerator::CreateScene()
 
 		Int2 size = b.size * 2;
 		Int2 pos = b.pos * 2;
-		int left_hole = b.doors[Building::DOOR_LEFT];
-		int right_hole = b.doors[Building::DOOR_RIGHT];
-		int bottom_hole = b.doors[Building::DOOR_BOTTOM];
-		int top_hole = b.doors[Building::DOOR_TOP];
 
-		for(int x = pos.x + 1; x < pos.x + size.x - 1; ++x)
+		for(int x = 1; x < size.x - 1; ++x)
 		{
 			// bottom wall
-			if(x != bottom_hole)
+			if(!b.is_doors[x])
 			{
 				node = new SceneNode;
 				node->mesh = mesh_wall;
-				node->pos = Vec3(tile_size2 * (x + 1), 0, tile_size2 * pos.y);
+				node->pos = Vec3(tile_size2 * (x + pos.x + 1), 0, tile_size2 * pos.y);
 				node->rot = Vec3(0, PI / 2, 0);
 				building_node->Add(node);
 			}
 
 			// top wall
-			if(x != top_hole)
+			if(!b.is_doors[x + size.y * (size.x + 1)])
 			{
 				node = new SceneNode;
 				node->mesh = mesh_wall;
-				node->pos = Vec3(tile_size2 * (x + 1), 0, tile_size2 * (pos.y + size.y) - wall_width);
+				node->pos = Vec3(tile_size2 * (x + pos.x + 1), 0, tile_size2 * (pos.y + size.y) - wall_width);
 				node->rot = Vec3(0, PI / 2, 0);
 				building_node->Add(node);
 			}
 		}
 
-		for(int y = pos.y + 1; y < pos.y + size.y - 1; ++y)
+		for(int y = 1; y < size.y - 1; ++y)
 		{
 			// left wall
-			if(y != left_hole)
+			if(!b.is_doors[y * (size.x + 1)])
 			{
 				node = new SceneNode;
 				node->mesh = mesh_wall;
-				node->pos = Vec3(tile_size2 * pos.x, 0, tile_size2 * y);
+				node->pos = Vec3(tile_size2 * pos.x, 0, tile_size2 * (y + pos.y));
 				node->rot = Vec3::Zero;
 				building_node->Add(node);
 			}
 
 			// right wall
-			if(y != right_hole)
+			if(!b.is_doors[size.x + y * (size.x + 1)])
 			{
 				node = new SceneNode;
 				node->mesh = mesh_wall;
-				node->pos = Vec3(tile_size2 * (pos.x + size.x) - wall_width, 0, tile_size2 * y);
+				node->pos = Vec3(tile_size2 * (pos.x + size.x) - wall_width, 0, tile_size2 * (y + pos.y));
 				node->rot = Vec3::Zero;
 				building_node->Add(node);
 			}
@@ -355,30 +529,30 @@ void CityGenerator::CreateScene()
 		// colliders
 		Collider c;
 		c.half_size = Vec2(tile_size2 / 2, wall_width / 2);
-		for(int x = pos.x; x < pos.x + size.x; ++x)
+		for(int x = 0; x < size.x; ++x)
 		{
 			// bottom wall
-			c.center = Vec2(tile_size2 * x + tile_size2 / 2, tile_size2 * pos.y + wall_width / 2);
-			if(x != bottom_hole)
+			c.center = Vec2(tile_size2 * (x + pos.x) + tile_size2 / 2, tile_size2 * pos.y + wall_width / 2);
+			if(!b.is_doors[x])
 				level->AddCollider(c);
 
 			// top wall
-			if(x != top_hole)
+			if(!b.is_doors[x + size.y * (size.x + 1)])
 			{
 				c.center.y = tile_size2 * (pos.y + size.y) - wall_width / 2;
 				level->AddCollider(c);
 			}
 		}
 		c.half_size = Vec2(wall_width / 2, tile_size2 / 2);
-		for(int y = pos.y; y < pos.y + size.y; ++y)
+		for(int y = 0; y < size.y; ++y)
 		{
 			// left wall
-			c.center = Vec2(tile_size2 * pos.x + wall_width / 2, tile_size2 * y + tile_size2 / 2);
-			if(y != left_hole)
+			c.center = Vec2(tile_size2 * pos.x + wall_width / 2, tile_size2 * (y + pos.y) + tile_size2 / 2);
+			if(!b.is_doors[y * (size.x + 1)])
 				level->AddCollider(c);
 
 			// right wall
-			if(y != right_hole)
+			if(!b.is_doors[size.x + y * (size.x + 1)])
 			{
 				c.center.x = tile_size2 * (pos.x + size.x) - wall_width / 2;
 				level->AddCollider(c);
@@ -398,7 +572,7 @@ void CityGenerator::SpawnItems()
 	Item* pistol = Item::Get("pistol");
 	Item* axe = Item::Get("axe");
 
-	for(Building& building : buildings)
+	for(Building* building : buildings)
 	{
 		int count = Rand() % 10; // 10% - 0, 40% - 1, 40% - 2, 10% - 3
 		switch(count)
@@ -442,15 +616,15 @@ void CityGenerator::SpawnItems()
 				break;
 			}
 
-			Vec2 pos = building.box.GetRandomPoint(2.f);
+			Vec2 pos = building->box.GetRandomPoint(2.f);
 			level->SpawnItem(Vec3(pos.x, floor_y, pos.y), item);
 		}
 	}
 
 	for(int i = 0; i < 2; ++i)
 	{
-		Building& building = buildings[Rand() % buildings.size()];
-		Vec2 pos = building.box.GetRandomPoint(2.f);
+		Building* building = buildings[Rand() % buildings.size()];
+		Vec2 pos = building->box.GetRandomPoint(2.f);
 		level->SpawnItem(Vec3(pos.x, floor_y, pos.y), axe);
 	}
 }
@@ -495,7 +669,7 @@ Int2 CityGenerator::PosToPt(const Vec3& pos)
 void CityGenerator::Save(FileWriter& f)
 {
 	f << map;
-	f << buildings;
+	f << buildings; // FIXME
 }
 
 void CityGenerator::Load(FileReader& f)

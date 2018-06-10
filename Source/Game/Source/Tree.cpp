@@ -13,10 +13,11 @@ static Tree::Node* GetNode(const Int2& pos, const Int2& size)
 	return node;
 }
 
-Tree::Tree(int min_size, int max_size, int size, int split_width) : min_size(min_size), max_size(max_size), split_width(split_width)
+Tree::Tree(int min_size, int max_size, const Int2& size, int split_width) : min_size(min_size), max_size(max_size), split_width(split_width)
 {
 	min_size_before_split = min_size * 2 + split_width;
-	to_check.push_back(GetNode(Int2::Zero, Int2(size)));
+	assert(max_size >= min_size_before_split);
+	to_check.push_back(GetNode(Int2::Zero, size));
 }
 
 Tree::~Tree()
@@ -43,19 +44,19 @@ void Tree::Split(Node& node)
 
 	if(node.horizontal)
 	{
-		int split = Random(min_size, node.size.x - min_size - 1);
+		int split = Random(min_size, node.size.x - min_size - split_width);
 		node.split_pos = Int2(node.pos.x + split, node.pos.y);
-		node.split_size = Int2(1, node.size.y);
+		node.split_size = Int2(split_width, node.size.y);
 		node.childs[0] = GetNode(node.pos, Int2(split, node.size.y));
-		node.childs[1] = GetNode(Int2(node.pos.x + split + 1, node.pos.y), Int2(node.size.x - split - 1, node.size.y));
+		node.childs[1] = GetNode(Int2(node.pos.x + split + split_width, node.pos.y), Int2(node.size.x - split - split_width, node.size.y));
 	}
 	else
 	{
-		int split = Random(min_size, node.size.y - min_size - 1);
+		int split = Random(min_size, node.size.y - min_size - split_width);
 		node.split_pos = Int2(node.pos.x, node.pos.y + split);
-		node.split_size = Int2(node.size.x, 1);
+		node.split_size = Int2(node.size.x, split_width);
 		node.childs[0] = GetNode(node.pos, Int2(node.size.x, split));
-		node.childs[1] = GetNode(Int2(node.pos.x, node.pos.y + split + 1), Int2(node.size.x, node.size.y - split - 1));
+		node.childs[1] = GetNode(Int2(node.pos.x, node.pos.y + split + split_width), Int2(node.size.x, node.size.y - split - split_width));
 	}
 
 	to_check.push_back(node.childs[0]);

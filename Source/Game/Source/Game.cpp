@@ -1332,12 +1332,14 @@ void Game::LoadGame()
 
 cstring VersionToString(int version)
 {
-	int major = (version & 0xFF00) >> 8;
-	int minor = version & 0xFF;
-	if(minor == 0)
-		return Format("%d", major);
-	else
+	int major = (version & 0xFF0000) >> 16;
+	int minor = (version & 0xFF00) >> 8;
+	int patch = version & 0xFF;
+
+	if(patch == 0)
 		return Format("%d.%d", major, minor);
+	else
+		return Format("%d.%d.%d", major, minor, patch);
 }
 
 void Game::Load(FileReader& f)
@@ -1355,7 +1357,7 @@ void Game::Load(FileReader& f)
 	// version
 	int version;
 	f >> version;
-	version &= 0xFFFF;
+	version &= 0xFFFFFF;
 	if(version != VERSION)
 		throw Format("Invalid save version %s.", VersionToString(version));
 

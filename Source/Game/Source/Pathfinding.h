@@ -13,7 +13,7 @@ public:
 		FPR_FOUND
 	};
 
-	void GenerateBlockedGrid(uint size, float tile_size, const vector<Building>& buildings);
+	void GenerateBlockedGrid(uint size, float tile_size, const vector<Building*>& buildings);
 	void DrawPath(DebugDrawer* debug_drawer, const Vec3& from, const Vec3& to, const vector<Int2>& path);
 	FindPathResult FindPath(const Vec3& from, const Vec3& to, vector<Int2>& path);
 	Int2 GetPt(const Vec3& pos) { return Int2(int(pos.x / tile_size), int(pos.z / tile_size)); }

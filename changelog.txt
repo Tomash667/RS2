@@ -1,6 +1,6 @@
 Rouge Survival Changelog
 ======================================================
-v1 (2018-05-??):
+v0.1 (2018-05-??):
 + gun, ammo, shooting
 + canned food, eating, starving
 + axe, better clothes
