@@ -3,7 +3,7 @@
 #include <DebugDrawer.h>
 #include "Level.h"
 
-void Pathfinding::GenerateBlockedGrid(uint size, float tile_size, const vector<Building>& buildings)
+void Pathfinding::GenerateBlockedGrid(uint size, float tile_size, const vector<Building*>& buildings)
 {
 	uint s = size * 2;
 	this->size = s;
@@ -13,38 +13,39 @@ void Pathfinding::GenerateBlockedGrid(uint size, float tile_size, const vector<B
 	tiles.resize(s * s);
 	memset(tiles.data(), 0, sizeof(Tile) * s * s);
 
-	for(const Building& b : buildings)
+	for(const Building* p_b : buildings)
 	{
+		const Building& b = *p_b;
 		Int2 pos = b.pos * 2,
 			size = b.size * 2;
-		for(int x = pos.x; x < pos.x + size.x; ++x)
+		for(int x = 0; x < size.x; ++x)
 		{
 			// bottom
-			if(x != b.doors[Building::DOOR_BOTTOM])
+			if(!b.IsDoors(Int2(x, 0), DIR_BOTTOM))
 			{
-				tiles[x + pos.y * s].blocked |= BLOCKED_BOTTOM;
-				tiles[x + (pos.y - 1) * s].blocked |= BLOCKED_TOP;
+				tiles[x + pos.x + pos.y * s].blocked |= BLOCKED_BOTTOM;
+				tiles[x + pos.x + (pos.y - 1) * s].blocked |= BLOCKED_TOP;
 			}
 			// top
-			if(x != b.doors[Building::DOOR_TOP])
+			if(!b.IsDoors(Int2(x, size.y - 1), DIR_TOP))
 			{
-				tiles[x + (pos.y + size.y - 1) * s].blocked |= BLOCKED_TOP;
-				tiles[x + (pos.y + size.y) * s].blocked |= BLOCKED_BOTTOM;
+				tiles[x + pos.x + (pos.y + size.y - 1) * s].blocked |= BLOCKED_TOP;
+				tiles[x + pos.x + (pos.y + size.y) * s].blocked |= BLOCKED_BOTTOM;
 			}
 		}
-		for(int y = pos.y; y < pos.y + size.y; ++y)
+		for(int y = 0; y < size.y; ++y)
 		{
 			// left
-			if(y != b.doors[Building::DOOR_LEFT])
+			if(!b.IsDoors(Int2(0, y), DIR_LEFT))
 			{
-				tiles[pos.x + y * s].blocked |= BLOCKED_LEFT;
-				tiles[pos.x - 1 + y * s].blocked |= BLOCKED_RIGHT;
+				tiles[pos.x + (y + pos.y) * s].blocked |= BLOCKED_LEFT;
+				tiles[pos.x - 1 + (y + pos.y) * s].blocked |= BLOCKED_RIGHT;
 			}
 			// right
-			if(y != b.doors[Building::DOOR_RIGHT])
+			if(!b.IsDoors(Int2(size.x - 1, y), DIR_RIGHT))
 			{
-				tiles[pos.x + size.x - 1 + y * s].blocked |= BLOCKED_RIGHT;
-				tiles[pos.x + size.x + y * s].blocked |= BLOCKED_LEFT;
+				tiles[pos.x + size.x - 1 + (y + pos.y) * s].blocked |= BLOCKED_RIGHT;
+				tiles[pos.x + size.x + (y + pos.y) * s].blocked |= BLOCKED_LEFT;
 			}
 		}
 	}

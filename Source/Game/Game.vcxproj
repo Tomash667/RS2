@@ -179,6 +179,7 @@
     <ClInclude Include="Source\Pathfinding.h" />
     <ClInclude Include="Source\Player.h" />
     <ClInclude Include="Source\ThirdPersonCamera.h" />
+    <ClInclude Include="Source\Tree.h" />
     <ClInclude Include="Source\Unit.h" />
     <ClInclude Include="Source\Version.h" />
     <ClInclude Include="Source\Zombie.h" />
@@ -195,6 +196,7 @@
     <ClCompile Include="Source\Pathfinding.cpp" />
     <ClCompile Include="Source\Player.cpp" />
     <ClCompile Include="Source\ThirdPersonCamera.cpp" />
+    <ClCompile Include="Source\Tree.cpp" />
     <ClCompile Include="Source\Unit.cpp" />
     <ClCompile Include="Source\Zombie.cpp" />
   </ItemGroup>
