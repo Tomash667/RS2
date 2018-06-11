@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Vertex.h>
+#include <Mesh.h>
 
 enum DIR
 {
@@ -29,6 +30,8 @@ struct Building
 		bool visited;
 	};
 
+	Building() : mesh(nullptr) {}
+	~Building() { delete mesh; }
 	void CheckConnect(Room& room, uint index, uint& last_index)
 	{
 		if(index == last_index)

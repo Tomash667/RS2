@@ -14,6 +14,7 @@ enum Tile
 class CityGenerator
 {
 public:
+	~CityGenerator();
 	void Init(Scene* scene, Level* level, Pathfinding* pathfinding, ResourceManager* res_mgr, uint size, uint splits);
 	void Reset();
 	void Generate();
@@ -35,6 +36,7 @@ private:
 	void SpawnZombies();
 	Int2 PosToPt(const Vec3& pos);
 
+	ResourceManager* res_mgr;
 	Scene* scene;
 	Pathfinding* pathfinding;
 	Level* level;

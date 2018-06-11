@@ -15,8 +15,14 @@ const float CityGenerator::tile_size = 5.f;
 const float CityGenerator::floor_y = 0.05f;
 const float CityGenerator::wall_width = 0.2f;
 
+CityGenerator::~CityGenerator()
+{
+	DeleteElements(buildings);
+}
+
 void CityGenerator::Init(Scene* scene, Level* level, Pathfinding* pathfinding, ResourceManager* res_mgr, uint size, uint splits)
 {
+	this->res_mgr = res_mgr;
 	this->scene = scene;
 	this->level = level;
 	this->pathfinding = pathfinding;
@@ -28,7 +34,7 @@ void CityGenerator::Init(Scene* scene, Level* level, Pathfinding* pathfinding, R
 
 	mesh[T_ASPHALT] = res_mgr->GetMesh("asphalt.qmsh");
 	mesh[T_PAVEMENT] = res_mgr->GetMesh("brick_pavement.qmsh");
-	mesh[T_BUILDING] = res_mgr->GetMesh("building_floor_ceil.qmsh");
+	mesh[T_BUILDING] = res_mgr->GetMesh("building_floor.qmsh");
 
 	mesh_offset[T_ASPHALT] = 0;
 	mesh_offset[T_PAVEMENT] = floor_y;
@@ -37,6 +43,10 @@ void CityGenerator::Init(Scene* scene, Level* level, Pathfinding* pathfinding, R
 	mesh_curb = res_mgr->GetMesh("curb.qmsh");
 	mesh_wall = res_mgr->GetMesh("wall.qmsh");
 	mesh_corner = res_mgr->GetMesh("corner.qmsh");
+
+	tex_ceil = res_mgr->GetTexture("ceil.jpg");
+	tex_wall = res_mgr->GetTexture("wall.jpg");
+	tex_wall_inner = res_mgr->GetTexture("wall_inner.jpg");
 }
 
 void CityGenerator::Reset()
@@ -136,11 +146,11 @@ void CityGenerator::FillBuildings()
 	vector<uint> indices;
 	vector<Building::Room*> outside_rooms, rooms_to_check;
 	MeshInfo info;
-	info.subs.resize(4);
+	info.subs.resize(3);
 	info.subs[0].tex = tex_ceil;
-	info.subs[1].tex = tex_roof;
-	info.subs[2].tex = tex_wall;
-	info.subs[3].tex = tex_wall_inner;
+	info.subs[1].tex = tex_wall;
+	info.subs[2].tex = tex_wall_inner;
+	//info.subs[3].tex = tex_roof;
 
 	for(Building* building : buildings)
 	{
@@ -211,7 +221,7 @@ void CityGenerator::FillBuildings()
 					building->CheckConnect(room, indices[x + (room.pos.y + room.size.y) * size.x], last);
 			}
 			else
-				room.outside |= DIR_F_BOTTOM;
+				room.outside |= DIR_F_TOP;
 
 			if(room.outside != 0)
 				outside_rooms.push_back(&room);
@@ -370,16 +380,73 @@ void CityGenerator::FillBuildings()
 		// set is_doors map
 		building->is_doors.resize(size.x * size.y, 0);
 		for(std::pair<Int2, DIR>& door : building->doors)
-			building->is_doors[door.first.x + door.first.y * size.x] = door.second;
+			building->is_doors[door.first.x + door.first.y * size.x] |= 1 << door.second;
 
 		// build mesh
 		vector<Vertex>& v = info.vertices;
+		v.clear();
+		info.indices.clear();
 		Vec3 offset = Vec3(-tile_size * building->size.x / 2, 0, -tile_size * building->size.y / 2);
 		// ceiling
 		info.subs[0].first = 0;
+		const float h = 4.f;
+		const float ts = tile_size / 2;
+		v.push_back(Vertex(Vec3(0, h, 0) + offset, Vec3(0, -1, 0), Vec2(0, 0)));
+		v.push_back(Vertex(Vec3(ts*size.x, h, 0) + offset, Vec3(0, -1, 0), Vec2((float)size.x, 0)));
+		v.push_back(Vertex(Vec3(0, h, ts*size.y) + offset, Vec3(0, -1, 0), Vec2(0, (float)size.y)));
+		v.push_back(Vertex(Vec3(ts*size.x, h, ts*size.y) + offset, Vec3(0, -1, 0), Vec2((float)size.x, (float)size.y)));
 		info.subs[0].tris = 2;
-		v.push_back(Vertex(Vec3::Zero + offset, Vec3(0, -1, 0), Vec2(0, 0)));
-		v.push_back(Vertex(Vec3()))
+		// outside wall
+		const Vec2 uv(1.f, 1.f);
+		info.subs[1].first = v.size() / 2;
+		for(int x = 0; x < size.x; ++x)
+		{
+			// bottom
+			if(!building->IsDoors(Int2(x, 0), DIR_BOTTOM))
+			{
+				v.push_back(Vertex(Vec3(ts*x, h, 0) + offset, Vec3(0, 0, -1), Vec2(0, uv.y)));
+				v.push_back(Vertex(Vec3(ts*(x + 1), h, 0) + offset, Vec3(0, 0, -1), Vec2(uv.x, uv.y)));
+				v.push_back(Vertex(Vec3(ts*x, 0, 0) + offset, Vec3(0, 0, -1), Vec2(0, 0)));
+				v.push_back(Vertex(Vec3(ts*(x + 1), 0, 0) + offset, Vec3(0, 0, -1), Vec2(uv.x, 0)));
+			}
+			// top
+			if(!building->IsDoors(Int2(x, size.y - 1), DIR_TOP))
+			{
+				v.push_back(Vertex(Vec3(ts*(x + 1), h, ts*size.y) + offset, Vec3(0, 0, 1), Vec2(0, uv.y)));
+				v.push_back(Vertex(Vec3(ts*x, h, ts*size.y) + offset, Vec3(0, 0, 1), Vec2(uv.x, uv.y)));
+				v.push_back(Vertex(Vec3(ts*(x + 1), 0, ts*size.y) + offset, Vec3(0, 0, 1), Vec2(0, 0)));
+				v.push_back(Vertex(Vec3(ts*x, 0, ts*size.y) + offset, Vec3(0, 0, 1), Vec2(uv.x, 0)));
+			}
+		}
+		for(int y = 0; y < size.y; ++y)
+		{
+			// left
+			if(!building->IsDoors(Int2(0, y), DIR_LEFT))
+			{
+				v.push_back(Vertex(Vec3(0, h, ts*(y+1)) + offset, Vec3(-1, 0, 0), Vec2(0, uv.y)));
+				v.push_back(Vertex(Vec3(0, h, ts*y) + offset, Vec3(-1, 0, 0), Vec2(uv.x, uv.y)));
+				v.push_back(Vertex(Vec3(0, 0, ts*(y+1)) + offset, Vec3(-1, 0, 0), Vec2(0, 0)));
+				v.push_back(Vertex(Vec3(0, 0, ts*y) + offset, Vec3(-1, 0, 0), Vec2(uv.x, 0)));
+			}
+			// right
+			if(!building->IsDoors(Int2(size.x - 1, y), DIR_RIGHT))
+			{
+				v.push_back(Vertex(Vec3(ts*size.x, h, ts*y) + offset, Vec3(-1, 0, 0), Vec2(0, uv.y)));
+				v.push_back(Vertex(Vec3(ts*size.x, h, ts*(y+1)) + offset, Vec3(-1, 0, 0), Vec2(uv.x, uv.y)));
+				v.push_back(Vertex(Vec3(ts*size.x, 0, ts*y) + offset, Vec3(-1, 0, 0), Vec2(0, 0)));
+				v.push_back(Vertex(Vec3(ts*size.x, 0, ts*(y+1)) + offset, Vec3(-1, 0, 0), Vec2(uv.x, 0)));
+			}
+		}
+		info.subs[1].tris = v.size() / 2 - info.subs[0].tris;
+		// outside wall from inside
+		info.subs[2].first = v.size() / 2;
+		// ...
+		info.subs[2].tris = v.size() / 2 - info.subs[1].tris;
+
+
+		info.GenerateIndices();
+		building->mesh = res_mgr->CreateMesh(&info);
+		building->mesh->head.radius = (Vec3(0, h, ts*max(size.x, size.y)) + offset).Length(); // FIXME - use roof pos
 	}
 }
 
@@ -464,10 +531,16 @@ void CityGenerator::CreateScene()
 		building_node->container->box = Box::CreateXZ(b.box, 0.f, 4.f);
 		building_node->container->is_sphere = false;
 
+		SceneNode* building_mesh = new SceneNode;
+		building_mesh->mesh = b.mesh;
+		building_mesh->pos = Vec3(tile_size * b.size.x / 2 + tile_size * b.pos.x, 0, tile_size * b.size.y / 2 + tile_size * b.pos.y);
+		building_mesh->rot = Vec3::Zero;
+		building_node->Add(building_mesh);
+
 		Int2 size = b.size * 2;
 		Int2 pos = b.pos * 2;
 
-		for(int x = 1; x < size.x - 1; ++x)
+		/*for(int x = 1; x < size.x - 1; ++x)
 		{
 			// bottom wall
 			if(!b.IsDoors(Int2(x, 0), DIR_BOTTOM))
@@ -539,12 +612,12 @@ void CityGenerator::CreateScene()
 		node->mesh = mesh_corner;
 		node->pos = Vec3(tile_size2 * (pos.x + size.x), 0, tile_size2 * (pos.y + size.y));
 		node->rot = Vec3(0, PI, 0);
-		building_node->Add(node);
+		building_node->Add(node);*/
 
 		scene->Add(building_node);
 
 		// colliders
-		Collider c;
+		/*Collider c;
 		c.half_size = Vec2(tile_size2 / 2, wall_width / 2);
 		for(int x = 0; x < size.x; ++x)
 		{
@@ -574,7 +647,7 @@ void CityGenerator::CreateScene()
 				c.center.x = tile_size2 * (pos.x + size.x) - wall_width / 2;
 				level->AddCollider(c);
 			}
-		}
+		}*/
 
 		level->camera_colliders.push_back(Box(tile_size2 * pos.x, 4.f, tile_size2 * pos.y,
 			tile_size2 * (pos.x + size.x), 4.05f, tile_size2 * (pos.y + size.y)));

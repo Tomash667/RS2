@@ -1210,6 +1210,8 @@ void Game::OnDebugDraw(DebugDrawer* debug)
 
 void Game::UpdateWorld(float dt)
 {
+	// FIXME
+	return;
 	world_tick += dt;
 	if(world_tick < 10.f)
 		return;
