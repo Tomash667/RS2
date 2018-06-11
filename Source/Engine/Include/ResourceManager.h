@@ -15,6 +15,7 @@ public:
 	Music* GetMusic(Cstring name);
 	Sound* GetSound(Cstring name);
 	Texture* GetTexture(Cstring name);
+	Mesh* CreateMesh(MeshInfo* mesh_info);
 
 private:
 	struct ResourceComparer

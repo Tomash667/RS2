@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Vertex.h>
+
 enum DIR
 {
 	DIR_LEFT,
@@ -19,15 +21,6 @@ enum DIR_FLAGS
 
 struct Building
 {
-	enum Door
-	{
-		DOOR_LEFT,
-		DOOR_RIGHT,
-		DOOR_BOTTOM,
-		DOOR_TOP,
-		DOOR_MAX
-	};
-
 	struct Room
 	{
 		Int2 pos, size;
@@ -60,17 +53,5 @@ struct Building
 	vector<Room> rooms;
 	vector<std::pair<Int2, DIR>> doors;
 	vector<int> is_doors;
+	Mesh* mesh;
 };
-
-/*struct Building
-{
-	struct Room
-	{
-		Int2 pos, size, split_pos, split_size;
-		Room* child_rooms[2];
-	};
-
-	Box2d box;
-	Int2 pos, size;
-	vector<Int2> doors2;
-};*/

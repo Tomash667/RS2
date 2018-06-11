@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Resource.h"
+#include "Vertex.h"
 
 struct MeshPoint {};
 
@@ -135,4 +136,19 @@ struct Mesh final : Resource
 	vector<Point> attach_points;
 	vector<BoneGroup> groups;
 	vector<Matrix> model_to_bone;
+};
+
+struct MeshInfo
+{
+	struct Submesh
+	{
+		Texture* tex;
+		uint tris, first;
+	};
+
+	void GenerateIndices();
+
+	vector<Vertex> vertices;
+	vector<word> indices;
+	vector<Submesh> subs;
 };

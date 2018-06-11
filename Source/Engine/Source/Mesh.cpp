@@ -159,3 +159,22 @@ void Mesh::KeyframeBone::Mix(Matrix& out, const Matrix& mul) const
 		* Matrix::Translation(pos)
 		* mul;
 }
+
+
+void MeshInfo::GenerateIndices()
+{
+	uint verts = vertices.size();
+	assert(verts % 4 == 0);
+	uint faces = verts / 4;
+	uint index = 0;
+	for(uint i = 0; i < faces; ++i)
+	{
+		indices.push_back(index);
+		indices.push_back(index + 1);
+		indices.push_back(index + 2);
+		indices.push_back(index + 2);
+		indices.push_back(index + 1);
+		indices.push_back(index + 3);
+		index += 4;
+	}
+}

@@ -40,8 +40,11 @@ private:
 	Level* level;
 	vector<Tile> map;
 	uint size;
-	Mesh* mesh[T_MAX], *mesh_curb, *mesh_wall, *mesh_corner;
 	float mesh_offset[T_MAX], map_size;
 	vector<Building*> buildings;
 	Vec3 player_start_pos;
+
+	// resources
+	Mesh* mesh[T_MAX], *mesh_curb, *mesh_wall, *mesh_corner;
+	Texture* tex_ceil, *tex_roof, *tex_wall, *tex_wall_inner;
 };

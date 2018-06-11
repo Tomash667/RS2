@@ -9,6 +9,7 @@
 #include "Item.h"
 #include "Pathfinding.h"
 #include "Tree.h"
+#include <Mesh.h>
 
 const float CityGenerator::tile_size = 5.f;
 const float CityGenerator::floor_y = 0.05f;
@@ -134,6 +135,12 @@ void CityGenerator::FillBuildings()
 {
 	vector<uint> indices;
 	vector<Building::Room*> outside_rooms, rooms_to_check;
+	MeshInfo info;
+	info.subs.resize(4);
+	info.subs[0].tex = tex_ceil;
+	info.subs[1].tex = tex_roof;
+	info.subs[2].tex = tex_wall;
+	info.subs[3].tex = tex_wall_inner;
 
 	for(Building* building : buildings)
 	{
@@ -160,7 +167,7 @@ void CityGenerator::FillBuildings()
 			// mark indices
 			for(int y = room.pos.y; y < room.pos.y + room.size.y; ++y)
 			{
-				for(int x = room.pos.x; x <room.pos.x + room.size.x; ++x)
+				for(int x = room.pos.x; x < room.pos.x + room.size.x; ++x)
 					indices[x + y * size.x] = i;
 			}
 		}
@@ -254,7 +261,7 @@ void CityGenerator::FillBuildings()
 					{
 					case DIR_LEFT:
 						rect = Rect(room->pos.x, room->pos.y, room->pos.x, room->pos.y + room->size.y - 1);
-			break;
+						break;
 					case DIR_RIGHT:
 						rect = Rect(room->pos.x + room->size.x - 1, room->pos.y, room->pos.x + room->size.x - 1, room->pos.y + room->size.y - 1);
 						break;
@@ -268,12 +275,12 @@ void CityGenerator::FillBuildings()
 
 					Int2 pt;
 					if(rect.p1.x == rect.p2.x)
-			{
+					{
 						pt.x = rect.p1.x;
 						pt.y = Random(rect.p1.y, rect.p2.y);
 						if(pt.y == rect.p1.y || pt.y == rect.p2.y)
 							pt.y = Random(rect.p1.y, rect.p2.y);
-			}
+					}
 					else
 					{
 						pt.y = rect.p1.y;
@@ -286,7 +293,7 @@ void CityGenerator::FillBuildings()
 					room->outside_used |= 1 << j;
 					if(room->outside_used == room->outside)
 						RemoveElement(outside_rooms, room);
-			break;
+					break;
 				}
 				j = (j + 1) % 4;
 			}
@@ -348,8 +355,8 @@ void CityGenerator::FillBuildings()
 						room.connected2.push_back(i);
 						room2.connected2.push_back(my_index);
 						ok = true;
-			break;
-		}
+						break;
+					}
 					index = (index + 1) % room.connected.size();
 				}
 				while(index != start_index);
@@ -357,13 +364,22 @@ void CityGenerator::FillBuildings()
 				if(!ok)
 					all_ok = false;
 				++my_index;
-	}
-}
+			}
+		}
 
 		// set is_doors map
 		building->is_doors.resize(size.x * size.y, 0);
 		for(std::pair<Int2, DIR>& door : building->doors)
 			building->is_doors[door.first.x + door.first.y * size.x] = door.second;
+
+		// build mesh
+		vector<Vertex>& v = info.vertices;
+		Vec3 offset = Vec3(-tile_size * building->size.x / 2, 0, -tile_size * building->size.y / 2);
+		// ceiling
+		info.subs[0].first = 0;
+		info.subs[0].tris = 2;
+		v.push_back(Vertex(Vec3::Zero + offset, Vec3(0, -1, 0), Vec2(0, 0)));
+		v.push_back(Vertex(Vec3()))
 	}
 }
 

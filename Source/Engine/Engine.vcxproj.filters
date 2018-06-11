@@ -173,9 +173,6 @@
     <ClInclude Include="Include\WindowHandler.h">
       <Filter>1. Include\Engine</Filter>
     </ClInclude>
-    <ClInclude Include="Include\Tree.h">
-      <Filter>1. Include\Core</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Text.cpp">
@@ -294,9 +291,6 @@
     </ClCompile>
     <ClCompile Include="Source\DebugShader.cpp">
       <Filter>3. Source Files\Engine</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Tree.cpp">
-      <Filter>3. Source Files\Core</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

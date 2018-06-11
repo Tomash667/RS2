@@ -291,3 +291,74 @@ void QmshLoader::LoadInternal(Mesh& mesh, FileReader& f)
 		mesh.SetupBoneMatrices();
 	}
 }
+
+Mesh* QmshLoader::Create(MeshInfo* mesh_info)
+{
+	assert(mesh_info);
+	Mesh* mesh = new Mesh("");
+	try
+	{
+		CreateInternal(*mesh, *mesh_info);
+		return mesh;
+	}
+	catch(cstring err)
+	{
+		delete mesh;
+		throw Format("Failed to create mesh: %s", err);
+	}
+}
+
+void QmshLoader::CreateInternal(Mesh& mesh, MeshInfo& info)
+{
+	mesh.head.flags = 0;
+
+	// vb
+	uint vertex_size = sizeof(Vertex);
+	uint size = vertex_size * info.vertices.size();
+
+	D3D11_BUFFER_DESC v_desc;
+	v_desc.Usage = D3D11_USAGE_DEFAULT;
+	v_desc.ByteWidth = size;
+	v_desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	v_desc.CPUAccessFlags = 0;
+	v_desc.MiscFlags = 0;
+	v_desc.StructureByteStride = 0;
+
+	D3D11_SUBRESOURCE_DATA v_data;
+	v_data.pSysMem = info.vertices.data();
+
+	HRESULT result = device->CreateBuffer(&v_desc, &v_data, &mesh.vb);
+	if(FAILED(result))
+		throw Format("Failed to create vertex buffer (%u).", result);
+
+	// ib
+	size = sizeof(word) * info.indices.size();
+
+	v_desc.ByteWidth = size;
+	v_desc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	v_data.pSysMem = info.indices.data();
+
+	result = device->CreateBuffer(&v_desc, &v_data, &mesh.ib);
+	if(FAILED(result))
+		throw Format("Failed to create index buffer (%u).", result);
+
+	// subs
+	mesh.subs.resize(info.subs.size());
+	for(uint i = 0, count = info.subs.size(); i < count; ++i)
+	{
+		Mesh::Submesh& sub = mesh.subs[i];
+		MeshInfo::Submesh& sub_info = info.subs[i];
+		sub.first = sub_info.first;
+		sub.tris = sub_info.tris;
+		sub.min_ind = 0;
+		sub.tex = sub_info.tex;
+		sub.tex_normal = nullptr;
+		sub.tex_specular = nullptr;
+		// default values from blender FIXME
+		/*f >> sub.specular_color;
+		f >> sub.specular_intensity;
+		f >> sub.specular_hardness;*/
+	}
+
+	// radius? FIXME
+}

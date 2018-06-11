@@ -110,3 +110,8 @@ void ResourceManager::AddFontFromFile(Cstring name)
 {
 	font_loader->AddFromFile(Format("Data/%s", name));
 }
+
+Mesh* ResourceManager::CreateMesh(MeshInfo* mesh_info)
+{
+	return qmsh_loader->Create(mesh_info);
+}
