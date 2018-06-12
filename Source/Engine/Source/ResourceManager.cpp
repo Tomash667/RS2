@@ -64,7 +64,19 @@ Mesh* ResourceManager::GetMesh(Cstring name)
 	if(!mesh)
 	{
 		cstring path = Format("Data/%s", name);
-		mesh = qmsh_loader->Load(name, path);
+		mesh = qmsh_loader->Load(name, path, false);
+		resources.insert(mesh);
+	}
+	return mesh;
+}
+
+Mesh* ResourceManager::GetMeshRaw(Cstring name)
+{
+	Mesh* mesh = (Mesh*)Get(name, Resource::Type::Mesh);
+	if(!mesh)
+	{
+		cstring path = Format("Data/%s", name);
+		mesh = qmsh_loader->Load(name, path, true);
 		resources.insert(mesh);
 	}
 	return mesh;
@@ -111,7 +123,7 @@ void ResourceManager::AddFontFromFile(Cstring name)
 	font_loader->AddFromFile(Format("Data/%s", name));
 }
 
-Mesh* ResourceManager::CreateMesh(MeshInfo* mesh_info)
+Mesh* ResourceManager::CreateMesh(MeshBuilder* mesh_builder)
 {
-	return qmsh_loader->Create(mesh_info);
+	return qmsh_loader->Create(mesh_builder);
 }

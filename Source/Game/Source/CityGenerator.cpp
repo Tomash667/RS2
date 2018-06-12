@@ -9,7 +9,7 @@
 #include "Item.h"
 #include "Pathfinding.h"
 #include "Tree.h"
-#include <Mesh.h>
+#include <MeshBuilder.h>
 
 const float CityGenerator::tile_size = 5.f;
 const float CityGenerator::floor_y = 0.05f;
@@ -41,8 +41,8 @@ void CityGenerator::Init(Scene* scene, Level* level, Pathfinding* pathfinding, R
 	mesh_offset[T_BUILDING] = floor_y;
 
 	mesh_curb = res_mgr->GetMesh("curb.qmsh");
-	mesh_wall = res_mgr->GetMesh("wall.qmsh");
-	mesh_corner = res_mgr->GetMesh("corner.qmsh");
+	mesh_wall = res_mgr->GetMeshRaw("wall.qmsh");
+	mesh_corner = res_mgr->GetMeshRaw("corner.qmsh");
 
 	tex_ceil = res_mgr->GetTexture("ceil.jpg");
 	tex_wall = res_mgr->GetTexture("wall.jpg");
@@ -145,12 +145,7 @@ void CityGenerator::FillBuildings()
 {
 	vector<uint> indices;
 	vector<Building::Room*> outside_rooms, rooms_to_check;
-	MeshInfo info;
-	info.subs.resize(3);
-	info.subs[0].tex = tex_ceil;
-	info.subs[1].tex = tex_wall;
-	info.subs[2].tex = tex_wall_inner;
-	//info.subs[3].tex = tex_roof;
+	MeshBuilder builder;
 
 	for(Building* building : buildings)
 	{
@@ -383,70 +378,13 @@ void CityGenerator::FillBuildings()
 			building->is_doors[door.first.x + door.first.y * size.x] |= 1 << door.second;
 
 		// build mesh
-		vector<Vertex>& v = info.vertices;
-		v.clear();
-		info.indices.clear();
+		builder.Clear();
 		Vec3 offset = Vec3(-tile_size * building->size.x / 2, 0, -tile_size * building->size.y / 2);
-		// ceiling
-		info.subs[0].first = 0;
-		const float h = 4.f;
-		const float ts = tile_size / 2;
-		v.push_back(Vertex(Vec3(0, h, 0) + offset, Vec3(0, -1, 0), Vec2(0, 0)));
-		v.push_back(Vertex(Vec3(ts*size.x, h, 0) + offset, Vec3(0, -1, 0), Vec2((float)size.x, 0)));
-		v.push_back(Vertex(Vec3(0, h, ts*size.y) + offset, Vec3(0, -1, 0), Vec2(0, (float)size.y)));
-		v.push_back(Vertex(Vec3(ts*size.x, h, ts*size.y) + offset, Vec3(0, -1, 0), Vec2((float)size.x, (float)size.y)));
-		info.subs[0].tris = 2;
-		// outside wall
-		const Vec2 uv(1.f, 1.f);
-		info.subs[1].first = v.size() / 2;
-		for(int x = 0; x < size.x; ++x)
-		{
-			// bottom
-			if(!building->IsDoors(Int2(x, 0), DIR_BOTTOM))
-			{
-				v.push_back(Vertex(Vec3(ts*x, h, 0) + offset, Vec3(0, 0, -1), Vec2(0, uv.y)));
-				v.push_back(Vertex(Vec3(ts*(x + 1), h, 0) + offset, Vec3(0, 0, -1), Vec2(uv.x, uv.y)));
-				v.push_back(Vertex(Vec3(ts*x, 0, 0) + offset, Vec3(0, 0, -1), Vec2(0, 0)));
-				v.push_back(Vertex(Vec3(ts*(x + 1), 0, 0) + offset, Vec3(0, 0, -1), Vec2(uv.x, 0)));
-			}
-			// top
-			if(!building->IsDoors(Int2(x, size.y - 1), DIR_TOP))
-			{
-				v.push_back(Vertex(Vec3(ts*(x + 1), h, ts*size.y) + offset, Vec3(0, 0, 1), Vec2(0, uv.y)));
-				v.push_back(Vertex(Vec3(ts*x, h, ts*size.y) + offset, Vec3(0, 0, 1), Vec2(uv.x, uv.y)));
-				v.push_back(Vertex(Vec3(ts*(x + 1), 0, ts*size.y) + offset, Vec3(0, 0, 1), Vec2(0, 0)));
-				v.push_back(Vertex(Vec3(ts*x, 0, ts*size.y) + offset, Vec3(0, 0, 1), Vec2(uv.x, 0)));
-			}
-		}
-		for(int y = 0; y < size.y; ++y)
-		{
-			// left
-			if(!building->IsDoors(Int2(0, y), DIR_LEFT))
-			{
-				v.push_back(Vertex(Vec3(0, h, ts*(y+1)) + offset, Vec3(-1, 0, 0), Vec2(0, uv.y)));
-				v.push_back(Vertex(Vec3(0, h, ts*y) + offset, Vec3(-1, 0, 0), Vec2(uv.x, uv.y)));
-				v.push_back(Vertex(Vec3(0, 0, ts*(y+1)) + offset, Vec3(-1, 0, 0), Vec2(0, 0)));
-				v.push_back(Vertex(Vec3(0, 0, ts*y) + offset, Vec3(-1, 0, 0), Vec2(uv.x, 0)));
-			}
-			// right
-			if(!building->IsDoors(Int2(size.x - 1, y), DIR_RIGHT))
-			{
-				v.push_back(Vertex(Vec3(ts*size.x, h, ts*y) + offset, Vec3(-1, 0, 0), Vec2(0, uv.y)));
-				v.push_back(Vertex(Vec3(ts*size.x, h, ts*(y+1)) + offset, Vec3(-1, 0, 0), Vec2(uv.x, uv.y)));
-				v.push_back(Vertex(Vec3(ts*size.x, 0, ts*y) + offset, Vec3(-1, 0, 0), Vec2(0, 0)));
-				v.push_back(Vertex(Vec3(ts*size.x, 0, ts*(y+1)) + offset, Vec3(-1, 0, 0), Vec2(uv.x, 0)));
-			}
-		}
-		info.subs[1].tris = v.size() / 2 - info.subs[0].tris;
-		// outside wall from inside
-		info.subs[2].first = v.size() / 2;
-		// ...
-		info.subs[2].tris = v.size() / 2 - info.subs[1].tris;
-
-
-		info.GenerateIndices();
-		building->mesh = res_mgr->CreateMesh(&info);
-		building->mesh->head.radius = (Vec3(0, h, ts*max(size.x, size.y)) + offset).Length(); // FIXME - use roof pos
+		builder.Append(mesh_corner, Matrix::Translation(offset));
+		builder.Append(mesh_corner, Matrix::RotationY(PI*3/2) * Matrix::Translation(offset + Vec3(building->size.x * tile_size, 0, 0)));
+		builder.JoinIndices();
+		building->mesh = res_mgr->CreateMesh(&builder);
+		building->mesh->head.radius = (Vec3(0, 4.f, (tile_size / 2)*max(size.x, size.y)) + offset).Length(); // FIXME - use roof pos
 	}
 }
 

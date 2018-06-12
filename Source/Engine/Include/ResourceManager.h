@@ -12,10 +12,11 @@ public:
 	void AddFontFromFile(Cstring name);
 	Font* GetFont(Cstring name, int size);
 	Mesh* GetMesh(Cstring name);
+	Mesh* GetMeshRaw(Cstring name);
 	Music* GetMusic(Cstring name);
 	Sound* GetSound(Cstring name);
 	Texture* GetTexture(Cstring name);
-	Mesh* CreateMesh(MeshInfo* mesh_info);
+	Mesh* CreateMesh(MeshBuilder* mesh_builder);
 
 private:
 	struct ResourceComparer

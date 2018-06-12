@@ -26,7 +26,7 @@ struct Shader;
 // resources
 struct Font;
 struct Mesh;
-struct MeshInfo;
+struct MeshBuilder;
 struct MeshPoint;
 struct Music;
 struct Resource;

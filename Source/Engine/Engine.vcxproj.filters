@@ -173,6 +173,9 @@
     <ClInclude Include="Include\WindowHandler.h">
       <Filter>1. Include\Engine</Filter>
     </ClInclude>
+    <ClInclude Include="Include\MeshBuilder.h">
+      <Filter>1. Include\Engine</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Text.cpp">
@@ -290,6 +293,9 @@
       <Filter>3. Source Files\Engine</Filter>
     </ClCompile>
     <ClCompile Include="Source\DebugShader.cpp">
+      <Filter>3. Source Files\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Include\MeshBuilder.cpp">
       <Filter>3. Source Files\Engine</Filter>
     </ClCompile>
   </ItemGroup>
