@@ -387,11 +387,9 @@ void QmshLoader::CreateInternal(Mesh& mesh, MeshBuilder& builder)
 		sub.tex = sub_info.tex;
 		sub.tex_normal = nullptr;
 		sub.tex_specular = nullptr;
-		// default values from blender FIXME
+		// default values from blender TODO
 		/*f >> sub.specular_color;
 		f >> sub.specular_intensity;
 		f >> sub.specular_hardness;*/
 	}
-
-	// radius? FIXME
 }

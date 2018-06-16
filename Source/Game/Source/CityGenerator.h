@@ -47,6 +47,5 @@ private:
 	Vec3 player_start_pos;
 
 	// resources
-	Mesh* mesh[T_MAX], *mesh_curb, *mesh_wall, *mesh_corner;
-	Texture* tex_ceil, *tex_roof, *tex_wall, *tex_wall_inner;
+	Mesh* mesh[T_MAX], *mesh_curb, *mesh_wall, *mesh_wall_inner, *mesh_corner, *mesh_door_jamb, *mesh_door_jamb_inner;
 };

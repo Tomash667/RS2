@@ -74,3 +74,20 @@ inline void LoopRemove(vector<T>& items, Action action)
 {
 	items.erase(std::remove_if(items.begin(), items.end(), action), items.end());
 }
+
+//-----------------------------------------------------------------------------
+// Checks is vector elements are unique, create map on each use - use for debugging/tests only!
+template<typename T>
+bool IsUnique(vector<T>& v)
+{
+	std::unordered_map<T, uint> c;
+	for(T e : v)
+	{
+		auto it = c.find(e);
+		if(it == c.end())
+			c[e] = 1;
+		else
+			return false;
+	}
+	return true;
+}

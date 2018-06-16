@@ -69,6 +69,24 @@ inline float Random(float a)
 	return ((float)Rand() / internal::rng.max())*a;
 }
 
+inline int RandomNormal(int a)
+{
+	assert(a > 0);
+	std::binomial_distribution<> r(a);
+	return r(internal::rng);
+}
+inline int RandomNormal(int a, int b)
+{
+	if(a == b)
+		return a;
+	else
+	{
+		assert(b > a);
+		std::binomial_distribution<> r(b - a);
+		return a + r(internal::rng);
+	}
+}
+
 // Random number in range <a,b>
 template<typename T>
 inline T Random(T a, T b)

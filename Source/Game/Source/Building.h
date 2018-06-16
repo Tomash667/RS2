@@ -24,6 +24,16 @@ struct Building
 {
 	struct Room
 	{
+		bool IsConnected(uint index) const
+		{
+			for(uint index2 : connected2)
+			{
+				if(index2 == index)
+					return true;
+			}
+			return false;
+		}
+
 		Int2 pos, size;
 		vector<uint> connected, connected2;
 		int outside, outside_used;
@@ -45,9 +55,9 @@ struct Building
 		room.connected.push_back(index);
 	}
 
-	bool IsDoors(const Int2& pt, DIR dir) const
+	bool IsDoor(const Int2& pt, DIR dir) const
 	{
-		int f = is_doors[pt.x + pt.y * (size.x * 2)];
+		int f = is_door[pt.x + pt.y * (size.x * 2)];
 		return IS_SET(f, 1 << dir);
 	}
 
@@ -55,6 +65,6 @@ struct Building
 	Int2 pos, size;
 	vector<Room> rooms;
 	vector<std::pair<Int2, DIR>> doors;
-	vector<int> is_doors;
+	vector<int> is_door;
 	Mesh* mesh;
 };

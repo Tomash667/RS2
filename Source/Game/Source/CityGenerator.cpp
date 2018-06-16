@@ -42,11 +42,10 @@ void CityGenerator::Init(Scene* scene, Level* level, Pathfinding* pathfinding, R
 
 	mesh_curb = res_mgr->GetMesh("curb.qmsh");
 	mesh_wall = res_mgr->GetMeshRaw("wall.qmsh");
+	mesh_wall_inner = res_mgr->GetMeshRaw("wall_inner.qmsh");
 	mesh_corner = res_mgr->GetMeshRaw("corner.qmsh");
-
-	tex_ceil = res_mgr->GetTexture("ceil.jpg");
-	tex_wall = res_mgr->GetTexture("wall.jpg");
-	tex_wall_inner = res_mgr->GetTexture("wall_inner.jpg");
+	mesh_door_jamb = res_mgr->GetMeshRaw("door_jamb.qmsh");
+	mesh_door_jamb_inner = res_mgr->GetMeshRaw("door_jamb_inner.qmsh");
 }
 
 void CityGenerator::Reset()
@@ -281,17 +280,33 @@ void CityGenerator::FillBuildings()
 					Int2 pt;
 					if(rect.p1.x == rect.p2.x)
 					{
+						// left or right
 						pt.x = rect.p1.x;
 						pt.y = Random(rect.p1.y, rect.p2.y);
 						if(pt.y == rect.p1.y || pt.y == rect.p2.y)
 							pt.y = Random(rect.p1.y, rect.p2.y);
+						if(pt.x == 0 || pt.x == size.x - 1)
+						{
+							if(pt.y == 0)
+								++pt.y;
+							else if(pt.y == size.y - 1)
+								--pt.y;
+						}
 					}
 					else
 					{
+						// top or bottom
 						pt.y = rect.p1.y;
 						pt.x = Random(rect.p1.x, rect.p2.x);
 						if(pt.x == rect.p1.x || pt.x == rect.p2.x)
 							pt.x = Random(rect.p1.x, rect.p2.x);
+						if(pt.y == 0 || pt.y == size.y - 1)
+						{
+							if(pt.x == 0)
+								++pt.x;
+							else if(pt.x == size.x - 1)
+								--pt.x;
+						}
 					}
 					building->doors.push_back(std::make_pair(pt, (DIR)j));
 
@@ -352,13 +367,16 @@ void CityGenerator::FillBuildings()
 				bool ok = false;
 				do
 				{
-					uint i = room.connected[index];
-					Building::Room& room2 = building->rooms[i];
+					uint other_index = room.connected[index];
+					Building::Room& room2 = building->rooms[other_index];
 					if(room2.visited)
 					{
 						room.visited = true;
-						room.connected2.push_back(i);
-						room2.connected2.push_back(my_index);
+						if(!room2.IsConnected(my_index))
+						{
+							room.connected2.push_back(other_index);
+							room2.connected2.push_back(my_index);
+						}
 						ok = true;
 						break;
 					}
@@ -372,16 +390,93 @@ void CityGenerator::FillBuildings()
 			}
 		}
 
+		// add inside doors
+		for(uint index = 0; index < building->rooms.size(); ++index)
+		{
+			Building::Room& room = building->rooms[index];
+			for(uint index2 : room.connected2)
+			{
+				if(index > index2)
+					continue;
+				Building::Room& room2 = building->rooms[index2];
+				Rect intersection;
+				bool ok = Rect::Intersect(Rect::Create(room.pos, room.size), Rect::Create(room2.pos, room2.size), intersection);
+				assert(ok);
+				Int2 pt;
+				DIR dir;
+				if(intersection.p1.x == intersection.p2.x)
+				{
+					--intersection.p2.y;
+					dir = DIR_LEFT;
+					pt.x = intersection.p1.x;
+					pt.y = RandomNormal(intersection.p1.y, intersection.p2.y);
+				}
+				else
+				{
+					--intersection.p2.x;
+					dir = DIR_BOTTOM;
+					pt.y = intersection.p1.y;
+					pt.x = RandomNormal(intersection.p1.x, intersection.p2.x);
+				}
+				building->doors.push_back(std::make_pair(pt, dir));
+			}
+		}
+
 		// set is_doors map
-		building->is_doors.resize(size.x * size.y, 0);
+		building->is_door.resize(size.x * size.y, 0);
 		for(std::pair<Int2, DIR>& door : building->doors)
-			building->is_doors[door.first.x + door.first.y * size.x] |= 1 << door.second;
+			building->is_door[door.first.x + door.first.y * size.x] |= 1 << door.second;
 
 		// build mesh
 		builder.Clear();
 		Vec3 offset = Vec3(-tile_size * building->size.x / 2, 0, -tile_size * building->size.y / 2);
+		const float ts = tile_size / 2;
+		// corners
 		builder.Append(mesh_corner, Matrix::Translation(offset));
-		builder.Append(mesh_corner, Matrix::RotationY(PI*3/2) * Matrix::Translation(offset + Vec3(building->size.x * tile_size, 0, 0)));
+		builder.Append(mesh_corner, Matrix::RotationY(PI * 3 / 2) * Matrix::Translation(offset + Vec3(building->size.x * tile_size, 0, 0)));
+		builder.Append(mesh_corner, Matrix::RotationY(PI / 2) * Matrix::Translation(offset + Vec3(0, 0, building->size.y * tile_size)));
+		builder.Append(mesh_corner, Matrix::RotationY(PI) * Matrix::Translation(offset + Vec3(building->size.x * tile_size, 0, building->size.y * tile_size)));
+		// outside walls
+		const float wall_width2 = wall_width / 2;
+		for(int x = 1; x < size.x - 1; ++x)
+		{
+			// bottom
+			builder.Append(building->IsDoor(Int2(x, 0), DIR_BOTTOM) ? mesh_door_jamb : mesh_wall,
+				Matrix::RotationY(PI * 3 / 2) * Matrix::Translation(offset + Vec3(x*ts + ts / 2, 0, wall_width2)));
+			// top
+			builder.Append(building->IsDoor(Int2(x, size.y - 1), DIR_TOP) ? mesh_door_jamb : mesh_wall,
+				Matrix::RotationY(PI / 2) * Matrix::Translation(offset + Vec3(x*ts + ts / 2, 0, size.y * ts - wall_width2)));
+		}
+		for(int y = 1; y < size.y - 1; ++y)
+		{
+			// left
+			builder.Append(building->IsDoor(Int2(0, y), DIR_LEFT) ? mesh_door_jamb : mesh_wall,
+				Matrix::Translation(offset + Vec3(wall_width2, 0, y * ts + ts / 2)));
+			// right
+			builder.Append(building->IsDoor(Int2(size.x - 1, y), DIR_RIGHT) ? mesh_door_jamb : mesh_wall,
+				Matrix::RotationY(PI) * Matrix::Translation(offset + Vec3(size.x * ts - wall_width2, 0, y * ts + ts / 2)));
+		}
+		// inner walls
+		for(Building::Room& room : building->rooms)
+		{
+			// right
+			if(!IS_SET(room.outside, DIR_F_RIGHT))
+			{
+				int x = room.pos.x + room.size.x;
+				for(int y = room.pos.y; y < room.pos.y + room.size.y; ++y)
+					builder.Append(building->IsDoor(Int2(x,y), DIR_LEFT) ? mesh_door_jamb_inner : mesh_wall_inner,
+						Matrix::Translation(offset + Vec3(x * ts, 0, y * ts + ts / 2)));
+			}
+			// top
+			if(!IS_SET(room.outside, DIR_F_TOP))
+			{
+				int y = room.pos.y + room.size.y;
+				for(int x = room.pos.x; x < room.pos.x + room.size.x; ++x)
+					builder.Append(building->IsDoor(Int2(x,y), DIR_BOTTOM) ? mesh_door_jamb_inner : mesh_wall_inner,
+						Matrix::RotationY(PI / 2) * Matrix::Translation(offset + Vec3(x*ts + ts / 2, 0, y*ts)));
+			}
+		}
+		// finalize
 		builder.JoinIndices();
 		building->mesh = res_mgr->CreateMesh(&builder);
 		building->mesh->head.radius = (Vec3(0, 4.f, (tile_size / 2)*max(size.x, size.y)) + offset).Length(); // FIXME - use roof pos
