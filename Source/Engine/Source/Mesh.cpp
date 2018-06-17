@@ -159,3 +159,4 @@ void Mesh::KeyframeBone::Mix(Matrix& out, const Matrix& mul) const
 		* Matrix::Translation(pos)
 		* mul;
 }
+

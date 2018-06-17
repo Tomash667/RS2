@@ -3,7 +3,7 @@
 struct Collider
 {
 	Collider() {}
-	Collider(const Vec2& center, const Vec2& half_size) : center(center), half_size(half_size) {}
+	Collider(const Vec2& center, const Vec2& half_size, bool block_view = true) : center(center), half_size(half_size), block_view(block_view) {}
 	Box2d ToBox2d() const
 	{
 		return Box2d(center.x - half_size.x, center.y - half_size.y,
@@ -16,4 +16,5 @@ struct Collider
 	}
 
 	Vec2 center, half_size;
+	bool block_view;
 };

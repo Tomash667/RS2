@@ -8,13 +8,21 @@
 #include "Player.h"
 #include "Item.h"
 #include "Pathfinding.h"
+#include "Tree.h"
+#include <MeshBuilder.h>
 
 const float CityGenerator::tile_size = 5.f;
 const float CityGenerator::floor_y = 0.05f;
 const float CityGenerator::wall_width = 0.2f;
 
+CityGenerator::~CityGenerator()
+{
+	DeleteElements(buildings);
+}
+
 void CityGenerator::Init(Scene* scene, Level* level, Pathfinding* pathfinding, ResourceManager* res_mgr, uint size, uint splits)
 {
+	this->res_mgr = res_mgr;
 	this->scene = scene;
 	this->level = level;
 	this->pathfinding = pathfinding;
@@ -26,20 +34,26 @@ void CityGenerator::Init(Scene* scene, Level* level, Pathfinding* pathfinding, R
 
 	mesh[T_ASPHALT] = res_mgr->GetMesh("asphalt.qmsh");
 	mesh[T_PAVEMENT] = res_mgr->GetMesh("brick_pavement.qmsh");
-	mesh[T_BUILDING] = res_mgr->GetMesh("building_floor_ceil.qmsh");
+	mesh[T_BUILDING] = res_mgr->GetMesh("building_floor.qmsh");
 
 	mesh_offset[T_ASPHALT] = 0;
 	mesh_offset[T_PAVEMENT] = floor_y;
 	mesh_offset[T_BUILDING] = floor_y;
 
 	mesh_curb = res_mgr->GetMesh("curb.qmsh");
-	mesh_wall = res_mgr->GetMesh("wall.qmsh");
-	mesh_corner = res_mgr->GetMesh("corner.qmsh");
+	mesh_table = res_mgr->GetMesh("table.qmsh");
+
+	mesh_wall = res_mgr->GetMeshRaw("wall.qmsh");
+	mesh_wall_inner = res_mgr->GetMeshRaw("wall_inner.qmsh");
+	mesh_corner = res_mgr->GetMeshRaw("corner.qmsh");
+	mesh_door_jamb = res_mgr->GetMeshRaw("door_jamb.qmsh");
+	mesh_door_jamb_inner = res_mgr->GetMeshRaw("door_jamb_inner.qmsh");
+	mesh_ceil = res_mgr->GetMeshRaw("ceil.qmsh");
 }
 
 void CityGenerator::Reset()
 {
-	buildings.clear();
+	DeleteElements(buildings);
 	scene->Reset();
 	level->Reset();
 }
@@ -48,6 +62,7 @@ void CityGenerator::Generate()
 {
 	GenerateMap();
 	FillBuildings();
+	BuildBuildingsMesh();
 	CreateScene();
 	level->SpawnBarriers();
 	level->SpawnPlayer(player_start_pos);
@@ -56,52 +71,6 @@ void CityGenerator::Generate()
 	pathfinding->GenerateBlockedGrid(size, tile_size, buildings);
 }
 
-struct Leaf
-{
-	Leaf(const Int2& pos, const Int2& size) : pos(pos), size(size), child1(nullptr), child2(nullptr) {}
-	bool CanSplit()
-	{
-		return size.x > max_size
-			|| size.y > max_size
-			|| (size.x >= min_size_before_split && size.y >= min_size_before_split && Rand() % 4 != 0);
-	}
-	void Split()
-	{
-		bool horizontal;
-		float ratio = float(size.x) / size.y;
-		if(ratio >= 1.25f)
-			horizontal = true;
-		else if(ratio <= 0.75f)
-			horizontal = false;
-		else
-			horizontal = Rand() % 2 == 0;
-
-		if(horizontal)
-		{
-			int split = Random(min_size, size.x - min_size - 1);
-			line_pos = Int2(pos.x + split, pos.y);
-			line_size = Int2(1, size.y);
-			child1 = new Leaf(pos, Int2(split, size.y));
-			child2 = new Leaf(Int2(pos.x + split + 1, pos.y), Int2(size.x - split - 1, size.y));
-		}
-		else
-		{
-			int split = Random(min_size, size.y - min_size - 1);
-			line_pos = Int2(pos.x, pos.y + split);
-			line_size = Int2(size.x, 1);
-			child1 = new Leaf(pos, Int2(size.x, split));
-			child2 = new Leaf(Int2(pos.x, pos.y + split + 1), Int2(size.x, size.y - split - 1));
-		}
-	}
-
-	Int2 pos, size, line_pos, line_size;
-	Leaf* child1, *child2;
-
-	static const int max_size = 12;
-	static const int min_size = 4;
-	static const int min_size_before_split = min_size * 2 + 1;
-};
-
 void CityGenerator::GenerateMap()
 {
 	// init
@@ -109,40 +78,27 @@ void CityGenerator::GenerateMap()
 		map[i] = T_PAVEMENT;
 
 	// generate roads
-	vector<Leaf*> leafs, to_check;
-	to_check.push_back(new Leaf(Int2(0, 0), Int2(size, size)));
-	while(!to_check.empty())
+	Tree roads_tree(4, 12, Int2(size), 1);
+	roads_tree.SplitAll();
+	for(Tree::Node* node : roads_tree.nodes)
 	{
-		Leaf* leaf = to_check.back();
-		to_check.pop_back();
-		leafs.push_back(leaf);
-		if(leaf->CanSplit())
+		for(int y = 0; y < node->split_size.y; ++y)
 		{
-			leaf->Split();
-			to_check.push_back(leaf->child1);
-			to_check.push_back(leaf->child2);
-
-			for(int y = 0; y < leaf->line_size.y; ++y)
-			{
-				for(int x = 0; x < leaf->line_size.x; ++x)
-					map[leaf->line_pos.x + x + (leaf->line_pos.y + y) * size] = T_ASPHALT;
-			}
+			for(int x = 0; x < node->split_size.x; ++x)
+				map[node->split_pos.x + x + (node->split_pos.y + y) * size] = T_ASPHALT;
 		}
 	}
 
 	// buildings
 	const int building_min_size = 2;
-	for(Leaf* leaf : leafs)
+	for(Tree::Node* node : roads_tree.leafs)
 	{
-		if(leaf->child1)
-			continue;
-
-		Int2 b_size(leaf->size.x - 2, leaf->size.y - 2);
+		Int2 b_size(node->size.x - 2, node->size.y - 2);
 		if(b_size.x != building_min_size && Rand() % 2 == 0)
 			--b_size.x;
 		if(b_size.y != building_min_size && Rand() % 2 == 0)
 			--b_size.y;
-		Int2 b_pos = leaf->pos + Int2(1 + Random(0, leaf->size.x - b_size.x - 2), 1 + Random(0, leaf->size.y - b_size.y - 2));
+		Int2 b_pos = node->pos + Int2(1 + Random(0, node->size.x - b_size.x - 2), 1 + Random(0, node->size.y - b_size.y - 2));
 
 		for(int y = 0; y < b_size.y; ++y)
 		{
@@ -150,19 +106,17 @@ void CityGenerator::GenerateMap()
 				map[b_pos.x + x + (b_pos.y + y) * size] = T_BUILDING;
 		}
 
-		Building b;
-		b.box = Box2d::Create(b_pos, b_size) * tile_size;
-		b.pos = b_pos;
-		b.size = b_size;
+		Building* b = new Building;
+		b->box = Box2d::Create(b_pos, b_size) * tile_size;
+		b->pos = b_pos;
+		b->size = b_size;
 		buildings.push_back(b);
 	}
 
 	// player start pos
-	Leaf* first = leafs.front();
-	player_start_pos = Vec3(tile_size * first->line_pos.x + tile_size / 2 * first->line_size.x,
-		0, tile_size * first->line_pos.y + tile_size / 2 * first->line_size.y);
-
-	DeleteElements(leafs);
+	Tree::Node* first = roads_tree.nodes.front();
+	player_start_pos = Vec3(tile_size * first->split_pos.x + tile_size / 2 * first->split_size.x,
+		0, tile_size * first->split_pos.y + tile_size / 2 * first->split_size.y);
 }
 
 void CityGenerator::DrawMap()
@@ -192,8 +146,85 @@ void CityGenerator::DrawMap()
 
 void CityGenerator::FillBuildings()
 {
-	for(Building& b : buildings)
+	vector<uint> indices;
+	vector<Building::Room*> outside_rooms, rooms_to_check;
+
+	for(Building* building : buildings)
 	{
+		const Int2 size = building->size * 2;
+
+		Tree tree(3, 6, size, 0);
+		tree.SplitAll();
+
+		indices.resize(size.x * size.y);
+		outside_rooms.clear();
+
+		building->rooms.resize(tree.leafs.size());
+		for(uint i = 0, count = tree.leafs.size(); i < count; ++i)
+		{
+			// copy room data from node
+			Building::Room& room = building->rooms[i];
+			Tree::Node* node = tree.leafs[i];
+			room.pos = node->pos;
+			room.size = node->size;
+			room.outside = 0;
+			room.outside_used = 0;
+			room.visited = false;
+
+			// mark indices
+			for(int y = room.pos.y; y < room.pos.y + room.size.y; ++y)
+			{
+				for(int x = room.pos.x; x < room.pos.x + room.size.x; ++x)
+					indices[x + y * size.x] = i;
+			}
+		}
+
+		// list connected rooms/outside
+		for(Building::Room& room : building->rooms)
+		{
+			uint last = 9999;
+
+			// left
+			if(room.pos.x != 0)
+			{
+				for(uint y = room.pos.y, count = room.pos.y + room.size.y; y < count; ++y)
+					building->CheckConnect(room, indices[room.pos.x - 1 + y * size.x], last);
+			}
+			else
+				room.outside |= DIR_F_LEFT;
+
+			// right
+			if(room.pos.x + room.size.x != size.x)
+			{
+				for(uint y = room.pos.y, count = room.pos.y + room.size.y; y < count; ++y)
+					building->CheckConnect(room, indices[room.pos.x + room.size.x + y * size.x], last);
+			}
+			else
+				room.outside |= DIR_F_RIGHT;
+
+			// bottom
+			if(room.pos.y != 0)
+			{
+				for(uint x = room.pos.x, count = room.pos.x + room.size.x; x < count; ++x)
+					building->CheckConnect(room, indices[x + (room.pos.y - 1) * size.x], last);
+			}
+			else
+				room.outside |= DIR_F_BOTTOM;
+
+			// top
+			if(room.pos.y + room.size.y != size.y)
+			{
+				for(uint x = room.pos.x, count = room.pos.x + room.size.x; x < count; ++x)
+					building->CheckConnect(room, indices[x + (room.pos.y + room.size.y) * size.x], last);
+			}
+			else
+				room.outside |= DIR_F_TOP;
+
+			if(room.outside != 0)
+				outside_rooms.push_back(&room);
+		}
+
+		// random count of doors
 		int doors;
 		switch(Rand() % 10)
 		{
@@ -216,33 +247,344 @@ void CityGenerator::FillBuildings()
 			doors = 4;
 			break;
 		}
-
-		int door_flags;
-		switch(doors)
+		if(size.x * size.y > 30)
 		{
-		case 1:
-			door_flags = 1 << (Rand() % 4);
-			break;
-		case 2:
-			{
-				int index = Rand() % 4;
-				door_flags = (1 << index) | (1 << ((index + 1 + Rand() % 3) % 4));
-			}
-			break;
-		case 3:
-			door_flags = ~(1 << (Rand() % 4));
-			break;
-		case 4:
-			door_flags = 0b1111;
-			break;
+			++doors;
+			if(size.x * size.y > 60)
+				++doors;
 		}
 
-		Int2 size = b.size * 2;
-		Int2 pos = b.pos * 2;
-		b.doors[Building::DOOR_LEFT] = IS_SET(door_flags, 1 << 0) ? (pos.y + Random(1, size.y - 2)) : -1;
-		b.doors[Building::DOOR_RIGHT] = IS_SET(door_flags, 1 << 1) ? (pos.y + Random(1, size.y - 2)) : -1;
-		b.doors[Building::DOOR_BOTTOM] = IS_SET(door_flags, 1 << 2) ? (pos.x + Random(1, size.x - 2)) : -1;
-		b.doors[Building::DOOR_TOP] = IS_SET(door_flags, 1 << 3) ? (pos.x + Random(1, size.x - 2)) : -1;
+		// add outside doors
+		for(int i = 0; i < doors && !outside_rooms.empty(); ++i)
+		{
+			Building::Room* room = outside_rooms[Rand() % outside_rooms.size()];
+			int j = Rand() % 4;
+			while(true)
+			{
+				if(IS_SET(room->outside, 1 << j) && !IS_SET(room->outside_used, 1 << j))
+				{
+					Rect rect;
+					switch(j)
+					{
+					case DIR_LEFT:
+						rect = Rect(room->pos.x, room->pos.y, room->pos.x, room->pos.y + room->size.y - 1);
+						break;
+					case DIR_RIGHT:
+						rect = Rect(room->pos.x + room->size.x - 1, room->pos.y, room->pos.x + room->size.x - 1, room->pos.y + room->size.y - 1);
+						break;
+					case DIR_BOTTOM:
+						rect = Rect(room->pos.x, room->pos.y, room->pos.x + room->size.x - 1, room->pos.y);
+						break;
+					case DIR_TOP:
+						rect = Rect(room->pos.x, room->pos.y + room->size.y - 1, room->pos.x + room->size.x - 1, room->pos.y + room->size.y - 1);
+						break;
+					}
+
+					Int2 pt;
+					if(rect.p1.x == rect.p2.x)
+					{
+						// left or right
+						pt.x = rect.p1.x;
+						pt.y = Random(rect.p1.y, rect.p2.y);
+						if(pt.y == rect.p1.y || pt.y == rect.p2.y)
+							pt.y = Random(rect.p1.y, rect.p2.y);
+						if(pt.x == 0 || pt.x == size.x - 1)
+						{
+							if(pt.y == 0)
+								++pt.y;
+							else if(pt.y == size.y - 1)
+								--pt.y;
+						}
+					}
+					else
+					{
+						// top or bottom
+						pt.y = rect.p1.y;
+						pt.x = Random(rect.p1.x, rect.p2.x);
+						if(pt.x == rect.p1.x || pt.x == rect.p2.x)
+							pt.x = Random(rect.p1.x, rect.p2.x);
+						if(pt.y == 0 || pt.y == size.y - 1)
+						{
+							if(pt.x == 0)
+								++pt.x;
+							else if(pt.x == size.x - 1)
+								--pt.x;
+						}
+					}
+					building->doors.push_back(std::make_pair(pt, (DIR)j));
+
+					room->outside_used |= 1 << j;
+					if(room->outside_used == room->outside)
+						RemoveElement(outside_rooms, room);
+					break;
+				}
+				j = (j + 1) % 4;
+			}
+		}
+
+		// connect rooms
+		for(uint i = 0, count = building->rooms.size(); i < count; ++i)
+		{
+			Building::Room& room = building->rooms[i];
+			for(uint j : room.connected)
+			{
+				if(i < j && Rand() % 2 == 0)
+				{
+					room.connected2.push_back(j);
+					building->rooms[j].connected2.push_back(i);
+				}
+			}
+		}
+
+		// verify all rooms are connected
+		rooms_to_check.clear();
+		rooms_to_check.push_back(&building->rooms.front());
+		building->rooms.front().visited = true;
+		while(!rooms_to_check.empty())
+		{
+			Building::Room* room = rooms_to_check.back();
+			rooms_to_check.pop_back();
+			for(uint i : room->connected2)
+			{
+				Building::Room* room2 = &building->rooms[i];
+				if(room2->visited)
+					continue;
+				rooms_to_check.push_back(room2);
+				room2->visited = true;
+			}
+		}
+		bool all_ok = false;
+		while(!all_ok)
+		{
+			all_ok = true;
+			uint my_index = 0;
+			for(Building::Room& room : building->rooms)
+			{
+				if(room.visited)
+				{
+					++my_index;
+					continue;
+				}
+
+				uint index = Rand() % room.connected.size(), start_index = index;
+				bool ok = false;
+				do
+				{
+					uint other_index = room.connected[index];
+					Building::Room& room2 = building->rooms[other_index];
+					if(room2.visited)
+					{
+						room.visited = true;
+						if(!room2.IsConnected(my_index))
+						{
+							room.connected2.push_back(other_index);
+							room2.connected2.push_back(my_index);
+						}
+						ok = true;
+						break;
+					}
+					index = (index + 1) % room.connected.size();
+				}
+				while(index != start_index);
+
+				if(!ok)
+					all_ok = false;
+				++my_index;
+			}
+		}
+
+		// add inside doors
+		for(uint index = 0; index < building->rooms.size(); ++index)
+		{
+			Building::Room& room = building->rooms[index];
+			for(uint index2 : room.connected2)
+			{
+				if(index > index2)
+					continue;
+				Building::Room& room2 = building->rooms[index2];
+				Rect intersection;
+				bool ok = Rect::Intersect(Rect::Create(room.pos, room.size), Rect::Create(room2.pos, room2.size), intersection);
+				assert(ok);
+				Int2 pt;
+				DIR dir;
+				if(intersection.p1.x == intersection.p2.x)
+				{
+					--intersection.p2.y;
+					dir = DIR_LEFT;
+					pt.x = intersection.p1.x;
+					pt.y = RandomNormal(intersection.p1.y, intersection.p2.y);
+				}
+				else
+				{
+					--intersection.p2.x;
+					dir = DIR_BOTTOM;
+					pt.y = intersection.p1.y;
+					pt.x = RandomNormal(intersection.p1.x, intersection.p2.x);
+				}
+				building->doors.push_back(std::make_pair(pt, dir));
+			}
+		}
+
+		// spawn tables
+		for(Building::Room& room : building->rooms)
+		{
+			if(Rand() % 4 == 0)
+			{
+				Int2 pt = Int2(RandomNormal(1, room.size.x - 2), RandomNormal(1, room.size.y - 2)) + room.pos;
+				building->tables.push_back(pt);
+			}
+		}
+	}
+}
+
+void CityGenerator::BuildBuildingsMesh()
+{
+	MeshBuilder builder;
+	Matrix rotPI_2 = Matrix::RotationY(PI / 2),
+		rotPI = Matrix::RotationY(PI),
+		rotPI3_2 = Matrix::RotationY(PI * 3 / 2);
+
+	for(Building* building : buildings)
+	{
+		const Int2 size = building->size * 2;
+		building->SetIsDoorMap();
+
+		// build mesh
+		builder.Clear();
+		Vec3 offset = Vec3(-tile_size * building->size.x / 2, 0, -tile_size * building->size.y / 2);
+		Vec2 col_offset = Vec2(building->pos.x * tile_size, building->pos.y * tile_size);
+		const float ts = tile_size / 2;
+		const float ts2 = ts / 2;
+		const float wall_width2 = wall_width / 2;
+		const float jamb_size2 = 0.25f / 2;
+		const Vec2 door_jamb_y(2.5f, 4.f - 2.5f);
+		Vec3 cam_offset = Vec3(col_offset.x, door_jamb_y.x, col_offset.y);
+		// corners
+		//   left bottom
+		builder.Append(mesh_corner, Matrix::Translation(offset));
+		level->AddCollider(Collider(Vec2(wall_width2, ts2) + col_offset, Vec2(wall_width2, ts2)));
+		level->AddCollider(Collider(Vec2(ts2, wall_width2) + col_offset, Vec2(ts2, wall_width2)));
+		//   right bottom
+		builder.Append(mesh_corner, rotPI3_2 * Matrix::Translation(offset + Vec3(building->size.x * tile_size, 0, 0)));
+		level->AddCollider(Collider(Vec2(building->size.x * tile_size - wall_width2, ts2) + col_offset, Vec2(wall_width2, ts2)));
+		level->AddCollider(Collider(Vec2(building->size.x * tile_size - ts2, wall_width2) + col_offset, Vec2(ts2, wall_width2)));
+		//   left top
+		builder.Append(mesh_corner, rotPI_2 * Matrix::Translation(offset + Vec3(0, 0, building->size.y * tile_size)));
+		level->AddCollider(Collider(Vec2(wall_width2, building->size.y * tile_size - ts2) + col_offset, Vec2(wall_width2, ts2)));
+		level->AddCollider(Collider(Vec2(ts2, building->size.y * tile_size - wall_width2) + col_offset, Vec2(ts2, wall_width2)));
+		//   right top
+		builder.Append(mesh_corner, rotPI * Matrix::Translation(offset + Vec3(building->size.x * tile_size, 0, building->size.y * tile_size)));
+		level->AddCollider(Collider(Vec2(building->size.x * tile_size - wall_width2, building->size.y * tile_size - ts2) + col_offset, Vec2(wall_width2, ts2)));
+		level->AddCollider(Collider(Vec2(building->size.x * tile_size - ts2, building->size.y * tile_size - wall_width2) + col_offset, Vec2(ts2, wall_width2)));
+		// outside walls
+		for(int x = 1; x < size.x - 1; ++x)
+		{
+			// bottom
+			bool is_door = building->IsDoor(Int2(x, 0), DIR_BOTTOM);
+			builder.Append(is_door ? mesh_door_jamb : mesh_wall,
+				rotPI3_2 * Matrix::Translation(offset + Vec3(x*ts + ts2, 0, wall_width2)));
+			if(is_door)
+			{
+				level->AddCollider(Collider(Vec2(x * ts + jamb_size2, wall_width2) + col_offset, Vec2(jamb_size2, wall_width2)));
+				level->AddCollider(Collider(Vec2((x + 1) * ts - jamb_size2, wall_width2) + col_offset, Vec2(jamb_size2, wall_width2)));
+				level->camera_colliders.push_back(Box::Create(Vec3(x * ts, 0, 0) + cam_offset, Vec3(ts, door_jamb_y.y, wall_width)));
+			}
+			else
+				level->AddCollider(Collider(Vec2(x * ts + ts2, wall_width2) + col_offset, Vec2(ts2, wall_width2)));
+			// top
+			is_door = building->IsDoor(Int2(x, size.y - 1), DIR_TOP);
+			builder.Append(is_door ? mesh_door_jamb : mesh_wall,
+				rotPI_2 * Matrix::Translation(offset + Vec3(x*ts + ts2, 0, size.y * ts - wall_width2)));
+			if(is_door)
+			{
+				level->AddCollider(Collider(Vec2(x * ts + jamb_size2, building->size.y * tile_size - wall_width2) + col_offset, Vec2(jamb_size2, wall_width2)));
+				level->AddCollider(Collider(Vec2((x + 1) * ts - jamb_size2, building->size.y * tile_size - wall_width2) + col_offset, Vec2(jamb_size2, wall_width2)));
+				level->camera_colliders.push_back(Box::Create(Vec3(x * ts, 0, building->size.y * tile_size - wall_width) + cam_offset, Vec3(ts, door_jamb_y.y, wall_width)));
+			}
+			else
+				level->AddCollider(Collider(Vec2(x * ts + ts2, building->size.y * tile_size - wall_width2) + col_offset, Vec2(ts2, wall_width2)));
+		}
+		for(int y = 1; y < size.y - 1; ++y)
+		{
+			// left
+			bool is_door = building->IsDoor(Int2(0, y), DIR_LEFT);
+			builder.Append(is_door ? mesh_door_jamb : mesh_wall,
+				Matrix::Translation(offset + Vec3(wall_width2, 0, y * ts + ts2)));
+			if(is_door)
+			{
+				level->AddCollider(Collider(Vec2(wall_width2, y * ts + jamb_size2) + col_offset, Vec2(wall_width2, jamb_size2)));
+				level->AddCollider(Collider(Vec2(wall_width2, (y + 1) * ts - jamb_size2) + col_offset, Vec2(wall_width2, jamb_size2)));
+				level->camera_colliders.push_back(Box::Create(Vec3(0, 0, y * ts) + cam_offset, Vec3(wall_width, door_jamb_y.y, ts)));
+			}
+			else
+				level->AddCollider(Collider(Vec2(wall_width2, y * ts + ts2) + col_offset, Vec2(wall_width2, ts2)));
+			// right
+			is_door = building->IsDoor(Int2(size.x - 1, y), DIR_RIGHT);
+			builder.Append(is_door ? mesh_door_jamb : mesh_wall,
+				rotPI * Matrix::Translation(offset + Vec3(size.x * ts - wall_width2, 0, y * ts + ts2)));
+			if(is_door)
+			{
+				level->AddCollider(Collider(Vec2(building->size.x * tile_size - wall_width2, y * ts + jamb_size2) + col_offset, Vec2(wall_width2, jamb_size2)));
+				level->AddCollider(Collider(Vec2(building->size.x * tile_size - wall_width2, (y + 1) * ts - jamb_size2) + col_offset, Vec2(wall_width2, jamb_size2)));
+				level->camera_colliders.push_back(Box::Create(Vec3(building->size.x * tile_size - wall_width, 0, y * ts) + cam_offset, Vec3(wall_width, door_jamb_y.y, ts)));
+			}
+			else
+				level->AddCollider(Collider(Vec2(building->size.x * tile_size - wall_width2, y * ts + ts2) + col_offset, Vec2(wall_width2, ts2)));
+		}
+		// inner walls
+		for(Building::Room& room : building->rooms)
+		{
+			// right
+			if(!IS_SET(room.outside, DIR_F_RIGHT))
+			{
+				int x = room.pos.x + room.size.x;
+				for(int y = room.pos.y; y < room.pos.y + room.size.y; ++y)
+				{
+					bool is_door = building->IsDoor(Int2(x, y), DIR_LEFT);
+					builder.Append(is_door ? mesh_door_jamb_inner : mesh_wall_inner,
+						Matrix::Translation(offset + Vec3(x * ts, 0, y * ts + ts2)));
+					if(is_door)
+					{
+						level->AddCollider(Collider(Vec2(x * ts - wall_width2, y * ts + jamb_size2) + col_offset, Vec2(wall_width2, jamb_size2)));
+						level->AddCollider(Collider(Vec2(x * ts - wall_width2, (y + 1) * ts - jamb_size2) + col_offset, Vec2(wall_width2, jamb_size2)));
+						level->camera_colliders.push_back(Box::Create(Vec3(x * ts - wall_width2, 0, y * ts) + cam_offset, Vec3(wall_width, door_jamb_y.y, ts)));
+					}
+					else
+						level->AddCollider(Collider(Vec2(x * ts - wall_width2, y * ts + ts2) + col_offset, Vec2(wall_width2, ts2)));
+				}
+			}
+			// top
+			if(!IS_SET(room.outside, DIR_F_TOP))
+			{
+				int y = room.pos.y + room.size.y;
+				for(int x = room.pos.x; x < room.pos.x + room.size.x; ++x)
+				{
+					bool is_door = building->IsDoor(Int2(x, y), DIR_BOTTOM);
+					builder.Append(is_door ? mesh_door_jamb_inner : mesh_wall_inner,
+						rotPI_2 * Matrix::Translation(offset + Vec3(x*ts + ts2, 0, y*ts)));
+					if(is_door)
+					{
+						level->AddCollider(Collider(Vec2(x * ts + jamb_size2, y * ts - wall_width2) + col_offset, Vec2(jamb_size2, wall_width2)));
+						level->AddCollider(Collider(Vec2((x + 1) * ts - jamb_size2, y * ts - wall_width2) + col_offset, Vec2(jamb_size2, wall_width2)));
+						level->camera_colliders.push_back(Box::Create(Vec3(x * ts, 0, y * ts - wall_width2) + cam_offset, Vec3(ts, door_jamb_y.y, wall_width)));
+					}
+					else
+						level->AddCollider(Collider(Vec2(x * ts + ts2, y * ts - wall_width2) + col_offset, Vec2(ts2, wall_width2)));
+				}
+			}
+		}
+		// ceil
+		for(int y = 0; y < building->size.y; ++y)
+		{
+			for(int x = 0; x < building->size.x; ++x)
+				builder.Append(mesh_ceil, Matrix::Translation(offset + Vec3(tile_size * x, 0, tile_size * y)));
+		}
+		level->camera_colliders.push_back(Box(tile_size * building->pos.x, 4.f, tile_size * building->pos.y,
+			tile_size * (building->pos.x + building->size.x), 4.05f, tile_size * (building->pos.y + building->size.y)));
+		// finalize
+		builder.JoinIndices();
+		building->mesh = res_mgr->CreateMesh(&builder);
+		building->mesh->head.radius = (Vec3(0, 4.1f, (tile_size / 2)*max(size.x, size.y)) + offset).Length();
 	}
 }
 
@@ -319,131 +661,32 @@ void CityGenerator::CreateScene()
 	}
 
 	// buildings
-	for(Building& b : buildings)
+	for(Building* p_b : buildings)
 	{
+		Building& b = *p_b;
 		SceneNode* building_node = new SceneNode;
 		building_node->container = new SceneNode::Container;
 		building_node->container->box = Box::CreateXZ(b.box, 0.f, 4.f);
 		building_node->container->is_sphere = false;
 
-		Int2 size = b.size * 2;
-		Int2 pos = b.pos * 2;
-		int left_hole = b.doors[Building::DOOR_LEFT];
-		int right_hole = b.doors[Building::DOOR_RIGHT];
-		int bottom_hole = b.doors[Building::DOOR_BOTTOM];
-		int top_hole = b.doors[Building::DOOR_TOP];
+		SceneNode* building_mesh = new SceneNode;
+		building_mesh->mesh = b.mesh;
+		building_mesh->pos = Vec3(tile_size * b.size.x / 2 + tile_size * b.pos.x, 0, tile_size * b.size.y / 2 + tile_size * b.pos.y);
+		building_mesh->rot = Vec3::Zero;
+		building_node->Add(building_mesh);
 
-		for(int x = pos.x + 1; x < pos.x + size.x - 1; ++x)
+		for(Int2& pt : b.tables)
 		{
-			// bottom wall
-			if(x != bottom_hole)
-			{
-				node = new SceneNode;
-				node->mesh = mesh_wall;
-				node->pos = Vec3(tile_size2 * (x + 1), 0, tile_size2 * pos.y);
-				node->rot = Vec3(0, PI / 2, 0);
-				building_node->Add(node);
-			}
+			SceneNode* table = new SceneNode;
+			table->mesh = mesh_table;
+			table->pos = Vec3(tile_size * b.pos.x + tile_size / 2 * pt.x + tile_size / 4, 0, tile_size * b.pos.y + tile_size / 2 * pt.y + tile_size / 4);
+			table->rot = Vec3::Zero;
+			building_node->Add(table);
 
-			// top wall
-			if(x != top_hole)
-			{
-				node = new SceneNode;
-				node->mesh = mesh_wall;
-				node->pos = Vec3(tile_size2 * (x + 1), 0, tile_size2 * (pos.y + size.y) - wall_width);
-				node->rot = Vec3(0, PI / 2, 0);
-				building_node->Add(node);
-			}
+			level->AddCollider(Collider(table->pos.XZ(), Vec2(2.1f / 2, 2.1f / 2), false));
 		}
-
-		for(int y = pos.y + 1; y < pos.y + size.y - 1; ++y)
-		{
-			// left wall
-			if(y != left_hole)
-			{
-				node = new SceneNode;
-				node->mesh = mesh_wall;
-				node->pos = Vec3(tile_size2 * pos.x, 0, tile_size2 * y);
-				node->rot = Vec3::Zero;
-				building_node->Add(node);
-			}
-
-			// right wall
-			if(y != right_hole)
-			{
-				node = new SceneNode;
-				node->mesh = mesh_wall;
-				node->pos = Vec3(tile_size2 * (pos.x + size.x) - wall_width, 0, tile_size2 * y);
-				node->rot = Vec3::Zero;
-				building_node->Add(node);
-			}
-		}
-
-		// left bottom corner
-		node = new SceneNode;
-		node->mesh = mesh_corner;
-		node->pos = Vec3(tile_size2 * pos.x, 0, tile_size2 * pos.y);
-		node->rot = Vec3::Zero;
-		building_node->Add(node);
-
-		// left top corner
-		node = new SceneNode;
-		node->mesh = mesh_corner;
-		node->pos = Vec3(tile_size2 * pos.x, 0, tile_size2 * (pos.y + size.y));
-		node->rot = Vec3(0, -PI / 2, 0);
-		building_node->Add(node);
-
-		// right bottom corner
-		node = new SceneNode;
-		node->mesh = mesh_corner;
-		node->pos = Vec3(tile_size2 * (pos.x + size.x), 0, tile_size2 * pos.y);
-		node->rot = Vec3(0, PI / 2, 0);
-		building_node->Add(node);
-
-		// right top corner
-		node = new SceneNode;
-		node->mesh = mesh_corner;
-		node->pos = Vec3(tile_size2 * (pos.x + size.x), 0, tile_size2 * (pos.y + size.y));
-		node->rot = Vec3(0, PI, 0);
-		building_node->Add(node);
 
 		scene->Add(building_node);
-
-		// colliders
-		Collider c;
-		c.half_size = Vec2(tile_size2 / 2, wall_width / 2);
-		for(int x = pos.x; x < pos.x + size.x; ++x)
-		{
-			// bottom wall
-			c.center = Vec2(tile_size2 * x + tile_size2 / 2, tile_size2 * pos.y + wall_width / 2);
-			if(x != bottom_hole)
-				level->AddCollider(c);
-
-			// top wall
-			if(x != top_hole)
-			{
-				c.center.y = tile_size2 * (pos.y + size.y) - wall_width / 2;
-				level->AddCollider(c);
-			}
-		}
-		c.half_size = Vec2(wall_width / 2, tile_size2 / 2);
-		for(int y = pos.y; y < pos.y + size.y; ++y)
-		{
-			// left wall
-			c.center = Vec2(tile_size2 * pos.x + wall_width / 2, tile_size2 * y + tile_size2 / 2);
-			if(y != left_hole)
-				level->AddCollider(c);
-
-			// right wall
-			if(y != right_hole)
-			{
-				c.center.x = tile_size2 * (pos.x + size.x) - wall_width / 2;
-				level->AddCollider(c);
-			}
-		}
-
-		level->camera_colliders.push_back(Box(tile_size2 * pos.x, 4.f, tile_size2 * pos.y,
-			tile_size2 * (pos.x + size.x), 4.05f, tile_size2 * (pos.y + size.y)));
 	}
 }
 
@@ -455,7 +698,7 @@ void CityGenerator::SpawnItems()
 	Item* pistol = Item::Get("pistol");
 	Item* axe = Item::Get("axe");
 
-	for(Building& building : buildings)
+	for(Building* building : buildings)
 	{
 		int count = Rand() % 10; // 10% - 0, 40% - 1, 40% - 2, 10% - 3
 		switch(count)
@@ -499,16 +742,39 @@ void CityGenerator::SpawnItems()
 				break;
 			}
 
-			Vec2 pos = building.box.GetRandomPoint(2.f);
-			level->SpawnItem(Vec3(pos.x, floor_y, pos.y), item);
+			SpawnItem(building, item);
 		}
 	}
 
 	for(int i = 0; i < 2; ++i)
 	{
-		Building& building = buildings[Rand() % buildings.size()];
-		Vec2 pos = building.box.GetRandomPoint(2.f);
-		level->SpawnItem(Vec3(pos.x, floor_y, pos.y), axe);
+		Building* building = buildings[Rand() % buildings.size()];
+		SpawnItem(building, axe);
+	}
+}
+
+void CityGenerator::SpawnItem(Building* building, Item* item)
+{
+	const float ts = tile_size / 2;
+	Building::Room& room = building->rooms[Rand() % building->rooms.size()];
+	while(true)
+	{
+		Vec2 pos = Vec2(Random(wall_width * 2, room.size.x * ts - wall_width * 2), Random(wall_width * 2, room.size.y * ts - wall_width * 2));
+		Int2 pt = Int2(int(pos.x / ts) + room.pos.x, int(pos.y / ts) + room.pos.y);
+		bool ok = true;
+		for(Int2& table_pt : building->tables)
+		{
+			if(pt == table_pt)
+			{
+				ok = false;
+				break;
+			}
+		}
+		if(ok)
+		{
+			level->SpawnItem(Vec3(pos.x + room.pos.x * ts + building->pos.x * tile_size, floor_y, pos.y + room.pos.y * ts + building->pos.y * tile_size), item);
+			return;
+		}
 	}
 }
 
@@ -552,13 +818,24 @@ Int2 CityGenerator::PosToPt(const Vec3& pos)
 void CityGenerator::Save(FileWriter& f)
 {
 	f << map;
-	f << buildings;
+	f << buildings.size();
+	for(Building* b : buildings)
+		b->Save(f);
 }
 
 void CityGenerator::Load(FileReader& f)
 {
 	f >> map;
-	f >> buildings;
+	uint count;
+	f >> count;
+	buildings.reserve(count);
+	for(uint i = 0; i < count; ++i)
+	{
+		Building* b = new Building;
+		b->Load(f);
+		buildings.push_back(b);
+	}
+	BuildBuildingsMesh();
 	CreateScene();
 	level->SpawnBarriers();
 	pathfinding->GenerateBlockedGrid(size, tile_size, buildings);

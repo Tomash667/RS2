@@ -1196,16 +1196,18 @@ bool Game::CanSee(Unit& unit, const Vec3& pos)
 	Vec3 to = pos.ModY(1.5f);
 	Vec3 ray = to - from;
 	float t;
-	return !level->RayTest(from, ray, t, Level::COLLIDE_COLLIDERS, nullptr, nullptr);
+	return !level->RayTest(from, ray, t, Level::COLLIDE_COLLIDERS | Level::COLLIDE_IGNORE_NO_BLOCK_VIEW, nullptr, nullptr);
 }
 
 void Game::OnDebugDraw(DebugDrawer* debug)
 {
-	for(Zombie* zombie : level->zombies)
+	/*for(Zombie* zombie : level->zombies)
 	{
 		if(zombie->hp > 0 && zombie->pf_used)
 			pathfinding->DrawPath(debug, zombie->node->pos, zombie->target_pos, zombie->path);
-	}
+	}*/
+
+	pathfinding->DrawBlocked(debug, level->player->node->pos);
 }
 
 void Game::UpdateWorld(float dt)
@@ -1332,12 +1334,14 @@ void Game::LoadGame()
 
 cstring VersionToString(int version)
 {
-	int major = (version & 0xFF00) >> 8;
-	int minor = version & 0xFF;
-	if(minor == 0)
-		return Format("%d", major);
-	else
+	int major = (version & 0xFF0000) >> 16;
+	int minor = (version & 0xFF00) >> 8;
+	int patch = version & 0xFF;
+
+	if(patch == 0)
 		return Format("%d.%d", major, minor);
+	else
+		return Format("%d.%d.%d", major, minor, patch);
 }
 
 void Game::Load(FileReader& f)
@@ -1355,7 +1359,7 @@ void Game::Load(FileReader& f)
 	// version
 	int version;
 	f >> version;
-	version &= 0xFFFF;
+	version &= 0xFFFFFF;
 	if(version != VERSION)
 		throw Format("Invalid save version %s.", VersionToString(version));
 

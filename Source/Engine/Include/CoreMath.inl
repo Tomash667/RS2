@@ -419,7 +419,7 @@ inline Rect Rect::Intersect(const Rect& r1, const Rect& r2)
 
 inline bool Rect::Intersect(const Rect& r1, const Rect& r2, Rect& result)
 {
-	int x = max(r1.Left(), r1.Left());
+	int x = max(r1.Left(), r2.Left());
 	int num1 = min(r1.Right(), r2.Right());
 	int y = max(r1.Top(), r2.Top());
 	int num2 = min(r1.Bottom(), r2.Bottom());
@@ -2655,6 +2655,11 @@ inline float Box::SizeZ() const
 //------------------------------------------------------------------------------
 // Static functions
 //------------------------------------------------------------------------------
+
+inline Box Box::Create(const Vec3& pos, const Vec3& size)
+{
+	return Box(pos, pos + size);
+}
 
 inline Box Box::CreateXZ(const Box2d& box2d, float y1, float y2)
 {

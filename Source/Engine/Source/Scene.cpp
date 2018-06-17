@@ -126,9 +126,12 @@ void Scene::DrawNodes(vector<SceneNode*>& nodes, const Matrix* parent_matrix)
 		else
 		{
 			// convert right handed rotation to left handed
-			mat_world = Matrix::Scale(node->scale)
-				* Matrix::Rotation(-node->rot.y, node->rot.x, node->rot.z)
-				* Matrix::Translation(node->pos);
+			if(node->use_matrix)
+				mat_world = node->mat;
+			else
+				mat_world = Matrix::Scale(node->scale)
+					* Matrix::Rotation(-node->rot.y, node->rot.x, node->rot.z)
+					* Matrix::Translation(node->pos);
 			if(parent_matrix)
 				mat_world *= (*parent_matrix);
 		}
@@ -249,12 +252,28 @@ void Scene::ListVisibleNodes(vector<SceneNode*>& nodes)
 					ListVisibleNodes(node->childs);
 			}
 		}
-		else if(frustum_planes.SphereToFrustum(node->pos, node->mesh->head.radius * node->scale))
+		else
 		{
-			if(node->alpha)
-				visible_alpha_nodes.push_back(node);
+			bool ok = false;
+			if(node->use_matrix)
+			{
+				Vec3 center = Vec3::TransformZero(node->mat);
+				if(frustum_planes.SphereToFrustum(center, node->mesh->head.radius))
+					ok = true;
+			}
 			else
-				visible_nodes.push_back(node);
+			{
+				if(frustum_planes.SphereToFrustum(node->pos, node->mesh->head.radius * node->scale))
+					ok = true;
+			}
+
+			if(ok)
+			{
+				if(node->alpha)
+					visible_alpha_nodes.push_back(node);
+				else
+					visible_nodes.push_back(node);
+			}
 		}
 	}
 }

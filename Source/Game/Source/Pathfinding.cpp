@@ -3,7 +3,7 @@
 #include <DebugDrawer.h>
 #include "Level.h"
 
-void Pathfinding::GenerateBlockedGrid(uint size, float tile_size, const vector<Building>& buildings)
+void Pathfinding::GenerateBlockedGrid(uint size, float tile_size, const vector<Building*>& buildings)
 {
 	uint s = size * 2;
 	this->size = s;
@@ -13,39 +13,79 @@ void Pathfinding::GenerateBlockedGrid(uint size, float tile_size, const vector<B
 	tiles.resize(s * s);
 	memset(tiles.data(), 0, sizeof(Tile) * s * s);
 
-	for(const Building& b : buildings)
+	for(const Building* p_b : buildings)
 	{
+		const Building& b = *p_b;
 		Int2 pos = b.pos * 2,
 			size = b.size * 2;
-		for(int x = pos.x; x < pos.x + size.x; ++x)
+		for(int x = 0; x < size.x; ++x)
 		{
 			// bottom
-			if(x != b.doors[Building::DOOR_BOTTOM])
+			if(!b.IsDoor(Int2(x, 0), DIR_BOTTOM))
 			{
-				tiles[x + pos.y * s].blocked |= BLOCKED_BOTTOM;
-				tiles[x + (pos.y - 1) * s].blocked |= BLOCKED_TOP;
+				tiles[x + pos.x + pos.y * s].blocked |= BLOCKED_BOTTOM;
+				tiles[x + pos.x + (pos.y - 1) * s].blocked |= BLOCKED_TOP;
 			}
 			// top
-			if(x != b.doors[Building::DOOR_TOP])
+			if(!b.IsDoor(Int2(x, size.y - 1), DIR_TOP))
 			{
-				tiles[x + (pos.y + size.y - 1) * s].blocked |= BLOCKED_TOP;
-				tiles[x + (pos.y + size.y) * s].blocked |= BLOCKED_BOTTOM;
+				tiles[x + pos.x + (pos.y + size.y - 1) * s].blocked |= BLOCKED_TOP;
+				tiles[x + pos.x + (pos.y + size.y) * s].blocked |= BLOCKED_BOTTOM;
 			}
 		}
-		for(int y = pos.y; y < pos.y + size.y; ++y)
+		for(int y = 0; y < size.y; ++y)
 		{
 			// left
-			if(y != b.doors[Building::DOOR_LEFT])
+			if(!b.IsDoor(Int2(0, y), DIR_LEFT))
 			{
-				tiles[pos.x + y * s].blocked |= BLOCKED_LEFT;
-				tiles[pos.x - 1 + y * s].blocked |= BLOCKED_RIGHT;
+				tiles[pos.x + (y + pos.y) * s].blocked |= BLOCKED_LEFT;
+				tiles[pos.x - 1 + (y + pos.y) * s].blocked |= BLOCKED_RIGHT;
 			}
 			// right
-			if(y != b.doors[Building::DOOR_RIGHT])
+			if(!b.IsDoor(Int2(size.x - 1, y), DIR_RIGHT))
 			{
-				tiles[pos.x + size.x - 1 + y * s].blocked |= BLOCKED_RIGHT;
-				tiles[pos.x + size.x + y * s].blocked |= BLOCKED_LEFT;
+				tiles[pos.x + size.x - 1 + (y + pos.y) * s].blocked |= BLOCKED_RIGHT;
+				tiles[pos.x + size.x + (y + pos.y) * s].blocked |= BLOCKED_LEFT;
 			}
+		}
+		// inner walls
+		for(const Building::Room& room : b.rooms)
+		{
+			// right
+			if(!IS_SET(room.outside, DIR_F_RIGHT))
+			{
+				int x = room.pos.x + room.size.x;
+				for(int y = room.pos.y; y < room.pos.y + room.size.y; ++y)
+				{
+					if(!b.IsDoor(Int2(x, y), DIR_LEFT))
+					{
+						tiles[x + pos.x - 1 + (y + pos.y) * s].blocked |= BLOCKED_RIGHT;
+						tiles[x + pos.x + (y + pos.y) * s].blocked |= BLOCKED_LEFT;
+					}
+				}
+			}
+			// top
+			if(!IS_SET(room.outside, DIR_F_TOP))
+			{
+				int y = room.pos.y + room.size.y;
+				for(int x = room.pos.x; x < room.pos.x + room.size.x; ++x)
+				{
+					if(!b.IsDoor(Int2(x, y), DIR_BOTTOM))
+					{
+						tiles[x + pos.x + (y + pos.y - 1) * s].blocked |= BLOCKED_TOP;
+						tiles[x + pos.x + (y + pos.y) * s].blocked |= BLOCKED_BOTTOM;
+					}
+				}
+			}
+		}
+		// tables
+		for(const Int2& pt : b.tables)
+		{
+			tiles[pt.x + pos.x + (pt.y + pos.y) * s].blocked = BLOCKED_ALL;
+			tiles[pt.x + pos.x - 1 + (pt.y + pos.y) * s].blocked |= BLOCKED_RIGHT;
+			tiles[pt.x + pos.x + 1 + (pt.y + pos.y) * s].blocked |= BLOCKED_LEFT;
+			tiles[pt.x + pos.x + (pt.y + pos.y - 1) * s].blocked |= BLOCKED_TOP;
+			tiles[pt.x + pos.x + (pt.y + pos.y + 1) * s].blocked |= BLOCKED_BOTTOM;
 		}
 	}
 }
@@ -307,4 +347,26 @@ Vec3 Pathfinding::GetPathNextTarget(const Vec3& target, const vector<Int2>& path
 		return target;
 	else
 		return PtToPos(path[1]);
+}
+
+void Pathfinding::DrawBlocked(DebugDrawer* debug_drawer, const Vec3& pos)
+{
+	debug_drawer->SetColor(Color(255, 0, 0, 128));
+	Int2 pt = Int2(int(pos.x / tile_size), int(pos.z / tile_size));
+	Rect rect(Max(0, pt.x - 5), Max(0, pt.y - 5), Min((int)size - 1, pt.x + 5), Min((int)size - 1, pt.y + 5));
+	for(int y = rect.p1.y; y <= rect.p2.y; ++y)
+	{
+		for(int x = rect.p1.x; x <= rect.p2.x; ++x)
+		{
+			Tile& tile = tiles[x + y * size];
+			if(IS_SET(tile.blocked, BLOCKED_LEFT))
+				debug_drawer->DrawCube(Box(tile_size*x, 0, tile_size*y, tile_size*x + 0.5f, 1.f, tile_size*(y + 1)));
+			if(IS_SET(tile.blocked, BLOCKED_RIGHT))
+				debug_drawer->DrawCube(Box(tile_size*(x + 1) - 0.5f, 0, tile_size*y, tile_size*(x + 1), 1.f, tile_size*(y + 1)));
+			if(IS_SET(tile.blocked, BLOCKED_BOTTOM))
+				debug_drawer->DrawCube(Box(tile_size*x, 0, tile_size*y, tile_size*(x + 1), 1.f, tile_size*y + 0.5f));
+			if(IS_SET(tile.blocked, BLOCKED_TOP))
+				debug_drawer->DrawCube(Box(tile_size*x, 0, tile_size*(y + 1) - 0.5f, tile_size*(x + 1), 1.f, tile_size*(y + 1)));
+		}
+	}
 }

@@ -64,8 +64,9 @@ void ThirdPersonCamera::Update(float dt, bool allow_mouse)
 	ray = Vec3::Transform(ray, mat);
 
 	float t1, t2;
-	level->RayTest(to, ray, t1, Level::COLLIDE_COLLIDERS | Level::COLLIDE_BOXES, nullptr, nullptr);
-	level->RayTest(camera_to_without_shift, ray, t2, Level::COLLIDE_COLLIDERS | Level::COLLIDE_BOXES, nullptr, nullptr);
+	const int flags = Level::COLLIDE_COLLIDERS | Level::COLLIDE_BOXES | Level::COLLIDE_IGNORE_NO_BLOCK_VIEW;
+	level->RayTest(to, ray, t1, flags, nullptr, nullptr);
+	level->RayTest(camera_to_without_shift, ray, t2, flags, nullptr, nullptr);
 	float t = min(t1, t2);
 
 	shift_x *= t;

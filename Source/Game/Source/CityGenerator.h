@@ -14,6 +14,7 @@ enum Tile
 class CityGenerator
 {
 public:
+	~CityGenerator();
 	void Init(Scene* scene, Level* level, Pathfinding* pathfinding, ResourceManager* res_mgr, uint size, uint splits);
 	void Reset();
 	void Generate();
@@ -30,18 +31,24 @@ public:
 private:
 	void GenerateMap();
 	void FillBuildings();
+	void BuildBuildingsMesh();
 	void CreateScene();
 	void SpawnItems();
+	void SpawnItem(Building* building, Item* item);
 	void SpawnZombies();
 	Int2 PosToPt(const Vec3& pos);
 
+	ResourceManager* res_mgr;
 	Scene* scene;
 	Pathfinding* pathfinding;
 	Level* level;
 	vector<Tile> map;
 	uint size;
-	Mesh* mesh[T_MAX], *mesh_curb, *mesh_wall, *mesh_corner;
 	float mesh_offset[T_MAX], map_size;
-	vector<Building> buildings;
+	vector<Building*> buildings;
 	Vec3 player_start_pos;
+
+	// resources
+	Mesh* mesh[T_MAX], *mesh_curb, *mesh_table,
+		*mesh_wall, *mesh_wall_inner, *mesh_corner, *mesh_door_jamb, *mesh_door_jamb_inner, *mesh_ceil, *mesh_roof;
 };

@@ -16,6 +16,7 @@ void DebugDrawer::Init()
 	shader.reset(new DebugShader(render));
 	shader->Init();
 
+	mesh_cube = res_mgr->GetMesh("cube.qmsh");
 	mesh_sphere = res_mgr->GetMesh("sphere.qmsh");
 }
 
@@ -76,6 +77,11 @@ void DebugDrawer::DrawQuad(const Vec3 pos[4])
 	v[5] = pos[3];
 
 	shader->Draw(6);
+}
+
+void DebugDrawer::DrawCube(const Box& box)
+{
+	shader->Draw(mesh_cube, Matrix::Scale(box.Size() / 2) * Matrix::Translation(box.Midpoint()));
 }
 
 void DebugDrawer::DrawSphere(const Vec3& pos, float radius)

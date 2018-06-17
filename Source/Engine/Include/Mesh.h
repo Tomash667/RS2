@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Resource.h"
+#include "Vertex.h"
 
 struct MeshPoint {};
 
@@ -13,6 +14,13 @@ struct Mesh final : Resource
 		F_USE_PARENT_BONES = 1 << 2, // mesh don't have bones, use parent
 		F_PHYSICS = 1 << 3,
 		F_SPLIT = 1 << 4
+	};
+
+	enum VertexLayout
+	{
+		VERTEX_POS,
+		VERTEX_NORMAL,
+		VERTEX_ANIMATED
 	};
 
 	struct Header
@@ -127,6 +135,7 @@ struct Mesh final : Resource
 	bool IsUsingParentBones() const { return IS_SET(head.flags, F_USE_PARENT_BONES); }
 
 	Header head;
+	VertexLayout layout;
 	ID3D11Buffer* vb;
 	ID3D11Buffer* ib;
 	vector<Submesh> subs;
@@ -135,4 +144,6 @@ struct Mesh final : Resource
 	vector<Point> attach_points;
 	vector<BoneGroup> groups;
 	vector<Matrix> model_to_bone;
+	vector<byte> vertex_data;
+	vector<word> index_data;
 };

@@ -6,6 +6,9 @@ struct Vertex
 	Vec3 pos;
 	Vec3 normal;
 	Vec2 tex;
+
+	Vertex() {}
+	Vertex(const Vec3& pos, const Vec3& normal, const Vec2& tex) : pos(pos), normal(normal), tex(tex) {}
 };
 
 //-----------------------------------------------------------------------------
