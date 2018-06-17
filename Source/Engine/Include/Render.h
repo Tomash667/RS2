@@ -18,7 +18,7 @@ public:
 	void BeginScene();
 	void EndScene();
 	void CreateShader(Shader& shader, cstring filename, D3D11_INPUT_ELEMENT_DESC* desc, uint desc_count, uint cbuffer_size[2]);
-	ID3DBlob* CompileShader(cstring filename, cstring entry, cstring target);
+	ID3DBlob* CompileShader(cstring filename, cstring entry, bool is_vertex);
 	ID3D11Buffer* CreateConstantBuffer(uint size);
 
 	void SetClearColor(const Vec4& clear_color) { this->clear_color = clear_color; }
@@ -53,4 +53,5 @@ private:
 	Int2 wnd_size;
 	bool vsync, alpha_blend, culling;
 	DepthState current_depth_state;
+	cstring vs_target_version, ps_target_version;
 };

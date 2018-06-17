@@ -59,6 +59,33 @@ void Render::Init(const Int2& wnd_size, void* wnd_handle)
 	CreateDepthStencilState();
 }
 
+cstring GetFeatureLevelString(D3D_FEATURE_LEVEL level)
+{
+	switch(level)
+	{
+	case D3D_FEATURE_LEVEL_9_1:
+		return "9.1";
+	case D3D_FEATURE_LEVEL_9_2:
+		return "9.2";
+	case D3D_FEATURE_LEVEL_9_3:
+		return "9.3";
+	case D3D_FEATURE_LEVEL_10_0:
+		return "10.0";
+	case D3D_FEATURE_LEVEL_10_1:
+		return "10.1";
+	case D3D_FEATURE_LEVEL_11_0:
+		return "11.0";
+	case D3D_FEATURE_LEVEL_11_1:
+		return "11.1";
+	case D3D_FEATURE_LEVEL_12_0:
+		return "12.0";
+	case D3D_FEATURE_LEVEL_12_1:
+		return "12.1";
+	default:
+		return Format("unknown(%u)", level);
+	}
+}
+
 void Render::CreateDeviceAndSwapChain(void* wnd_handle)
 {
 	DXGI_SWAP_CHAIN_DESC swap_desc = {};
@@ -76,16 +103,29 @@ void Render::CreateDeviceAndSwapChain(void* wnd_handle)
 	swap_desc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 	swap_desc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
-	D3D_FEATURE_LEVEL feature_level = D3D_FEATURE_LEVEL_11_0;
 	int flags = 0;
 #ifdef _DEBUG
 	flags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
 
-	HRESULT result = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, flags, &feature_level, 1,
-		D3D11_SDK_VERSION, &swap_desc, &swap_chain, &device, nullptr, &device_context);
+	D3D_FEATURE_LEVEL feature_levels[] = { /*D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_1,*/ D3D_FEATURE_LEVEL_10_0 };
+	D3D_FEATURE_LEVEL feature_level;
+	HRESULT result = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, flags, feature_levels, countof(feature_levels),
+		D3D11_SDK_VERSION, &swap_desc, &swap_chain, &device, &feature_level, &device_context);
 	if(FAILED(result))
 		throw Format("Failed to create device and swap chain (%u).", result);
+
+	Info("Created device with '%s' feature level.", GetFeatureLevelString(feature_level));
+	if(feature_level == D3D_FEATURE_LEVEL_11_0)
+	{
+		vs_target_version = "vs_5_0";
+		ps_target_version = "ps_5_0";
+	}
+	else
+	{
+		vs_target_version = "vs_4_0";
+		ps_target_version = "ps_4_0";
+	}
 
 	// disable alt+enter
 	IDXGIDevice* dxgi_device;
@@ -267,9 +307,11 @@ void Render::EndScene()
 	C(swap_chain->Present(vsync ? 1 : 0, 0));
 }
 
-ID3DBlob* Render::CompileShader(cstring filename, cstring entry, cstring target)
+ID3DBlob* Render::CompileShader(cstring filename, cstring entry, bool is_vertex)
 {
-	assert(filename && entry && target);
+	assert(filename && entry);
+
+	cstring target = is_vertex ? vs_target_version : ps_target_version;
 
 	uint flags = D3DCOMPILE_ENABLE_STRICTNESS;
 #ifdef _DEBUG
@@ -307,13 +349,13 @@ ID3DBlob* Render::CompileShader(cstring filename, cstring entry, cstring target)
 void Render::CreateShader(Shader& shader, cstring filename, D3D11_INPUT_ELEMENT_DESC* desc, uint desc_count, uint cbuffer_size[2])
 {
 	// create vertex shader
-	CPtr<ID3DBlob> vs_buf = CompileShader(filename, "vs_main", "vs_5_0");
+	CPtr<ID3DBlob> vs_buf = CompileShader(filename, "vs_main", true);
 	HRESULT result = device->CreateVertexShader(vs_buf->GetBufferPointer(), vs_buf->GetBufferSize(), nullptr, &shader.vertex_shader);
 	if(FAILED(result))
 		throw Format("Failed to create vertex shader '%s' (%u).", filename, result);
 
 	// create pixel shader
-	CPtr<ID3DBlob> ps_buf = CompileShader(filename, "ps_main", "ps_5_0");
+	CPtr<ID3DBlob> ps_buf = CompileShader(filename, "ps_main", false);
 	result = device->CreatePixelShader(ps_buf->GetBufferPointer(), ps_buf->GetBufferSize(), nullptr, &shader.pixel_shader);
 	if(FAILED(result))
 		throw Format("Failed to create pixel shader '%s' (%u).", filename, result);

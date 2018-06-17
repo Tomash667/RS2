@@ -77,9 +77,9 @@ void MeshShader::InitInternal()
 	HRESULT result;
 
 	// compile shader to blobs
-	ID3DBlob* blob_vs_mesh = render->CompileShader("mesh.hlsl", "vs_mesh", "vs_5_0");
-	ID3DBlob* blob_vs_animated = render->CompileShader("mesh.hlsl", "vs_animated", "vs_5_0");
-	ID3DBlob* blob_ps = render->CompileShader("mesh.hlsl", "ps_main", "ps_5_0");
+	ID3DBlob* blob_vs_mesh = render->CompileShader("mesh.hlsl", "vs_mesh", true);
+	ID3DBlob* blob_vs_animated = render->CompileShader("mesh.hlsl", "vs_animated", true);
+	ID3DBlob* blob_ps = render->CompileShader("mesh.hlsl", "ps_main", false);
 
 	// create shaders
 	result = device->CreateVertexShader(blob_vs_mesh->GetBufferPointer(), blob_vs_mesh->GetBufferSize(), nullptr, &vertex_shader);
