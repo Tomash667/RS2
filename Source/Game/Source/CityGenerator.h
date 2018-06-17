@@ -31,8 +31,10 @@ public:
 private:
 	void GenerateMap();
 	void FillBuildings();
+	void BuildBuildingsMesh();
 	void CreateScene();
 	void SpawnItems();
+	void SpawnItem(Building* building, Item* item);
 	void SpawnZombies();
 	Int2 PosToPt(const Vec3& pos);
 
@@ -47,5 +49,6 @@ private:
 	Vec3 player_start_pos;
 
 	// resources
-	Mesh* mesh[T_MAX], *mesh_curb, *mesh_wall, *mesh_wall_inner, *mesh_corner, *mesh_door_jamb, *mesh_door_jamb_inner;
+	Mesh* mesh[T_MAX], *mesh_curb, *mesh_table,
+		*mesh_wall, *mesh_wall_inner, *mesh_corner, *mesh_door_jamb, *mesh_door_jamb_inner, *mesh_ceil, *mesh_roof;
 };

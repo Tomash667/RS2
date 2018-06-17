@@ -24,47 +24,30 @@ struct Building
 {
 	struct Room
 	{
-		bool IsConnected(uint index) const
-		{
-			for(uint index2 : connected2)
-			{
-				if(index2 == index)
-					return true;
-			}
-			return false;
-		}
+		bool IsConnected(uint index) const;
 
 		Int2 pos, size;
+		int outside;
+
+		// used only for generation - don't save
 		vector<uint> connected, connected2;
-		int outside, outside_used;
+		int outside_used;
 		bool visited;
 	};
 
 	Building() : mesh(nullptr) {}
 	~Building() { delete mesh; }
-	void CheckConnect(Room& room, uint index, uint& last_index)
-	{
-		if(index == last_index)
-			return;
-		last_index = index;
-		for(uint index2 : room.connected)
-		{
-			if(index2 == index)
-				return;
-		}
-		room.connected.push_back(index);
-	}
-
-	bool IsDoor(const Int2& pt, DIR dir) const
-	{
-		int f = is_door[pt.x + pt.y * (size.x * 2)];
-		return IS_SET(f, 1 << dir);
-	}
+	void CheckConnect(Room& room, uint index, uint& last_index);
+	void SetIsDoorMap();
+	bool IsDoor(const Int2& pt, DIR dir) const;
+	void Save(FileWriter& f);
+	void Load(FileReader& f);
 
 	Box2d box;
 	Int2 pos, size;
 	vector<Room> rooms;
 	vector<std::pair<Int2, DIR>> doors;
+	vector<Int2> tables;
 	vector<int> is_door;
 	Mesh* mesh;
 };

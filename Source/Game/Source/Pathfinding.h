@@ -19,6 +19,7 @@ public:
 	Int2 GetPt(const Vec3& pos) { return Int2(int(pos.x / tile_size), int(pos.z / tile_size)); }
 	Vec3 PtToPos(const Int2& pt) { return Vec3(tile_size * pt.x + tile_size / 2, 0, tile_size * pt.y + tile_size / 2); }
 	Vec3 GetPathNextTarget(const Vec3& target, const vector<Int2>& path);
+	void DrawBlocked(DebugDrawer* debug_drawer, const Vec3& pos);
 
 private:
 	enum Blocked
@@ -26,7 +27,8 @@ private:
 		BLOCKED_LEFT = 1 << 0,
 		BLOCKED_RIGHT = 1 << 1,
 		BLOCKED_TOP = 1 << 2,
-		BLOCKED_BOTTOM = 1 << 3
+		BLOCKED_BOTTOM = 1 << 3,
+		BLOCKED_ALL = BLOCKED_LEFT | BLOCKED_RIGHT | BLOCKED_TOP | BLOCKED_BOTTOM
 	};
 
 	struct Tile

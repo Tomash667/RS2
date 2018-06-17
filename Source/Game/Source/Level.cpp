@@ -217,6 +217,7 @@ bool Level::RayTest(const Vec3& pos, const Vec3& ray, float& out_t, int flags, U
 
 	if(IS_SET(flags, COLLIDE_COLLIDERS))
 	{
+		bool ignore = IS_SET(flags, COLLIDE_IGNORE_NO_BLOCK_VIEW);
 		Int2 pt1 = PosToPt(pos.XZ()),
 			pt2 = PosToPt((pos + ray).XZ());
 		Int2::MinMax(pt1, pt2);
@@ -231,6 +232,8 @@ bool Level::RayTest(const Vec3& pos, const Vec3& ray, float& out_t, int flags, U
 			{
 				for(Collider& c : colliders[x + y * grids])
 				{
+					if(ignore && !c.block_view)
+						continue;
 					const Box box = c.ToBox();
 					if(RayToBox(pos, ray, box, &t) && t > 0.f && t < min_t)
 						min_t = t;

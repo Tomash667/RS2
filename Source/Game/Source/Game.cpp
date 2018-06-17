@@ -1196,22 +1196,22 @@ bool Game::CanSee(Unit& unit, const Vec3& pos)
 	Vec3 to = pos.ModY(1.5f);
 	Vec3 ray = to - from;
 	float t;
-	return !level->RayTest(from, ray, t, Level::COLLIDE_COLLIDERS, nullptr, nullptr);
+	return !level->RayTest(from, ray, t, Level::COLLIDE_COLLIDERS | Level::COLLIDE_IGNORE_NO_BLOCK_VIEW, nullptr, nullptr);
 }
 
 void Game::OnDebugDraw(DebugDrawer* debug)
 {
-	for(Zombie* zombie : level->zombies)
+	/*for(Zombie* zombie : level->zombies)
 	{
 		if(zombie->hp > 0 && zombie->pf_used)
 			pathfinding->DrawPath(debug, zombie->node->pos, zombie->target_pos, zombie->path);
-	}
+	}*/
+
+	pathfinding->DrawBlocked(debug, level->player->node->pos);
 }
 
 void Game::UpdateWorld(float dt)
 {
-	// FIXME
-	return;
 	world_tick += dt;
 	if(world_tick < 10.f)
 		return;

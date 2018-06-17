@@ -185,6 +185,7 @@
     <ClInclude Include="Source\Zombie.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Building.cpp" />
     <ClCompile Include="Source\CityGenerator.cpp" />
     <ClCompile Include="Source\Game.cpp" />
     <ClCompile Include="Source\GameGui.cpp" />
