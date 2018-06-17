@@ -1,7 +1,7 @@
 +----------------+
 | Rogue Survival |
 |    ver 0.1     |
-|   2018-05-??   |
+|   2018-06-17   |
 +----------------+
 
 Zombie apocalipse has just begun! Will you surive or will you finish as food for zombies?
