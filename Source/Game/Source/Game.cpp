@@ -25,12 +25,13 @@
 #include "GameState.h"
 #include "Pathfinding.h"
 #include <Gui.h>
+#include <Config.h>
 
 
 const int level_size = 32;
 
 
-Game::Game() : camera(nullptr)
+Game::Game() : camera(nullptr), quickstart(false)
 {
 }
 
@@ -39,9 +40,8 @@ Game::~Game()
 	delete camera;
 }
 
-int Game::Start(bool quickstart)
+int Game::Start(char* cmd_line)
 {
-	this->quickstart = quickstart;
 	engine.reset(new Engine);
 
 	InitLogger();
@@ -1379,4 +1379,45 @@ void Game::Load(FileReader& f)
 void Game::ShowErrorMessage(cstring err)
 {
 	engine->GetGui()->ShowMessageBox(err);
+}
+
+void Game::LoadConfig(char* cmd_line)
+{
+	cstring config_file = "rs.config";
+
+	// parse command line
+	char** argv;
+	int argc = Config::SplitCommandLine(cmd_line, &argv);
+	for(int i = 0; i < argc; ++i)
+	{
+		cstring str = argv[i];
+		if(str[0] != '-')
+			continue;
+		if(strcmp(str, "-config") == 0)
+		{
+			if(i + 1 < argc)
+			{
+				++i;
+				config_file = argv[i];
+			}
+			else
+				Warn("Missing command line argument for '-config'.");
+		}
+		else if(strcmp(str, "-qs") == 0)
+			quickstart = true;
+		else
+			Warn("Unknown command line switch '%s'.", str);
+	}
+
+	// load config
+	Info("Using '%s' configuration file.", config_file);
+	config = new Config(config_file);
+	config.Add(Config::Var(Config::VAR_BOOL, "fullscreen", true));
+	config.Add(Config::Var(Config::VAR_BOOL, "vsync", true));
+	config.Add(Config::Var(Config::VAR_INT2, "resolution", Int2(-1, -1)));
+	config.Add(Config::Var(Config::VAR_INT, "volume", 100));
+	config.Load();
+	config.ParseCommandLine(argc, argv);
+
+	config.Get("volume").value._int;
 }

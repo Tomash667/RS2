@@ -92,3 +92,4 @@ const destT &absolute_cast(const srcT &v)
 
 //-----------------------------------------------------------------------------
 struct QuadTree;
+class Config;

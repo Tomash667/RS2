@@ -314,3 +314,5 @@ namespace internal
 		}
 	};
 }
+
+extern ObjectPool<string> StringPool;

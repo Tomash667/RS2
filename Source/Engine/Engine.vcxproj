@@ -142,6 +142,7 @@
   <ItemGroup>
     <ClInclude Include="Include\Camera.h" />
     <ClInclude Include="Include\Color.h" />
+    <ClInclude Include="Include\Config.h" />
     <ClInclude Include="Include\Containers.h" />
     <ClInclude Include="Include\Control.h" />
     <ClInclude Include="Include\Core.h" />
@@ -195,6 +196,7 @@
     <ClCompile Include="Include\MeshBuilder.cpp" />
     <ClCompile Include="Source\Camera.cpp" />
     <ClCompile Include="Source\Color.cpp" />
+    <ClCompile Include="Source\Config.cpp" />
     <ClCompile Include="Source\Control.cpp" />
     <ClCompile Include="Source\CoreMath.cpp" />
     <ClCompile Include="Source\CoreMemory.cpp" />
