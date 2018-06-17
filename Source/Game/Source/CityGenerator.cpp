@@ -82,6 +82,8 @@ void CityGenerator::GenerateMap()
 	roads_tree.SplitAll();
 	for(Tree::Node* node : roads_tree.nodes)
 	{
+		if(node->IsLeaf())
+			continue;
 		for(int y = 0; y < node->split_size.y; ++y)
 		{
 			for(int x = 0; x < node->split_size.x; ++x)
