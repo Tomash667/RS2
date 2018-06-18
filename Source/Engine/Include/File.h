@@ -322,4 +322,5 @@ namespace io
 {
 	bool FileExists(Cstring path);
 	void DeleteFile(Cstring path);
+	bool LoadFileToString(Cstring path, string& str, uint max_size = (uint)-1);
 }

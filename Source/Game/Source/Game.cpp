@@ -224,7 +224,7 @@ bool Game::OnTick(float dt)
 	Window* window = engine->GetWindow();
 	if(input->Down(Key::Alt) && input->Pressed(Key::Enter))
 		window->SetFullscreen(!window->IsFullscreen());
-	
+
 	if(input->Pressed(Key::U))
 		window->SetCursorLock(!window->IsCursorLocked());
 
@@ -424,7 +424,7 @@ void Game::UpdatePlayer(float dt)
 					{
 						player->ranged_weapon = player->item_before->item;
 						player->current_ammo = 10;
-				}
+					}
 					else
 						player->ammo += 10;
 					break;

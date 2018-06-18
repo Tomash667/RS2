@@ -14,6 +14,8 @@ public:
 
 	union Any
 	{
+		Any() {}
+		Any(const Any& any) : int2(any.int2) {}
 		Any(bool bool_) : bool_(bool_) {}
 		Any(int int_) : int_(int_) {}
 		Any(float float_) : float_(float_) {}
@@ -23,6 +25,7 @@ public:
 			str = StringPool.Get();
 			*str = s;
 		}
+		Any& operator = (const Any& any) { int2 = any.int2; return *this; }
 
 		bool bool_;
 		int int_;
@@ -36,8 +39,9 @@ public:
 		VarType type;
 		Any value, prev_value;
 		cstring name;
-		bool prepared;
+		string* name_ptr;
 
+		Var() {}
 		Var(cstring name, bool value) : name(name), type(VAR_BOOL), value(value), prev_value(value) {}
 		Var(cstring name, int value) : name(name), type(VAR_INT), value(value), prev_value(value) {}
 		Var(cstring name, float value) : name(name), type(VAR_FLOAT), value(value), prev_value(value) {}
@@ -49,7 +53,7 @@ public:
 	~Config();
 	void Load();
 	void Save();
-	void Add(Var&& var);
+	void Add(Var* var);
 	Var* TryGet(cstring name);
 	Var& Get(cstring name)
 	{
@@ -91,5 +95,18 @@ public:
 	static int SplitCommandLine(char* cmd_line, char*** out);
 
 private:
-	std::unordered_map<cstring, Var> vars;
+	void LoadInternal(Tokenizer& t);
+	std::pair<Any, VarType> ParseType(Tokenizer& t);
+	bool CanAssignType(std::pair<Any, VarType>& var, VarType expected);
+	void AssignType(std::pair<Any, VarType>& v, Var* var);
+
+	struct Comparer
+	{
+		bool operator()(cstring a, cstring b) const
+		{
+			return std::strcmp(a, b) < 0;
+		}
+	};
+	std::map<cstring, Var*, Comparer> vars;
+	bool load_failed;
 };

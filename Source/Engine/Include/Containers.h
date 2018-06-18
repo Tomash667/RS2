@@ -1,5 +1,12 @@
 #pragma once
 
+template<typename T>
+inline T& Add1(vector<T>& v)
+{
+	v.resize(v.size() + 1);
+	return v.back();
+}
+
 template<typename Container, typename Element>
 void RemoveElement(Container& c, Element e)
 {

@@ -179,6 +179,9 @@
     <ClInclude Include="Include\Config.h">
       <Filter>1. Include\Core</Filter>
     </ClInclude>
+    <ClInclude Include="Include\Tokenizer.h">
+      <Filter>1. Include\Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Text.cpp">
@@ -302,6 +305,9 @@
       <Filter>3. Source Files\Engine</Filter>
     </ClCompile>
     <ClCompile Include="Source\Config.cpp">
+      <Filter>3. Source Files\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Tokenizer.cpp">
       <Filter>3. Source Files\Core</Filter>
     </ClCompile>
   </ItemGroup>

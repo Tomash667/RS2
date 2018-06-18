@@ -53,6 +53,54 @@ inline bool operator != (const Cstring& s1, cstring s2)
 }
 
 //-----------------------------------------------------------------------------
+cstring Escape(Cstring str, char quote = '"');
+cstring Escape(Cstring str, string& out, char quote = '"');
+cstring EscapeChar(char c);
+cstring EscapeChar(char c, string& out);
 cstring Format(cstring fmt, ...);
+cstring FormatList(cstring fmt, va_list lis);
+string& Ltrim(string& str);
+string& Rtrim(string& str);
+bool StringInString(cstring s1, cstring s2);
+bool StringToBool(Cstring s, bool& result);
+bool StringToFloat(Cstring s, float& result);
+bool StringToInt(Cstring s, int& result);
+int StringToNumber(Cstring s, __int64& i, float& f); // 0-invalid, 1-int, 2-float
+bool StringToUint(Cstring s, uint& result);
 const wchar_t* ToWString(cstring str);
 cstring ToString(const wchar_t* wstr);
+string& Trim(string& str);
+string Trimmed(const string& str);
+bool Unescape(const string& str_in, uint pos, uint length, string& str_out);
+bool Unescape(const string& str_in, string& str_out);
+char CharInStr(char c, cstring chrs);
+
+//-----------------------------------------------------------------------------
+inline string& Ltrim(string& str)
+{
+	str.erase(str.begin(), find_if(str.begin(), str.end(), [](char& ch)->bool { return !isspace(ch); }));
+	return str;
+}
+
+inline string& Rtrim(string& str)
+{
+	str.erase(find_if(str.rbegin(), str.rend(), [](char& ch)->bool { return !isspace(ch); }).base(), str.end());
+	return str;
+}
+
+inline string& Trim(string& str)
+{
+	return Ltrim(Rtrim(str));
+}
+
+inline string Trimmed(const string& str)
+{
+	string s = str;
+	Trim(s);
+	return s;
+}
+
+inline bool Unescape(const string& str_in, string& str_out)
+{
+	return Unescape(str_in, 0u, str_in.length(), str_out);
+}
