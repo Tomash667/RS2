@@ -9,6 +9,7 @@ class GameState;
 class MainMenu;
 class Inventory;
 class Level;
+class Options;
 class Pathfinding;
 
 struct Collider;

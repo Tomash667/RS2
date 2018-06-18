@@ -53,6 +53,7 @@ inline bool operator != (const Cstring& s1, cstring s2)
 }
 
 //-----------------------------------------------------------------------------
+char CharInStr(char c, cstring chrs);
 cstring Escape(Cstring str, char quote = '"');
 cstring Escape(Cstring str, string& out, char quote = '"');
 cstring EscapeChar(char c);
@@ -61,19 +62,19 @@ cstring Format(cstring fmt, ...);
 cstring FormatList(cstring fmt, va_list lis);
 string& Ltrim(string& str);
 string& Rtrim(string& str);
+int StrCharIndex(cstring str, char c);
 bool StringInString(cstring s1, cstring s2);
-bool StringToBool(Cstring s, bool& result);
-bool StringToFloat(Cstring s, float& result);
-bool StringToInt(Cstring s, int& result);
-int StringToNumber(Cstring s, __int64& i, float& f); // 0-invalid, 1-int, 2-float
-bool StringToUint(Cstring s, uint& result);
-const wchar_t* ToWString(cstring str);
+bool StringToBool(cstring s, bool& result);
+bool StringToFloat(cstring s, float& result);
+bool StringToInt(cstring s, int& result);
+int StringToNumber(cstring s, __int64& i, float& f); // 0-invalid, 1-int, 2-float
+bool StringToUint(cstring s, uint& result);
 cstring ToString(const wchar_t* wstr);
+const wchar_t* ToWString(cstring str);
 string& Trim(string& str);
 string Trimmed(const string& str);
 bool Unescape(const string& str_in, uint pos, uint length, string& str_out);
 bool Unescape(const string& str_in, string& str_out);
-char CharInStr(char c, cstring chrs);
 
 //-----------------------------------------------------------------------------
 inline string& Ltrim(string& str)

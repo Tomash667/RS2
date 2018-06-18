@@ -49,6 +49,7 @@ void MainMenu::Init(ResourceManager* res_mgr, GameState* game_state)
 	cstring texts[BUTTON_MAX] = {
 		"Continue",
 		"New game",
+		"Options",
 		"Exit"
 	};
 

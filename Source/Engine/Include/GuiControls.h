@@ -81,6 +81,31 @@ struct Button : Control
 };
 
 //-----------------------------------------------------------------------------
+struct CheckBox : Control
+{
+	bool checked;
+};
+
+//-----------------------------------------------------------------------------
+struct DropDownList : Control
+{
+	struct Item
+	{
+		string text;
+		int value;
+	};
+
+	vector<Item> items;
+	int selected_index;
+};
+
+//-----------------------------------------------------------------------------
+struct Slider : Control
+{
+	int value, min_value, max_value, step;
+};
+
+//-----------------------------------------------------------------------------
 struct DialogBox : Control
 {
 	struct Layout

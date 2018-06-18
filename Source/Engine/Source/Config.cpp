@@ -13,9 +13,10 @@ cstring var_type_name[] = {
 };
 
 
-Config::Config(Cstring path)
+Config::Config(Cstring path) : path(path), load_failed(false)
 {
-
+	t.AddKeyword("true", 0);
+	t.AddKeyword("false", 1);
 }
 
 Config::~Config()
@@ -36,15 +37,11 @@ Config::~Config()
 
 void Config::Load()
 {
-	Tokenizer t;
 	load_failed = false;
-
-	t.AddKeyword("true", 0);
-	t.AddKeyword("false", 1);
 
 	try
 	{
-		LoadInternal(t);
+		LoadInternal();
 	}
 	catch(Tokenizer::Exception& e)
 	{
@@ -53,8 +50,15 @@ void Config::Load()
 	}
 }
 
-void Config::LoadInternal(Tokenizer& t)
+void Config::LoadInternal()
 {
+	if(!t.FromFile(path.c_str()))
+	{
+		// file don't exists
+		load_failed = true;
+		return;
+	}
+
 	if(!t.Next())
 		return;
 
@@ -73,7 +77,7 @@ void Config::LoadInternal(Tokenizer& t)
 				t.Next();
 				t.AssertSymbol('=');
 				t.Next();
-				std::pair<Any, VarType> v = ParseType(t);
+				std::pair<Any, VarType> v = ParseType();
 				var->value = var->prev_value = v.first;
 				var->type = v.second;
 				if(var->type == VAR_STRING)
@@ -89,16 +93,18 @@ void Config::LoadInternal(Tokenizer& t)
 				t.Next();
 				t.AssertSymbol('=');
 				t.Next();
-				std::pair<Any, VarType> v = ParseType(t);
+				std::pair<Any, VarType> v = ParseType();
 				if(!CanAssignType(v, var->type))
 				{
-					Warn("Config var '%s' type mismatch, ignoring value.", var->name);
+					Warn("Config var '%s' type mismatch (%s and %s), ignoring value.",
+						var->name, var_type_name[var->type], var_type_name[v.second]);
 					continue;
 				}
 				AssignType(v, var);
 			}
 
-			t.Next();
+			if(!t.Next())
+				break;
 		}
 		catch(Tokenizer::Exception& e)
 		{
@@ -112,8 +118,11 @@ void Config::LoadInternal(Tokenizer& t)
 
 void Config::Save()
 {
-	TextWriter f("rs.config");
-	for(std::pair<cstring, Var*>& v : vars)
+	if(!HaveChanges())
+		return;
+
+	TextWriter f(path);
+	for(std::pair<const cstring, Var*>& v : vars)
 	{
 		Var* var = v.second;
 		f << var->name;
@@ -121,23 +130,68 @@ void Config::Save()
 		switch(var->type)
 		{
 		case VAR_BOOL:
-			f << var->value.bool_ ? "true" : "false";
+			f << (var->value.bool_ ? "true" : "false");
+			var->prev_value.bool_ = var->value.bool_;
 			break;
 		case VAR_INT:
 			f << var->value.int_;
+			var->prev_value.int_ = var->value.int_;
 			break;
 		case VAR_FLOAT:
 			f << var->value.float_;
+			var->prev_value.float_ = var->value.float_;
 			break;
 		case VAR_STRING:
 			f << Escape(*var->value.str);
+			*var->prev_value.str = *var->value.str;
 			break;
 		case VAR_INT2:
 			f << Format("{%d;%d}", var->value.int2.x, var->value.int2.y);
+			var->prev_value.int2 = var->value.int2;
 			break;
 		}
 		f << "\n";
 	}
+
+	load_failed = false;
+}
+
+bool Config::HaveChanges()
+{
+	if(load_failed)
+		return true;
+
+	for(std::pair<const cstring, Var*>& v : vars)
+	{
+		Var& var = *v.second;
+		switch(var.type)
+		{
+		case VAR_BOOL:
+			if(var.value.bool_ != var.prev_value.bool_)
+				return true;
+			break;
+		default:
+			assert(0);
+		case VAR_INT:
+			if(var.value.int_ != var.prev_value.int_)
+				return true;
+			break;
+		case VAR_FLOAT:
+			if(var.value.float_ != var.prev_value.float_)
+				return true;
+			break;
+		case VAR_INT2:
+			if(var.value.int2 != var.prev_value.int2)
+				return true;
+			break;
+		case VAR_STRING:
+			if(*var.value.str != *var.prev_value.str)
+				return true;
+			break;
+		}
+	}
+
+	return false;
 }
 
 void Config::Add(Var* var)
@@ -156,7 +210,7 @@ Config::Var* Config::TryGet(cstring name)
 		return it->second;
 }
 
-std::pair<Config::Any, Config::VarType> Config::ParseType(Tokenizer& t)
+std::pair<Config::Any, Config::VarType> Config::ParseType()
 {
 	Any any;
 	VarType type;
@@ -244,73 +298,78 @@ void Config::AssignType(std::pair<Any, VarType>& v, Var* var)
 	}
 }
 
-int Config::SplitCommandLine(char* cmd_line, char*** out)
+void Config::ParseCommandLine(cstring cmd_line)
 {
-	int argc = 0;
-	char* str = cmd_line;
+	t.FromString(cmd_line);
+	if(!t.Next())
+		return;
 
-	// count argument count
-	while(*str)
+	while(true)
 	{
-		while(*str && *str == ' ')
-			++str;
-
-		if(*str)
+		try
 		{
-			if(*str == '"')
+			if(t.IsSymbol('+'))
 			{
-				++str;
-				while(*str && *str != '"')
-					++str;
-				++str;
-				++argc;
+				t.Next();
+				const string& item = t.MustGetItem();
+				Var* var = TryGet(item.c_str());
+				if(!var)
+				{
+					Warn("Ignoring command line var '%s'.", item.c_str());
+					t.Next();
+					continue;
+				}
+				t.Next();
+				t.AssertSymbol('=');
+				t.Next();
+				std::pair<Any, VarType> v = ParseType();
+				if(CanAssignType(v, var->type))
+					AssignType(v, var);
+				else
+					Warn("Command line var '%s' type mismatch (%s and %s), ignoring value.",
+						var->name, var_type_name[var->type], var_type_name[v.second]);
+			}
+			t.Next();
+		}
+		catch(Tokenizer::Exception& e)
+		{
+			Warn("Error while parsing command line: %s", e.ToString());
+			if(!t.SkipTo([](Tokenizer& t) {return t.IsItem(); }))
+				return;
+		}
+	}
+}
+
+void Config::SplitCommandLine(cstring cmd_line, vector<string>& out)
+{
+	cstring s = cmd_line;
+	while(*s)
+	{
+		while(*s && *s == ' ')
+			++s;
+
+		if(*s)
+		{
+			if(*s == '"')
+			{
+				++s;
+				cstring start = s;
+				while(*s && *s != '"')
+					++s;
+				uint len = s - start;
+				if(len > 0)
+					out.push_back(string(start, len));
+				if(*s)
+					++s;
 			}
 			else
 			{
-				++argc;
-				while(*str && *str != ' ')
-					++str;
+				cstring start = s;
+				while(*s && *s != ' ')
+					++s;
+				out.push_back(string(start, s - start));
+				++s;
 			}
 		}
 	}
-
-	// split arguments
-	char** argv = new char*[argc];
-	char** cargv = argv;
-	str = cmd_line;
-	while(*str)
-	{
-		while(*str && *str == ' ')
-			++str;
-
-		if(*str)
-		{
-			if(*str == '"')
-			{
-				++str;
-				*cargv = str;
-				++cargv;
-
-				while(*str && *str != '"')
-					++str;
-			}
-			else
-			{
-				*cargv = str;
-				++cargv;
-
-				while(*str && *str != ' ')
-					++str;
-			}
-		}
-
-		if(*str)
-		{
-			*str = 0;
-			++str;
-		}
-	}
-
-	*out = argv;
-	return argc;
 }

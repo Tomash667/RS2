@@ -30,6 +30,8 @@ public:
 	}
 	void SetPaused(bool paused) { this->paused = paused; }
 
+	Engine* engine;
+	Config* config;
 	Level* level;
 	Player* player;
 

@@ -31,20 +31,22 @@
 const int level_size = 32;
 
 
-Game::Game() : camera(nullptr), quickstart(false)
+Game::Game() : camera(nullptr), quickstart(false), config(nullptr)
 {
 }
 
 Game::~Game()
 {
 	delete camera;
+	delete config;
 }
 
-int Game::Start(char* cmd_line)
+int Game::Start(cstring cmd_line)
 {
 	engine.reset(new Engine);
 
 	InitLogger();
+	LoadConfig(cmd_line);
 
 	try
 	{
@@ -65,6 +67,9 @@ int Game::Start(char* cmd_line)
 		engine->ShowError(Format("Failed to initialize game: %s", err));
 		return 2;
 	}
+
+	// update config if required
+	config->Save();
 
 	try
 	{
@@ -109,15 +114,20 @@ void Game::InitLogger()
 void Game::InitEngine()
 {
 	Info("Initializing engine.");
+
 	Window* window = engine->GetWindow();
 	window->SetTitle("Rouge Survival v" VERSION_STR);
+	window->SetFullscreen(config->GetBool("fullscreen"));
+	window->SetSize(config->GetInt2("resolution"));
+	engine->GetRender()->SetVsync(config->GetBool("vsync"));
+
 	engine->Init(this);
-	//window->SetFullscreen(true);
 
 	scene = engine->GetScene();
 	input = engine->GetInput();
 	res_mgr = engine->GetResourceManager();
 	sound_mgr = engine->GetSoundManager();
+	sound_mgr->SetSoundVolume(config->GetInt("volume"));
 }
 
 void Game::InitGame()
@@ -1381,43 +1391,52 @@ void Game::ShowErrorMessage(cstring err)
 	engine->GetGui()->ShowMessageBox(err);
 }
 
-void Game::LoadConfig(char* cmd_line)
+void Game::LoadConfig(cstring cmd_line)
 {
-	cstring config_file = "rs.config";
+	string config_file = "rs.config";
 
 	// parse command line
-	char** argv;
-	int argc = Config::SplitCommandLine(cmd_line, &argv);
-	for(int i = 0; i < argc; ++i)
+	vector<string> cmds;
+	Config::SplitCommandLine(cmd_line, cmds);
+	for(uint i = 0; i < cmds.size(); ++i)
 	{
-		cstring str = argv[i];
+		const string& str = cmds[i];
 		if(str[0] != '-')
 			continue;
-		if(strcmp(str, "-config") == 0)
+		if(str == "-config")
 		{
-			if(i + 1 < argc)
+			if(i + 1 < cmds.size())
 			{
 				++i;
-				config_file = argv[i];
+				config_file = cmds[i];
 			}
 			else
 				Warn("Missing command line argument for '-config'.");
 		}
-		else if(strcmp(str, "-qs") == 0)
+		else if(str, "-qs")
 			quickstart = true;
 		else
-			Warn("Unknown command line switch '%s'.", str);
+			Warn("Unknown command line switch '%s'.", str.c_str());
 	}
 
 	// load config
-	Info("Using '%s' configuration file.", config_file);
+	Info("Using '%s' configuration file.", config_file.c_str());
 	config = new Config(config_file);
-	config.Add(Config::Var(Config::VAR_BOOL, "fullscreen", true));
-	config.Add(Config::Var(Config::VAR_BOOL, "vsync", true));
-	config.Add(Config::Var(Config::VAR_INT2, "resolution", Int2(-1, -1)));
-	config.Add(Config::Var(Config::VAR_INT, "volume", 100));
-	config.Load();
-	config.ParseCommandLine(argc, argv);
+	config->Add(new Config::Var("fullscreen", true));
+	config->Add(new Config::Var("vsync", true));
+	config->Add(new Config::Var("resolution", Int2::Zero));
+	config->Add(new Config::Var("volume", 100));
+	config->Load();
+	config->ParseCommandLine(cmd_line);
 
-	config.Get("volume").value._int;
+	// validate settings
+	Int2 res = config->GetInt2("resolution");
+	Int2 valid_res = engine->GetRender()->CheckResolution(res);
+	if(res != valid_res)
+		config->SetInt2("resolution", valid_res);
+
+	int volume = config->GetInt("volume");
+	int valid_volume = Clamp(volume, 0, 100);
+	if(volume != valid_volume)
+		config->SetInt("volume", valid_volume);
 }

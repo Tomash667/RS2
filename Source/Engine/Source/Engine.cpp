@@ -12,6 +12,7 @@
 Engine::Engine() : handler(nullptr), input(new Input), window(new Window), render(new Render), sound_mgr(new SoundManager), res_mgr(new ResourceManager),
 scene(new Scene), gui(new Gui), fps(0)
 {
+	render->Prepare();
 }
 
 Engine::~Engine()

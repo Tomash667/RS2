@@ -8,7 +8,7 @@ class Game : public GameHandler
 public:
 	Game();
 	~Game();
-	int Start(char* cmd_line);
+	int Start(cstring cmd_line);
 	
 private:
 	void InitLogger();

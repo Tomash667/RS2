@@ -14,6 +14,7 @@ private:
 	{
 		CONTINUE,
 		NEW_GAME,
+		OPTIONS,
 		EXIT,
 		BUTTON_MAX
 	};

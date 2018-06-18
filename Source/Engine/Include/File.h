@@ -318,6 +318,49 @@ private:
 };
 
 //-----------------------------------------------------------------------------
+class TextWriter
+{
+public:
+	TextWriter(Cstring filename) : file(filename)
+	{
+	}
+
+	operator bool() const
+	{
+		return file.IsOpen();
+	}
+
+	void Write(cstring str)
+	{
+		file.Write(str, strlen(str));
+	}
+
+	void operator << (const string& str)
+	{
+		file.Write(str.c_str(), str.length());
+	}
+	void operator << (cstring str)
+	{
+		file.Write(str, strlen(str));
+	}
+	void operator << (char c)
+	{
+		file << c;
+	}
+	void operator << (int i)
+	{
+		Write(Format("%d", i));
+	}
+	void operator << (float f)
+	{
+		Write(Format("%g", f));
+	}
+	
+private:
+	FileWriter file;
+};
+
+//-----------------------------------------------------------------------------
 namespace io
 {
 	bool FileExists(Cstring path);

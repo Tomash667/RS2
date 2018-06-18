@@ -424,7 +424,7 @@ bool Tokenizer::ParseNumber(SeekData& s, uint pos2, bool negative)
 
 	// parse number
 	__int64 val;
-	int type = StringToNumber(s.item, val, s._float);
+	int type = StringToNumber(s.item.c_str(), val, s._float);
 	assert(type > 0);
 	s._int = (int)val;
 	if(s._int < 0)

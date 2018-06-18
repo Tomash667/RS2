@@ -6,9 +6,13 @@
 #include <d3dcompiler.h>
 #include "InternalHelper.h"
 
-Render::Render() : swap_chain(nullptr), device(nullptr), device_context(nullptr), render_target(nullptr), depth_stencil_view(nullptr), depth_state(nullptr),
-no_depth_state(nullptr), readonly_depth_state(nullptr), raster_state(nullptr), no_cull_raster_state(nullptr), blend_state(nullptr), no_blend_state(nullptr),
-clear_color(Color::Black), vsync(true), current_depth_state(DEPTH_YES), alpha_blend(false), culling(true)
+const Int2 MIN_RESOLUTION = Int2(1024, 768);
+const DXGI_FORMAT DISPLAY_FORMAT = DXGI_FORMAT_R8G8B8A8_UNORM;
+
+Render::Render() : factory(nullptr), adapter(nullptr), swap_chain(nullptr), device(nullptr), device_context(nullptr), render_target(nullptr),
+depth_stencil_view(nullptr), depth_state(nullptr), no_depth_state(nullptr), readonly_depth_state(nullptr), raster_state(nullptr),
+no_cull_raster_state(nullptr), blend_state(nullptr), no_blend_state(nullptr), clear_color(Color::Black), vsync(true), current_depth_state(DEPTH_YES),
+alpha_blend(false), culling(true)
 {
 #ifdef _DEBUG
 	vsync = false;
@@ -44,6 +48,38 @@ Render::~Render()
 
 		device->Release();
 	}
+
+	SafeRelease(adapter);
+	SafeRelease(factory);
+}
+
+void Render::Prepare()
+{
+	IDXGIOutput* output;
+
+	C(CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&factory));
+	C(factory->EnumAdapters(0, &adapter));
+	C(adapter->EnumOutputs(0, &output));
+
+	uint count;
+	C(output->GetDisplayModeList(DISPLAY_FORMAT, 0, &count, nullptr));
+	vector<DXGI_MODE_DESC> modes;
+	modes.resize(count);
+	C(output->GetDisplayModeList(DISPLAY_FORMAT, 0, &count, modes.data()));
+
+	Int2 prev = Int2(0, 0);
+	for(DXGI_MODE_DESC& mode : modes)
+	{
+		if((mode.Width == prev.x && mode.Height == prev.y)
+			|| mode.Scaling != DXGI_MODE_SCALING_UNSPECIFIED
+			|| mode.Width < (uint)MIN_RESOLUTION.x
+			|| mode.Height < (uint)MIN_RESOLUTION.y)
+			continue;
+		prev = Int2(mode.Width, mode.Height);
+		resolutions.push_back(prev);
+	}
+
+	output->Release();
 }
 
 void Render::Init(const Int2& wnd_size, void* wnd_handle)
@@ -92,7 +128,7 @@ void Render::CreateDeviceAndSwapChain(void* wnd_handle)
 	swap_desc.BufferCount = 1;
 	swap_desc.BufferDesc.Width = wnd_size.x;
 	swap_desc.BufferDesc.Height = wnd_size.y;
-	swap_desc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	swap_desc.BufferDesc.Format = DISPLAY_FORMAT;
 	swap_desc.BufferDesc.RefreshRate.Numerator = 0;
 	swap_desc.BufferDesc.RefreshRate.Denominator = 1;
 	swap_desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
@@ -108,9 +144,9 @@ void Render::CreateDeviceAndSwapChain(void* wnd_handle)
 	flags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
 
-	D3D_FEATURE_LEVEL feature_levels[] = { /*D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_1,*/ D3D_FEATURE_LEVEL_10_0 };
+	D3D_FEATURE_LEVEL feature_levels[] = { D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_1, D3D_FEATURE_LEVEL_10_0 };
 	D3D_FEATURE_LEVEL feature_level;
-	HRESULT result = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, flags, feature_levels, countof(feature_levels),
+	HRESULT result = D3D11CreateDeviceAndSwapChain(adapter, D3D_DRIVER_TYPE_UNKNOWN, nullptr, flags, feature_levels, countof(feature_levels),
 		D3D11_SDK_VERSION, &swap_desc, &swap_chain, &device, &feature_level, &device_context);
 	if(FAILED(result))
 		throw Format("Failed to create device and swap chain (%u).", result);
@@ -128,19 +164,7 @@ void Render::CreateDeviceAndSwapChain(void* wnd_handle)
 	}
 
 	// disable alt+enter
-	IDXGIDevice* dxgi_device;
-	C(device->QueryInterface(IID_PPV_ARGS(&dxgi_device)));
-
-	IDXGIAdapter* adapter;
-	C(dxgi_device->GetParent(IID_PPV_ARGS(&adapter)));
-
-	IDXGIFactory* factory;
-	C(adapter->GetParent(IID_PPV_ARGS(&factory)));
 	C(factory->MakeWindowAssociation(swap_desc.OutputWindow, DXGI_MWA_NO_WINDOW_CHANGES));
-
-	factory->Release();
-	adapter->Release();
-	dxgi_device->Release();
 }
 
 void Render::CreateSizeDependentResources()
@@ -454,7 +478,19 @@ void Render::OnSizeChange(const Int2& wnd_size)
 
 	DXGI_SWAP_CHAIN_DESC desc = {};
 	swap_chain->GetDesc(&desc);
-	C(swap_chain->ResizeBuffers(1, wnd_size.x, wnd_size.y, DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH));
+	C(swap_chain->ResizeBuffers(1, wnd_size.x, wnd_size.y, DISPLAY_FORMAT, DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH));
 
 	CreateSizeDependentResources();
+}
+
+Int2 Render::CheckResolution(const Int2& res)
+{
+	if(res == Int2::Zero)
+		return Int2(GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN));
+	for(Int2& res2 : resolutions)
+	{
+		if(res2.x >= res.x && res2.y >= res.y)
+			return res2;
+	}
+	return resolutions.back();
 }

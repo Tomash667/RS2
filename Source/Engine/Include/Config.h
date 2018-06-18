@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Tokenizer.h"
+
 class Config
 {
 public:
@@ -52,6 +54,7 @@ public:
 	Config(Cstring path);
 	~Config();
 	void Load();
+	void ParseCommandLine(cstring cmd_line);
 	void Save();
 	void Add(Var* var);
 	Var* TryGet(cstring name);
@@ -91,14 +94,45 @@ public:
 		assert(var.type == VAR_STRING);
 		return *var.value.str;
 	}
+	void SetBool(cstring name, bool value)
+	{
+		Var& var = Get(name);
+		assert(var.type == VAR_BOOL);
+		var.value.bool_ = value;
+	}
+	void SetInt(cstring name, int value)
+	{
+		Var& var = Get(name);
+		assert(var.type == VAR_INT);
+		var.value.int_ = value;
+	}
+	void SetFloat(cstring name, float value)
+	{
+		Var& var = Get(name);
+		assert(var.type == VAR_FLOAT);
+		var.value.float_ = value;
+	}
+	void SetInt2(cstring name, const Int2& value)
+	{
+		Var& var = Get(name);
+		assert(var.type == VAR_INT2);
+		var.value.int2 = value;
+	}
+	void SetString(cstring name, Cstring value)
+	{
+		Var& var = Get(name);
+		assert(var.type == VAR_STRING);
+		*var.value.str = value;
+	}
 
-	static int SplitCommandLine(char* cmd_line, char*** out);
+	static void SplitCommandLine(cstring cmd_line, vector<string>& out);
 
 private:
-	void LoadInternal(Tokenizer& t);
-	std::pair<Any, VarType> ParseType(Tokenizer& t);
+	void LoadInternal();
+	std::pair<Any, VarType> ParseType();
 	bool CanAssignType(std::pair<Any, VarType>& var, VarType expected);
 	void AssignType(std::pair<Any, VarType>& v, Var* var);
+	bool HaveChanges();
 
 	struct Comparer
 	{
@@ -108,5 +142,7 @@ private:
 		}
 	};
 	std::map<cstring, Var*, Comparer> vars;
+	Tokenizer t;
+	string path;
 	bool load_failed;
 };
