@@ -64,7 +64,7 @@ struct Button : Control
 		Color font_color, font_color_disabled;
 	};
 
-	Button() : layout(default_layout), id(0), event(nullptr), state(UP) {}
+	Button() : Button(default_layout) {}
 	Button(Layout& layout) : layout(layout), id(0), event(nullptr), state(UP) {}
 	void Draw() override;
 	void Update(float dt) override;
@@ -83,20 +83,74 @@ struct Button : Control
 //-----------------------------------------------------------------------------
 struct CheckBox : Control
 {
-	bool checked;
+	struct Layout
+	{
+		Texture* background, *hover, *checkbox;
+	};
+
+	CheckBox() : CheckBox(default_layout) {}
+	CheckBox(Layout& layout) : layout(layout), checked(false), hover(false) {}
+	void Draw() override;
+	void Update(float dt) override;
+
+	Layout& layout;
+	bool checked, hover;
+
+	static Layout default_layout;
+};
+
+//-----------------------------------------------------------------------------
+struct ScrollBar : Control
+{
+	struct Layout
+	{
+		Texture* background, *arrow, *arrow_hover;
+		Int2 corners, arrow_size, arrow_image_size;
+		Color scroll_color, scroll_hover_color;
+	};
+
+	explicit ScrollBar(bool horizontal = false) : ScrollBar(default_layout) {}
+	explicit ScrollBar(Layout& layout, bool horizontal = false) : layout(layout), horizontal(horizontal), hover(0) {}
+	void Draw() override;
+	void Update(float dt) override;
+
+private:
+	Layout& layout;
+	int hover;
+	bool horizontal;
+
+public:
+	static Layout default_layout;
 };
 
 //-----------------------------------------------------------------------------
 struct DropDownList : Control
 {
+	struct Layout
+	{
+		Texture* background, *background_hover, *list_background, *list_hover;
+		Int2 corners;
+		Font* font;
+		Color font_color;
+	};
+
 	struct Item
 	{
 		string text;
 		int value;
 	};
 
+	DropDownList() : DropDownList(default_layout) {}
+	DropDownList(Layout& layout) : layout(layout), selected_index(-1), is_open(false), hover(false) {}
+	void Draw() override;
+	void Update(float dt) override;
+
+	Layout& layout;
 	vector<Item> items;
-	int selected_index;
+	int selected_index, hover_index, status;
+	bool is_open, hover;
+
+	static Layout default_layout;
 };
 
 //-----------------------------------------------------------------------------

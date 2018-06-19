@@ -111,6 +111,95 @@ void Button::NormalizeSize(Button* buttons[], uint count, const Int2& padding)
 
 
 //-----------------------------------------------------------------------------
+void CheckBox::Draw()
+{
+	gui->DrawSprite(hover ? layout.hover : layout.background, pos, size);
+	if(checked)
+		gui->DrawSprite(layout.checkbox, pos, size);
+}
+
+void CheckBox::Update(float dt)
+{
+	if(mouse_focus && Rect::IsInside(pos, size, gui->GetCursorPos()))
+	{
+		focus = true;
+		if(gui->GetInput()->PressedOnce(Key::LeftButton))
+			checked = !checked;
+	}
+	else
+		focus = false;
+}
+
+
+//-----------------------------------------------------------------------------
+void ScrollBar::Draw()
+{
+	gui->DrawSpriteGrid(layout.background, Color::White, layout.corners.y, layout.corners.x, pos, size);
+	if(horizontal)
+	{
+		Matrix::Transform2D(nullptr, 0.f, nullptr, &(Vec2(layout.arrow_size) / 2), PI, &Vec2::Zero);
+		gui->DrawSprite(hover == 1 ? layout.arrow_hover : layout.arrow,
+	}
+	else
+	{
+
+	}
+}
+
+void ScrollBar::Update(float dt)
+{
+
+}
+
+
+//-----------------------------------------------------------------------------
+void DropDownList::Draw()
+{
+	gui->DrawSpriteGrid(layout.background, Color::White, layout.corners.y, layout.corners.x, pos, size);
+	if(selected_index != -1)
+	{
+		Rect rect = Rect::Create(pos, size, 2);
+		gui->DrawText(items[selected_index].text, layout.font, layout.font_color, Font::Center | Font::VCenter, rect, &rect);
+	}
+	if(is_open)
+	{
+		// list
+	}
+}
+
+void DropDownList::Update(float dt)
+{
+	if(mouse_focus)
+	{
+		if(Rect::IsInside(pos, size, gui->GetCursorPos()))
+		{
+			hover = true;
+			if(gui->GetInput()->PressedOnce(Key::LeftButton))
+			{
+				if(is_open)
+					is_open = false;
+				else
+				{
+					is_open = true;
+					hover_index = selected_index;
+				}
+				gui->TakeFocus(this);
+			}
+		}
+		else
+			hover = false;
+	}
+	else
+	{
+		hover = false;
+	}
+
+	if(is_open && !focus)
+		is_open = false;
+}
+
+
+//-----------------------------------------------------------------------------
 void DialogBox::Draw()
 {
 	gui->DrawSpriteGrid(layout.background, layout.background_color, layout.corners.y, layout.corners.x, pos, size);

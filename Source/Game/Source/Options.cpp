@@ -5,6 +5,9 @@
 #include <Window.h>
 #include <Render.h>
 #include <SoundManager.h>
+#include <Gui.h>
+#include <Input.h>
+#include <Config.h>
 
 Options::Options(GameState* state) : state(state)
 {
@@ -38,16 +41,65 @@ Options::Options(GameState* state) : state(state)
 	sl_volume->max_value = 100;
 	sl_volume->step = 1;
 	Add(sl_volume);
+
+	Button* bt = new Button;
+	bt->text = "OK";
+	bt->event = delegate<void(int)>(this, &Options::OnEvent);
+	Add(bt);
+
+	visible = false;
 }
 
 void Options::Draw()
 {
-
+	Panel::Draw();
 }
 
 void Options::Update(float dt)
 {
-	// handle alt enter here too
+	if(gui->GetInput()->PressedOnce(Key::Escape))
+	{
+		Close();
+		return;
+	}
+
+	Window* window = state->engine->GetWindow();
+	Render* render = state->engine->GetRender();
+	SoundManager* sound_mgr = state->engine->GetSoundManager();
+
+	// handle alt enter change
+	bool current_fullscreen = window->IsFullscreen();
+	if(current_fullscreen != fullscreen)
+	{
+		fullscreen = current_fullscreen;
+		cb_fullscreen->checked = fullscreen;
+	}
+
+	if(fullscreen != cb_fullscreen->checked)
+	{
+		fullscreen = cb_fullscreen->checked;
+		window->SetFullscreen(fullscreen);
+	}
+
+	if(vsync != cb_vsync->checked)
+	{
+		vsync = cb_vsync->checked;
+		render->SetVsync(vsync);
+	}
+
+	if(resolution_index != ddl_resolution->selected_index)
+	{
+		resolution_index = ddl_resolution->selected_index;
+		window->SetSize(render->GetAvailableResolutions()[resolution_index]);
+	}
+
+	if(volume != sl_volume->value)
+	{
+		volume = sl_volume->value;
+		sound_mgr->SetSoundVolume(volume);
+	}
+
+	Panel::Update(dt);
 }
 
 void Options::Show()
@@ -56,11 +108,15 @@ void Options::Show()
 	Render* render = state->engine->GetRender();
 	SoundManager* sound_mgr = state->engine->GetSoundManager();
 
-	cb_fullscreen->checked = window->IsFullscreen();
-	cb_vsync->checked = render->IsVsyncEnabled();
+	fullscreen = window->IsFullscreen();
+	cb_fullscreen->checked = fullscreen;
+
+	vsync = render->IsVsyncEnabled();
+	cb_vsync->checked = vsync;
+
+	const Int2& current_res = window->GetSize();
 	const vector<Int2>& resolutions = render->GetAvailableResolutions();
 	int selected_index = -1;
-	Int2 current_res = window->GetSize();
 	for(uint index = 0; index < resolutions.size(); ++index)
 	{
 		if(current_res == resolutions[index])
@@ -69,11 +125,32 @@ void Options::Show()
 			break;
 		}
 	}
+	resolution_index = selected_index;
 	ddl_resolution->selected_index = selected_index;
-	sl_volume->value = sound_mgr->GetSoundVolume();
+	ddl_resolution->is_open = false;
+
+	volume = sound_mgr->GetSoundVolume();
+	sl_volume->value = volume;
+
+	visible = true;
+}
+
+void Options::Close()
+{
+	Window* window = state->engine->GetWindow();
+	Render* render = state->engine->GetRender();
+	SoundManager* sound_mgr = state->engine->GetSoundManager();
+
+	state->config->SetBool("fullscreen", window->IsFullscreen());
+	state->config->SetBool("vsync", render->IsVsyncEnabled());
+	state->config->SetInt2("resolution", window->GetSize());
+	state->config->SetInt("volume", sound_mgr->GetSoundVolume());
+	state->config->Save();
+
+	visible = false;
 }
 
 void Options::OnEvent(int id)
 {
-
+	Close();
 }

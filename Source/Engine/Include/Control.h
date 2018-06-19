@@ -3,13 +3,13 @@
 //-----------------------------------------------------------------------------
 struct Control
 {
-	Control() : visible(true), pos(Int2::Zero), size(Int2::Zero) {}
+	Control() : visible(true), pos(Int2::Zero), size(Int2::Zero), focus(false) {}
 	virtual ~Control() {}
 	virtual void Draw() {}
 	virtual void Update(float dt) {}
 
 	Int2 pos, size;
-	bool visible, mouse_focus;
+	bool visible, mouse_focus, focus;
 	static Gui* gui;
 };
 

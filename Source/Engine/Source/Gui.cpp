@@ -320,6 +320,14 @@ void Gui::DrawSpriteGrid(Texture* image, Color color, int image_size, int corner
 		DrawSprite(image, pos, size, color);
 }
 
+void Gui::DrawSpriteComplex(Texture* image, Color color, const Box2d& uv, const Matrix& mat)
+{
+	assert(image);
+	Lock();
+	Vec4 current_color = color;
+
+}
+
 bool Gui::To2dPoint(const Vec3& pos, Int2& pt)
 {
 	Vec4 v4;
