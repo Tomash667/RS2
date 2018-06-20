@@ -234,7 +234,7 @@ bool Game::OnTick(float dt)
 	Window* window = engine->GetWindow();
 	if(input->Down(Key::Alt) && input->Pressed(Key::Enter))
 	{
-		bool fullscreen = !window->IsFullscreen()
+		bool fullscreen = !window->IsFullscreen();
 		window->SetFullscreen(fullscreen);
 		config->SetBool("fullscreen", fullscreen);
 		config->Save();

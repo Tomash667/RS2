@@ -7,6 +7,8 @@
 
 Button::Layout Button::default_layout;
 DialogBox::Layout DialogBox::default_layout;
+CheckBox::Layout CheckBox::default_layout;
+DropDownList::Layout DropDownList::default_layout;
 
 
 //-----------------------------------------------------------------------------
@@ -138,7 +140,7 @@ void ScrollBar::Draw()
 	if(horizontal)
 	{
 		Matrix::Transform2D(nullptr, 0.f, nullptr, &(Vec2(layout.arrow_size) / 2), PI, &Vec2::Zero);
-		gui->DrawSprite(hover == 1 ? layout.arrow_hover : layout.arrow,
+		//gui->DrawSprite(hover == 1 ? layout.arrow_hover : layout.arrow,
 	}
 	else
 	{

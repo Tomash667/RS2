@@ -6,6 +6,9 @@
 #include "Font.h"
 #include "Input.h"
 
+// FIXME
+void Gui::TakeFocus(Control*) {}
+
 Gui::Gui() : v(nullptr), cursor_visible(false), tex_cursor(nullptr), dialog(nullptr)
 {
 }

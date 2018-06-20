@@ -99,3 +99,5 @@ namespace tokenizer
 	class Tokenizer;
 };
 using tokenizer::Tokenizer;
+template<typename T>
+using delegate = ssvu::FastFunc<T>;
