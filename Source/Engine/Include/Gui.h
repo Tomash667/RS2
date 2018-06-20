@@ -13,6 +13,7 @@ public:
 	void Update(float dt) override;
 	bool To2dPoint(const Vec3& pos, Int2& pt);
 	void ShowMessageBox(Cstring text);
+	void ShowDialog(Control* control);
 	void CloseDialog();
 	void TakeFocus(Control* control);
 
@@ -71,6 +72,7 @@ private:
 	Matrix mat_view_proj;
 	Texture* tex_cursor;
 	Control* focused;
-	DialogBox* dialog;
-	bool cursor_visible;
+	Control* dialog;
+	Color dialog_overlay;
+	bool cursor_visible, own_dialog;
 };

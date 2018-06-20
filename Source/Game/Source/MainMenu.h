@@ -5,6 +5,8 @@
 class MainMenu : public Container
 {
 public:
+	MainMenu();
+	~MainMenu();
 	void Init(ResourceManager* res_mgr, GameState* game_state);
 	void Show();
 	void Hide();
@@ -19,9 +21,11 @@ private:
 		BUTTON_MAX
 	};
 
+	void InitLayout(ResourceManager* res_mgr);
 	void Update(float dt) override;
 	void OnEvent(int id);
 
 	GameState* game_state;
 	Button* buttons[BUTTON_MAX];
+	Options* options;
 };

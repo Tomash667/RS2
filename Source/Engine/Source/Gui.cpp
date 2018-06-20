@@ -9,13 +9,14 @@
 // FIXME
 void Gui::TakeFocus(Control*) {}
 
-Gui::Gui() : v(nullptr), cursor_visible(false), tex_cursor(nullptr), dialog(nullptr)
+Gui::Gui() : v(nullptr), cursor_visible(false), tex_cursor(nullptr), dialog(nullptr), dialog_overlay(Color(50, 50, 50, 150))
 {
 }
 
 Gui::~Gui()
 {
-	delete dialog;
+	if(own_dialog)
+		delete dialog;
 }
 
 void Gui::Init(Render* render, ResourceManager* res_mgr, Input* input)
@@ -41,7 +42,11 @@ void Gui::Draw(const Matrix& mat_view_proj)
 	Container::Draw();
 
 	if(HaveDialog())
+	{
+		if(dialog_overlay.a > 0)
+			DrawSprite(nullptr, Int2::Zero, wnd_size, dialog_overlay);
 		dialog->Draw();
+	}
 
 	if((cursor_visible || HaveDialog()) && tex_cursor)
 		DrawSprite(tex_cursor, cursor_pos, Int2(32, 32));
@@ -368,7 +373,8 @@ void Gui::SetWindowSize(const Int2& wnd_size)
 void Gui::ShowMessageBox(Cstring text)
 {
 	assert(!dialog); // max 1 dialog at once currently
-	dialog = new DialogBox;
+
+	DialogBox* dialog = new DialogBox;
 	dialog->text = text;
 	dialog->button.text = "OK";
 	dialog->button.CalculateSize();
@@ -376,16 +382,33 @@ void Gui::ShowMessageBox(Cstring text)
 	Int2 text_size = font->CalculateSize(dialog->text, wnd_size.x - 100);
 	dialog->size.x = max(text_size.x, dialog->button.size.x) + 10 + dialog->layout.corners.x * 2;
 	dialog->size.y = text_size.y + dialog->button.size.y + 15 + dialog->layout.corners.x * 2;
-	dialog->pos = (wnd_size - dialog->size) / 2;
-	dialog->button.pos = Int2((wnd_size.x - dialog->button.size.x) / 2, dialog->pos.y + 10 + dialog->layout.corners.x + text_size.y);
-	dialog->rect = Rect(dialog->pos.x + dialog->layout.corners.x + 5, dialog->pos.y + dialog->layout.corners.x + 5);
+	Int2 pos = (wnd_size - dialog->size) / 2;
+	dialog->SetPos(pos);
+	dialog->button.SetPos(Int2((wnd_size.x - dialog->button.size.x) / 2, pos.y + 10 + dialog->layout.corners.x + text_size.y));
+	dialog->rect = Rect(pos.x + dialog->layout.corners.x + 5, pos.y + dialog->layout.corners.x + 5);
 	dialog->rect.p2 += text_size;
 	dialog->button.event = delegate<void(int)>(dialog, &DialogBox::OnEvent);
+
+	this->dialog = dialog;
+	own_dialog = true;
+}
+
+void Gui::ShowDialog(Control* control)
+{
+	assert(!dialog); // max 1 dialog at once currently
+
+	control->SetPos(Int2((wnd_size.x - control->size.x) / 2, (wnd_size.y - control->size.y) / 2));
+	control->visible = true;
+	dialog = control;
+	own_dialog = false;
 }
 
 void Gui::CloseDialog()
 {
 	assert(HaveDialog());
-	delete dialog;
+	if(own_dialog)
+		delete dialog;
+	else
+		dialog->visible = false;
 	dialog = nullptr;
 }

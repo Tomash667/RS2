@@ -2,7 +2,7 @@
 
 #include "GuiControls.h"
 
-class Inventory : public Panel
+class Inventory : public CustomPanel
 {
 public:
 	Inventory(ResourceManager* res_mgr, GameState* game_state);

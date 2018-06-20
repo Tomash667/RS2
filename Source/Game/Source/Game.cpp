@@ -141,6 +141,8 @@ void Game::InitGame()
 	level.reset(new Level);
 	level->Init(scene, res_mgr, &game_state, CityGenerator::tile_size * level_size);
 	game_state.level = level.get();
+	game_state.engine = engine.get();
+	game_state.config = config;
 
 	pathfinding.reset(new Pathfinding);
 

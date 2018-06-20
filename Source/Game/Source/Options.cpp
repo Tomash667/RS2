@@ -9,7 +9,7 @@
 #include <Input.h>
 #include <Config.h>
 
-Options::Options(GameState* state) : state(state)
+Options::Options(GameState* game_state) : game_state(game_state)
 {
 	// TILE
 	// [] Fullscreen
@@ -18,6 +18,8 @@ Options::Options(GameState* state) : state(state)
 	// <----X> Volume
 	//    [Ok]
 
+	size = Int2(200, 200);
+
 	cb_fullscreen = new CheckBox;
 	Add(cb_fullscreen);
 
@@ -25,7 +27,7 @@ Options::Options(GameState* state) : state(state)
 	Add(cb_vsync);
 
 	ddl_resolution = new DropDownList;
-	const vector<Int2>& resolutions = state->engine->GetRender()->GetAvailableResolutions();
+	const vector<Int2>& resolutions = game_state->engine->GetRender()->GetAvailableResolutions();
 	ddl_resolution->items.resize(resolutions.size());
 	for(uint i = 0; i < resolutions.size(); ++i)
 	{
@@ -45,6 +47,8 @@ Options::Options(GameState* state) : state(state)
 	Button* bt = new Button;
 	bt->text = "OK";
 	bt->event = delegate<void(int)>(this, &Options::OnEvent);
+	bt->size = Int2(100, 30);
+	bt->SetPos(Int2((size.x - bt->size.x) / 2, size.y - bt->size.y - 10));
 	Add(bt);
 
 	visible = false;
@@ -63,9 +67,9 @@ void Options::Update(float dt)
 		return;
 	}
 
-	Window* window = state->engine->GetWindow();
-	Render* render = state->engine->GetRender();
-	SoundManager* sound_mgr = state->engine->GetSoundManager();
+	Window* window = game_state->engine->GetWindow();
+	Render* render = game_state->engine->GetRender();
+	SoundManager* sound_mgr = game_state->engine->GetSoundManager();
 
 	// handle alt enter change
 	bool current_fullscreen = window->IsFullscreen();
@@ -104,9 +108,9 @@ void Options::Update(float dt)
 
 void Options::Show()
 {
-	Window* window = state->engine->GetWindow();
-	Render* render = state->engine->GetRender();
-	SoundManager* sound_mgr = state->engine->GetSoundManager();
+	Window* window = game_state->engine->GetWindow();
+	Render* render = game_state->engine->GetRender();
+	SoundManager* sound_mgr = game_state->engine->GetSoundManager();
 
 	fullscreen = window->IsFullscreen();
 	cb_fullscreen->checked = fullscreen;
@@ -132,22 +136,22 @@ void Options::Show()
 	volume = sound_mgr->GetSoundVolume();
 	sl_volume->value = volume;
 
-	visible = true;
+	gui->ShowDialog(this);
 }
 
 void Options::Close()
 {
-	Window* window = state->engine->GetWindow();
-	Render* render = state->engine->GetRender();
-	SoundManager* sound_mgr = state->engine->GetSoundManager();
+	Window* window = game_state->engine->GetWindow();
+	Render* render = game_state->engine->GetRender();
+	SoundManager* sound_mgr = game_state->engine->GetSoundManager();
 
-	state->config->SetBool("fullscreen", window->IsFullscreen());
-	state->config->SetBool("vsync", render->IsVsyncEnabled());
-	state->config->SetInt2("resolution", window->GetSize());
-	state->config->SetInt("volume", sound_mgr->GetSoundVolume());
-	state->config->Save();
+	game_state->config->SetBool("fullscreen", window->IsFullscreen());
+	game_state->config->SetBool("vsync", render->IsVsyncEnabled());
+	game_state->config->SetInt2("resolution", window->GetSize());
+	game_state->config->SetInt("volume", sound_mgr->GetSoundVolume());
+	game_state->config->Save();
 
-	visible = false;
+	gui->CloseDialog();
 }
 
 void Options::OnEvent(int id)

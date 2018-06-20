@@ -237,8 +237,6 @@ namespace tokenizer
 		bool FromFile(cstring path);
 		void FromTokenizer(const Tokenizer& t);
 
-		typedef bool(*SkipToFunc)(Tokenizer& t);
-
 		bool Next(bool return_eol = false) { return DoNext(normal_seek, return_eol); }
 		bool NextLine();
 		bool SkipTo(delegate<bool(Tokenizer&)> f)

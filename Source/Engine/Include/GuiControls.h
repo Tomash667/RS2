@@ -28,12 +28,24 @@ struct Label : Control
 //-----------------------------------------------------------------------------
 struct Panel : Container
 {
-	Panel() : image(nullptr), corners(0,0), color(Color::White) {}
+	struct Layout
+	{
+		Texture* image;
+		Int2 corners;
+		Color color;
+	};
+
+	Panel(Layout& layout = default_layout) : layout(layout) {}
 	void Draw() override;
 
-	Texture* image;
-	Int2 corners;
-	Color color;
+	Layout& layout;
+	static Layout default_layout;
+};
+
+//-----------------------------------------------------------------------------
+struct CustomPanel : Panel, Panel::Layout
+{
+	CustomPanel() : Panel(*this) {}
 };
 
 //-----------------------------------------------------------------------------

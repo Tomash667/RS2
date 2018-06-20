@@ -5,6 +5,7 @@
 #include "Input.h"
 
 
+Panel::Layout Panel::default_layout;
 Button::Layout Button::default_layout;
 DialogBox::Layout DialogBox::default_layout;
 CheckBox::Layout CheckBox::default_layout;
@@ -14,14 +15,14 @@ DropDownList::Layout DropDownList::default_layout;
 //-----------------------------------------------------------------------------
 void Sprite::Draw()
 {
-	gui->DrawSprite(image, pos, size, color);
+	gui->DrawSprite(image, global_pos, size, color);
 }
 
 
 //-----------------------------------------------------------------------------
 void Label::Draw()
 {
-	gui->DrawText(text, font, color, flags, Rect::Create(pos, size));
+	gui->DrawText(text, font, color, flags, Rect::Create(global_pos, size));
 }
 
 Int2 Label::CalculateSize() const
@@ -34,7 +35,7 @@ Int2 Label::CalculateSize() const
 //-----------------------------------------------------------------------------
 void Panel::Draw()
 {
-	gui->DrawSpriteGrid(image, color, corners.y, corners.x, pos, size);
+	gui->DrawSpriteGrid(layout.image, layout.color, layout.corners.y, layout.corners.x, global_pos, size);
 	Container::Draw();
 }
 
@@ -42,9 +43,9 @@ void Panel::Draw()
 //-----------------------------------------------------------------------------
 void ProgressBar::Draw()
 {
-	gui->DrawSprite(background, pos, size);
+	gui->DrawSprite(background, global_pos, size);
 	if(progress > 0.f)
-		gui->DrawSpritePart(image, pos, size, Vec2(progress, 1));
+		gui->DrawSpritePart(image, global_pos, size, Vec2(progress, 1));
 }
 
 
@@ -67,8 +68,8 @@ void Button::Draw()
 		font_color = layout.font_color_disabled;
 		break;
 	}
-	gui->DrawSpriteGrid(img, Color::White, layout.corners.y, layout.corners.x, pos, size);
-	Rect rect = Rect::Create(pos, size);
+	gui->DrawSpriteGrid(img, Color::White, layout.corners.y, layout.corners.x, global_pos, size);
+	Rect rect = Rect::Create(global_pos, size);
 	gui->DrawText(text.c_str(), layout.font, font_color, Font::Center | Font::VCenter, rect, &rect);
 }
 
@@ -76,7 +77,7 @@ void Button::Update(float dt)
 {
 	if(state == DISABLED)
 		return;
-	if(mouse_focus && Rect::IsInside(pos, size, gui->GetCursorPos()))
+	if(mouse_focus && Rect::IsInside(global_pos, size, gui->GetCursorPos()))
 	{
 		state = HOVER;
 		if(gui->GetInput()->PressedOnce(Key::LeftButton) && event)
@@ -115,14 +116,14 @@ void Button::NormalizeSize(Button* buttons[], uint count, const Int2& padding)
 //-----------------------------------------------------------------------------
 void CheckBox::Draw()
 {
-	gui->DrawSprite(hover ? layout.hover : layout.background, pos, size);
+	gui->DrawSprite(hover ? layout.hover : layout.background, global_pos, size);
 	if(checked)
-		gui->DrawSprite(layout.checkbox, pos, size);
+		gui->DrawSprite(layout.checkbox, global_pos, size);
 }
 
 void CheckBox::Update(float dt)
 {
-	if(mouse_focus && Rect::IsInside(pos, size, gui->GetCursorPos()))
+	if(mouse_focus && Rect::IsInside(global_pos, size, gui->GetCursorPos()))
 	{
 		focus = true;
 		if(gui->GetInput()->PressedOnce(Key::LeftButton))
@@ -136,7 +137,7 @@ void CheckBox::Update(float dt)
 //-----------------------------------------------------------------------------
 void ScrollBar::Draw()
 {
-	gui->DrawSpriteGrid(layout.background, Color::White, layout.corners.y, layout.corners.x, pos, size);
+	gui->DrawSpriteGrid(layout.background, Color::White, layout.corners.y, layout.corners.x, global_pos, size);
 	if(horizontal)
 	{
 		Matrix::Transform2D(nullptr, 0.f, nullptr, &(Vec2(layout.arrow_size) / 2), PI, &Vec2::Zero);
@@ -157,10 +158,10 @@ void ScrollBar::Update(float dt)
 //-----------------------------------------------------------------------------
 void DropDownList::Draw()
 {
-	gui->DrawSpriteGrid(layout.background, Color::White, layout.corners.y, layout.corners.x, pos, size);
+	gui->DrawSpriteGrid(layout.background, Color::White, layout.corners.y, layout.corners.x, global_pos, size);
 	if(selected_index != -1)
 	{
-		Rect rect = Rect::Create(pos, size, 2);
+		Rect rect = Rect::Create(global_pos, size, 2);
 		gui->DrawText(items[selected_index].text, layout.font, layout.font_color, Font::Center | Font::VCenter, rect, &rect);
 	}
 	if(is_open)
@@ -173,7 +174,7 @@ void DropDownList::Update(float dt)
 {
 	if(mouse_focus)
 	{
-		if(Rect::IsInside(pos, size, gui->GetCursorPos()))
+		if(Rect::IsInside(global_pos, size, gui->GetCursorPos()))
 		{
 			hover = true;
 			if(gui->GetInput()->PressedOnce(Key::LeftButton))
@@ -204,7 +205,7 @@ void DropDownList::Update(float dt)
 //-----------------------------------------------------------------------------
 void DialogBox::Draw()
 {
-	gui->DrawSpriteGrid(layout.background, layout.background_color, layout.corners.y, layout.corners.x, pos, size);
+	gui->DrawSpriteGrid(layout.background, layout.background_color, layout.corners.y, layout.corners.x, global_pos, size);
 	gui->DrawText(text, layout.font, layout.font_color, Font::Left, rect);
 	button.Draw();
 }

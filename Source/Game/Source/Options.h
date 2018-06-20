@@ -5,7 +5,7 @@
 class Options : public Panel
 {
 public:
-	Options(GameState* state);
+	Options(GameState* game_state);
 	void Draw() override;
 	void Update(float dt) override;
 	void Show();
@@ -14,7 +14,7 @@ private:
 	void OnEvent(int id);
 	void Close();
 
-	GameState* state;
+	GameState* game_state;
 	CheckBox* cb_fullscreen, *cb_vsync;
 	DropDownList* ddl_resolution;
 	Slider* sl_volume;
