@@ -93,6 +93,20 @@ void MainMenu::InitLayout(ResourceManager* res_mgr)
 	Button::default_layout.font_color_disabled = Color(50, 50, 50);
 	Button::default_layout.corners = Int2(6, 32);
 
+	CheckBox::default_layout.background = res_mgr->GetTexture("checbox.png");
+	CheckBox::default_layout.hover = res_mgr->GetTexture("checbox_hover.png");
+	CheckBox::default_layout.checkbox = res_mgr->GetTexture("checked.png");
+	CheckBox::default_layout.size = Int2(32, 32);
+
+	ScrollBar::default_layout.arrow.image = res_mgr->GetTexture("scroll_arrow.png");
+	ScrollBar::default_layout.arrow.color = Color::White;
+	ScrollBar::default_layout.arrow.image_size = Int2(16, 16);
+	ScrollBar::default_layout.arrow.image_region = Int2(8, 12);
+	ScrollBar::default_layout.background = res_mgr->GetTexture("scrollbar.png");
+	ScrollBar::default_layout.corners = Int2(2, 16);
+	ScrollBar::default_layout.scroll_color = Color(128, 0, 0, 255); // FIXME
+	ScrollBar::default_layout.scroll_hover_color = Color(255, 0, 0, 255); // FIXME
+
 	DialogBox::default_layout.background = res_mgr->GetTexture("panel.png");
 	DialogBox::default_layout.corners = Int2(6, 32);
 	DialogBox::default_layout.background_color = Color(255, 255, 255, 200);

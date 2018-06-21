@@ -8,6 +8,7 @@
 #include <Gui.h>
 #include <Input.h>
 #include <Config.h>
+#include <Font.h>
 
 Options::Options(GameState* game_state) : game_state(game_state)
 {
@@ -20,11 +21,45 @@ Options::Options(GameState* game_state) : game_state(game_state)
 
 	size = Int2(200, 200);
 
+	Label* label = new Label;
+	label->text = "Options";
+	label->color = Color(0, 255, 33);
+	label->size = label->CalculateSize();
+	label->flags = Font::Center | Font::VCenter;
+	label->SetPos(Int2(size - label->size.x) / 2, 10);
+	Add(label);
+
+	// fullscreen checkboox
 	cb_fullscreen = new CheckBox;
+	cb_fullscreen->SetPos(Int2(15, 40));
 	Add(cb_fullscreen);
 
+	label = new Label;
+	label->text = "Fullscreen";
+	label->color = Color(0, 255, 33);
+	label->size = Int2(100, 40);
+	label->SetPos(Int2(15 + 36, 40));
+	Add(label);
+
+	// vsync checkboox
 	cb_vsync = new CheckBox;
+	cb_vsync->SetPos(Int2(15, 70));
 	Add(cb_vsync);
+
+	label = new Label;
+	label->text = "Vsync";
+	label->color = Color(0, 255, 33);
+	label->size = Int2(100, 40);
+	label->SetPos(Int2(15 + 36, 70));
+	Add(label);
+
+	// resolution
+	label = new Label;
+	label->text = "Resolution";
+	label->color = Color(0, 255, 33);
+	label->size = Int2(100, 40);
+	label->SetPos(Int2(15 + 36, 100));
+	Add(label);
 
 	ddl_resolution = new DropDownList;
 	const vector<Int2>& resolutions = game_state->engine->GetRender()->GetAvailableResolutions();
@@ -36,6 +71,7 @@ Options::Options(GameState* game_state) : game_state(game_state)
 		item.text = Format("%d x %d", res.x, res.y);
 		item.value = i;
 	}
+	ddl_resolution->size = ddl_resolution->Init();
 	Add(ddl_resolution);
 
 	sl_volume = new Slider;
@@ -50,6 +86,17 @@ Options::Options(GameState* game_state) : game_state(game_state)
 	bt->size = Int2(100, 30);
 	bt->SetPos(Int2((size.x - bt->size.x) / 2, size.y - bt->size.y - 10));
 	Add(bt);
+
+	// TEST
+	ScrollBar* scroll = new ScrollBar(true);
+	scroll->size = Int2(100, 12);
+	scroll->SetValue(0, 100);
+	Add(scroll);
+
+	scroll = new ScrollBar(false);
+	scroll->pos = Int2(100, 0);
+	scroll->size = Int2(12, 100);
+	Add(scroll);
 
 	visible = false;
 }

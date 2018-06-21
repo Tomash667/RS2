@@ -138,14 +138,32 @@ void CheckBox::Update(float dt)
 void ScrollBar::Draw()
 {
 	gui->DrawSpriteGrid(layout.background, Color::White, layout.corners.y, layout.corners.x, global_pos, size);
+	Vec2 arrow_mid = Vec2(layout.arrow.image_region) / 2;
 	if(horizontal)
 	{
-		Matrix::Transform2D(nullptr, 0.f, nullptr, &(Vec2(layout.arrow_size) / 2), PI, &Vec2::Zero);
-		//gui->DrawSprite(hover == 1 ? layout.arrow_hover : layout.arrow,
+		// arrow left
+		Matrix mat = Matrix::Transform2D(nullptr, 0.f, nullptr, &arrow_mid, PI, &Vec2(global_pos));
+		gui->DrawSpriteComplex(layout.arrow.image[hover == HOVER_ARROW_LESS ? 1 : 0], layout.arrow.color, layout.arrow.ToUV(), mat);
+
+		// arrow right
+		mat = Matrix::Transform2D(nullptr, 0.f, nullptr, nullptr, 0.f, &Vec2(Int2(global_pos.x + size.x - layout.arrow.image_region.x, global_pos.y)));
+		gui->DrawSpriteComplex(layout.arrow.image[hover == HOVER_ARROW_MORE ? 1 : 0], layout.arrow.color, layout.arrow.ToUV(), mat);
+
+		// scroll
+		//gui->DrawSprite(nullptr, )
 	}
 	else
 	{
+		// arrow top
+		Matrix mat = Matrix::Transform2D(nullptr, 0.f, nullptr, &arrow_mid, PI / 2, &Vec2(global_pos));
+		gui->DrawSpriteComplex(layout.arrow.image[hover == HOVER_ARROW_LESS ? 1 : 0], layout.arrow.color, layout.arrow.ToUV(), mat);
 
+		// arrow bottom
+		mat = Matrix::Transform2D(nullptr, 0.f, nullptr, &arrow_mid, PI * 3 / 2,
+			&Vec2(Int2(global_pos.x, global_pos.y + size.y - layout.arrow.image_region.y));
+		gui->DrawSpriteComplex(layout.arrow.image[hover == HOVER_ARROW_MORE ? 1 : 0], layout.arrow.color, layout.arrow.ToUV(), mat);
+
+		// scroll
 	}
 }
 
@@ -156,6 +174,19 @@ void ScrollBar::Update(float dt)
 
 
 //-----------------------------------------------------------------------------
+void DropDownList::Init()
+{
+	size = Int2::Zero;
+	Font* font = layout.font ? layout.font : gui->GetDefaultFont();
+	for(Item& item : items)
+	{
+		Int2 item_size = font->CalculateSize(item.text);
+		size = Int2::Max(size, item_size);
+	}
+	total_height = items.size() * (size.y + layout.item_pad * 2);
+	size += Int2(layout.pad * 2, layout.pad * 2 + layout.arrow.image_region.x);
+}
+
 void DropDownList::Draw()
 {
 	gui->DrawSpriteGrid(layout.background, Color::White, layout.corners.y, layout.corners.x, global_pos, size);

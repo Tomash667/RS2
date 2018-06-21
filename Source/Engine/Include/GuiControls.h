@@ -3,6 +3,20 @@
 #include "Control.h"
 
 //-----------------------------------------------------------------------------
+template<int N = 1>
+struct SpriteLayout
+{
+	Box2d ToUV() const
+	{
+		return Box2d(0.f, 0.f, float(image_region.x) / image_size.x, float(image_region.y) / image_size.y);
+	}
+
+	Texture* image[N];
+	Int2 image_size, image_region;
+	Color color;
+};
+
+//-----------------------------------------------------------------------------
 struct Sprite : Control
 {
 	Sprite() : image(nullptr), color(Color::White) {}
@@ -43,9 +57,11 @@ struct Panel : Container
 };
 
 //-----------------------------------------------------------------------------
-struct CustomPanel : Panel, Panel::Layout
+struct CustomPanel : Panel
 {
-	CustomPanel() : Panel(*this) {}
+	CustomPanel() : Panel(custom_layout) {}
+
+	Panel::Layout custom_layout;
 };
 
 //-----------------------------------------------------------------------------
@@ -76,8 +92,7 @@ struct Button : Control
 		Color font_color, font_color_disabled;
 	};
 
-	Button() : Button(default_layout) {}
-	Button(Layout& layout) : layout(layout), id(0), event(nullptr), state(UP) {}
+	Button(Layout& layout = default_layout) : layout(layout), id(0), event(nullptr), state(UP) {}
 	void Draw() override;
 	void Update(float dt) override;
 	void CalculateSize(const Int2& padding = Int2(10, 10));
@@ -98,10 +113,13 @@ struct CheckBox : Control
 	struct Layout
 	{
 		Texture* background, *hover, *checkbox;
+		Int2 size;
 	};
 
-	CheckBox() : CheckBox(default_layout) {}
-	CheckBox(Layout& layout) : layout(layout), checked(false), hover(false) {}
+	CheckBox(Layout& layout = default_layout) : layout(layout), checked(false), hover(false)
+	{
+		size = layout.size;
+	}
 	void Draw() override;
 	void Update(float dt) override;
 
@@ -116,19 +134,29 @@ struct ScrollBar : Control
 {
 	struct Layout
 	{
-		Texture* background, *arrow, *arrow_hover;
-		Int2 corners, arrow_size, arrow_image_size;
+		Texture* background;
+		SpriteLayout<2> arrow;
+		Int2 corners;
 		Color scroll_color, scroll_hover_color;
 	};
 
 	explicit ScrollBar(bool horizontal = false) : ScrollBar(default_layout) {}
-	explicit ScrollBar(Layout& layout, bool horizontal = false) : layout(layout), horizontal(horizontal), hover(0) {}
+	explicit ScrollBar(Layout& layout, bool horizontal = false) : layout(layout), horizontal(horizontal), hover(HOVER_NONE) {}
 	void Draw() override;
 	void Update(float dt) override;
 
 private:
+	enum Hover
+	{
+		HOVER_NONE,
+		HOVER_ARROW_LESS,
+		HOVER_ARROW_MORE,
+		HOVER_SCROLL
+	};
+
 	Layout& layout;
-	int hover;
+	Hover hover;
+	int total, available_region;
 	bool horizontal;
 
 public:
@@ -141,9 +169,11 @@ struct DropDownList : Control
 	struct Layout
 	{
 		Texture* background, *background_hover, *list_background, *list_hover;
+		SpriteLayout arrow;
 		Int2 corners;
 		Font* font;
 		Color font_color;
+		int pad, item_pad;
 	};
 
 	struct Item
@@ -152,14 +182,14 @@ struct DropDownList : Control
 		int value;
 	};
 
-	DropDownList() : DropDownList(default_layout) {}
-	DropDownList(Layout& layout) : layout(layout), selected_index(-1), is_open(false), hover(false) {}
+	DropDownList(Layout& layout = default_layout) : layout(layout), selected_index(-1), is_open(false), hover(false) {}
+	void Init();
 	void Draw() override;
 	void Update(float dt) override;
 
 	Layout& layout;
 	vector<Item> items;
-	int selected_index, hover_index, status;
+	int selected_index, hover_index, status, total_height;
 	bool is_open, hover;
 
 	static Layout default_layout;
@@ -168,7 +198,7 @@ struct DropDownList : Control
 //-----------------------------------------------------------------------------
 struct Slider : Control
 {
-	int value, min_value, max_value, step;
+	int value, max_value, step;
 };
 
 //-----------------------------------------------------------------------------
@@ -182,8 +212,7 @@ struct DialogBox : Control
 		Int2 corners;
 	};
 
-	DialogBox() : layout(default_layout) {}
-	DialogBox(Layout& layout) : layout(layout) {}
+	DialogBox(Layout& layout = default_layout) : layout(layout) {}
 	void Draw() override;
 	void Update(float dt) override;
 	void OnEvent(int);
