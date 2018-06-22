@@ -16,7 +16,7 @@ void Input::Process(Key key, bool down)
 		{
 			if(k <= IS_RELEASED)
 				k = IS_PRESSED;
-			//keyrepeat[key] = true;
+			keyrepeat[key] = true;
 		}
 		else
 		{
@@ -37,7 +37,7 @@ void Input::Update()
 	{
 		if(keystate[i] & 1)
 			--keystate[i];
-		//keyrepeat[i] = false;
+		keyrepeat[i] = false;
 	}
 	//for(uint i = 0; i < 5; ++i)
 	//	doubleclk[i] = false;

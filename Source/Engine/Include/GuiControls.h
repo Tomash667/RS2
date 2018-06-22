@@ -141,9 +141,13 @@ struct ScrollBar : Control
 	};
 
 	explicit ScrollBar(bool horizontal = false) : ScrollBar(default_layout) {}
-	explicit ScrollBar(Layout& layout, bool horizontal = false) : layout(layout), horizontal(horizontal), hover(HOVER_NONE) {}
+	explicit ScrollBar(Layout& layout, bool horizontal = false) : layout(layout), horizontal(horizontal), hover(HOVER_NONE), part(0), total(0), offset(0.f),
+		clicked(false), click_step(10), step(0) {}
 	void Draw() override;
 	void Update(float dt) override;
+	void UpdateValues(int part, int total);
+
+	int click_step, step;
 
 private:
 	enum Hover
@@ -154,10 +158,14 @@ private:
 		HOVER_SCROLL
 	};
 
+	void GetScrollPosSize(Int2& scroll_pos, Int2& scroll_size);
+
 	Layout& layout;
 	Hover hover;
-	int total, available_region;
-	bool horizontal;
+	Int2 click_pt;
+	int total, part;
+	float offset;
+	bool horizontal, clicked;
 
 public:
 	static Layout default_layout;
@@ -169,7 +177,7 @@ struct DropDownList : Control
 	struct Layout
 	{
 		Texture* background, *background_hover, *list_background, *list_hover;
-		SpriteLayout arrow;
+		SpriteLayout<1> arrow;
 		Int2 corners;
 		Font* font;
 		Color font_color;

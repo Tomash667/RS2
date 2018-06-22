@@ -98,7 +98,7 @@ void MainMenu::InitLayout(ResourceManager* res_mgr)
 	CheckBox::default_layout.checkbox = res_mgr->GetTexture("checked.png");
 	CheckBox::default_layout.size = Int2(32, 32);
 
-	ScrollBar::default_layout.arrow.image = res_mgr->GetTexture("scroll_arrow.png");
+	ScrollBar::default_layout.arrow.image[0] = res_mgr->GetTexture("scroll_arrow.png");
 	ScrollBar::default_layout.arrow.color = Color::White;
 	ScrollBar::default_layout.arrow.image_size = Int2(16, 16);
 	ScrollBar::default_layout.arrow.image_region = Int2(8, 12);
