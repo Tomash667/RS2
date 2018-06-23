@@ -70,7 +70,7 @@ void Gui::Update(float dt)
 	{
 		mouse_focus = false;
 		Container::Update(dt);
-		dialog->mouse_focus = true;
+		dialog->mouse_focus = Rect::IsInside(dialog->global_pos, dialog->size, cursor_pos);
 		dialog->Update(dt);
 	}
 }
@@ -421,6 +421,7 @@ void Gui::ShowMessageBox(Cstring text)
 	dialog->rect = Rect(pos.x + dialog->layout.corners.x + 5, pos.y + dialog->layout.corners.x + 5);
 	dialog->rect.p2 += text_size;
 	dialog->button.event = delegate<void(int)>(dialog, &DialogBox::OnEvent);
+	dialog->parent = this;
 
 	this->dialog = dialog;
 	own_dialog = true;
@@ -432,6 +433,7 @@ void Gui::ShowDialog(Control* control)
 
 	control->SetPos(Int2((wnd_size.x - control->size.x) / 2, (wnd_size.y - control->size.y) / 2));
 	control->visible = true;
+	control->parent = this;
 	dialog = control;
 	own_dialog = false;
 }
@@ -442,6 +444,9 @@ void Gui::CloseDialog()
 	if(own_dialog)
 		delete dialog;
 	else
+	{
 		dialog->visible = false;
+		dialog->parent = nullptr;
+	}
 	dialog = nullptr;
 }

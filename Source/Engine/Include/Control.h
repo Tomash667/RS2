@@ -10,8 +10,9 @@ enum GuiEvent
 struct Control
 {
 	friend Container;
+	friend Gui;
 
-	Control() : visible(true), pos(Int2::Zero), global_pos(Int2::Zero), size(Int2::Zero), focus(false) {}
+	Control() : visible(true), pos(Int2::Zero), global_pos(Int2::Zero), size(Int2::Zero), focus(false), parent(nullptr) {}
 	virtual ~Control() {}
 	virtual void Draw() {}
 	virtual void Update(float dt) {}
@@ -21,6 +22,8 @@ struct Control
 
 	const Int2& GetPos() const { return pos; }
 
+private:
+	Control* parent;
 protected:
 	Int2 pos, global_pos;
 public:

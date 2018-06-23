@@ -91,12 +91,13 @@ Options::Options(GameState* game_state) : game_state(game_state)
 	// TEST
 	ScrollBar* scroll = new ScrollBar(true);
 	scroll->size = Int2(100, 12);
-	//scroll->SetValue(0, 100);
+	scroll->UpdateValues(10, 100);
 	Add(scroll);
 
 	scroll = new ScrollBar(false);
 	scroll->SetPos(Int2(100, 0));
 	scroll->size = Int2(12, 100);
+	scroll->step = 10;
 	Add(scroll);
 
 	visible = false;

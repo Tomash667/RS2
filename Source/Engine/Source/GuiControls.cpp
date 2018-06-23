@@ -78,7 +78,7 @@ void Button::Update(float dt)
 {
 	if(state == DISABLED)
 		return;
-	if(mouse_focus && Rect::IsInside(global_pos, size, gui->GetCursorPos()))
+	if(mouse_focus)
 	{
 		state = HOVER;
 		if(gui->GetInput()->PressedOnce(Key::LeftButton) && event)
@@ -124,7 +124,7 @@ void CheckBox::Draw()
 
 void CheckBox::Update(float dt)
 {
-	if(mouse_focus && Rect::IsInside(global_pos, size, gui->GetCursorPos()))
+	if(mouse_focus)
 	{
 		focus = true;
 		if(gui->GetInput()->PressedOnce(Key::LeftButton))
@@ -140,6 +140,7 @@ void ScrollBar::Draw()
 {
 	gui->DrawSpriteGrid(layout.background, Color::White, layout.corners.y, layout.corners.x, global_pos, size);
 	Vec2 arrow_mid = Vec2(layout.arrow.image_region) / 2;
+
 	if(horizontal)
 	{
 		// arrow left
@@ -149,9 +150,6 @@ void ScrollBar::Draw()
 		// arrow right
 		mat = Matrix::Transform2D(nullptr, 0.f, nullptr, nullptr, 0.f, &Vec2(Int2(global_pos.x + size.x - layout.arrow.image_region.x, global_pos.y)));
 		gui->DrawSpriteComplex(layout.arrow.image[hover == HOVER_ARROW_MORE ? 1 : 0], layout.arrow.color, layout.arrow.image_region, layout.arrow.ToUV(), mat);
-
-		// scroll
-		//gui->DrawSprite(nullptr, )
 	}
 	else
 	{
@@ -163,14 +161,129 @@ void ScrollBar::Draw()
 		mat = Matrix::Transform2D(nullptr, 0.f, nullptr, &arrow_mid, PI * 3 / 2,
 			&Vec2(Int2(global_pos.x, global_pos.y + size.y - layout.arrow.image_region.y)));
 		gui->DrawSpriteComplex(layout.arrow.image[hover == HOVER_ARROW_MORE ? 1 : 0], layout.arrow.color, layout.arrow.image_region, layout.arrow.ToUV(), mat);
-
-		// scroll
 	}
+
+	// scroll
+	Int2 scroll_pos, scroll_size;
+	GetScrollPosSize(scroll_pos, scroll_size);
+	gui->DrawSprite(nullptr, scroll_pos, scroll_size, hover == HOVER_SCROLL ? layout.scroll_hover_color : layout.scroll_color);
 }
 
 void ScrollBar::Update(float dt)
 {
+	Input* input = gui->GetInput();
+	const Int2& cursor_pos = gui->GetCursorPos();
+	if(!mouse_focus)
+	{
+		hover = HOVER_NONE;
+		clicked = false;
+	}
+	else if(clicked)
+	{
+		if(input->Up(Key::LeftButton))
+			clicked = false;
+		else
+		{
+			Int2 scroll_pos, scroll_size;
+			GetScrollPosSize(scroll_pos, scroll_size);
+			Int2 dif = (cursor_pos - scroll_pos) - click_pt;
+			if(horizontal)
+			{
+				scroll_pos.x = Clamp(scroll_pos.x + dif.x, global_pos.x + layout.arrow.image_region.x, global_pos.x + size.x - layout.arrow.image_region.x);
 
+			}
+			else
+			{
+
+			}
+		}
+	}
+	else if(!Rect::IsInside(global_pos, size, cursor_pos))
+		hover = HOVER_NONE;
+	else
+	{
+		hover = HOVER_NONE;
+		if(horizontal)
+		{
+			if(Rect::IsInside(global_pos, layout.arrow.image_region, cursor_pos))
+				hover = HOVER_ARROW_LESS;
+			else if(Rect::IsInside(Int2(global_pos.x + size.x - layout.arrow.image_region.x, global_pos.y), layout.arrow.image_region, cursor_pos))
+				hover = HOVER_ARROW_MORE;
+		}
+		else
+		{
+			if(Rect::IsInside(global_pos, Int2(layout.arrow.image_region.y, layout.arrow.image_region.x), cursor_pos))
+				hover = HOVER_ARROW_LESS;
+			else if(Rect::IsInside(Int2(global_pos.x, global_pos.y + size.y - layout.arrow.image_region.x),
+				Int2(layout.arrow.image_region.y, layout.arrow.image_region.x), cursor_pos))
+				hover = HOVER_ARROW_MORE;
+		}
+		if(hover == HOVER_NONE)
+		{
+			Int2 scroll_pos, scroll_size;
+			GetScrollPosSize(scroll_pos, scroll_size);
+			if(Rect::IsInside(scroll_pos, scroll_size, cursor_pos))
+			{
+				hover = HOVER_SCROLL;
+				if(input->Pressed(Key::LeftButton))
+				{
+					click_pt = cursor_pos - scroll_pos;
+					clicked = true;
+				}
+			}
+			else if(input->DownRepeat(Key::LeftButton))
+			{
+				bool less;
+				if(horizontal)
+					less = cursor_pos.x < scroll_pos.x;
+				else
+					less = cursor_pos.y < scroll_pos.y;
+				if(less)
+					offset = max(0.f, offset - part);
+				else
+					offset = max(float(total - part), offset + part);
+			}
+		}
+		else if(input->DownRepeat(Key::LeftButton))
+		{
+			if(hover == HOVER_ARROW_LESS)
+				offset = max(0.f, offset - click_step);
+			else
+				offset = max(float(total - part), offset + click_step);
+		}
+	}
+}
+
+void ScrollBar::GetScrollPosSize(Int2& scroll_pos, Int2& scroll_size)
+{
+	if(horizontal)
+	{
+		Int2 scroll_region = Int2(size.x - layout.arrow.image_region.x * 2, size.y);
+		if(part >= total || total == 0 || part == 0)
+		{
+			scroll_pos = Int2(global_pos.x + layout.arrow.image_region.x, global_pos.y);
+			scroll_size = scroll_region;
+		}
+		else
+		{
+			scroll_size = Int2(float(part) / total * scroll_region.x, scroll_region.y);
+			scroll_pos = Int2(global_pos.x + layout.arrow.image_region.x + int((offset / total) * (scroll_region.x - scroll_size.x)), global_pos.y);
+		}
+	}
+	else
+	{
+		Int2 scroll_region = Int2(size.x, size.y - layout.arrow.image_region.x * 2);
+		if(part >= total || total == 0 || part == 0)
+		{
+			scroll_pos = Int2(global_pos.x, global_pos.y + layout.arrow.image_region.x);
+			scroll_size = scroll_region;
+		}
+		else
+		{
+			scroll_size = Int2(scroll_region.x, float(part) / total * scroll_region.y);
+			scroll_pos = Int2(global_pos.x, global_pos.y + layout.arrow.image_region.x + int((offset / total) * (scroll_region.y - scroll_size.y)));
+		}
+	}
 }
 
 

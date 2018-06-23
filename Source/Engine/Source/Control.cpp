@@ -1,5 +1,6 @@
 #include "EngineCore.h"
 #include "Control.h"
+#include "Gui.h"
 
 
 Gui* Control::gui;
@@ -32,8 +33,9 @@ void Container::Draw()
 
 void Container::Add(Control* control)
 {
-	assert(control);
+	assert(control && !control->parent);
 	controls.push_back(control);
+	control->parent = this;
 	control->global_pos = global_pos + control->pos;
 }
 
@@ -43,7 +45,7 @@ void Container::Update(float dt)
 	{
 		if(control->visible)
 		{
-			control->mouse_focus = mouse_focus;
+			control->mouse_focus = mouse_focus && Rect::IsInside(control->global_pos, control->size, gui->GetCursorPos());
 			control->Update(dt);
 		}
 	}
