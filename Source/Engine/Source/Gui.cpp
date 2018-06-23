@@ -6,9 +6,6 @@
 #include "Font.h"
 #include "Input.h"
 
-// FIXME
-void Gui::TakeFocus(Control*) {}
-
 Gui::Gui() : v(nullptr), cursor_visible(false), tex_cursor(nullptr), dialog(nullptr), dialog_overlay(Color(50, 50, 50, 150))
 {
 }
@@ -70,7 +67,7 @@ void Gui::Update(float dt)
 	{
 		mouse_focus = false;
 		Container::Update(dt);
-		dialog->mouse_focus = Rect::IsInside(dialog->global_pos, dialog->size, cursor_pos);
+		dialog->mouse_focus = true;
 		dialog->Update(dt);
 	}
 }
@@ -317,7 +314,9 @@ void Gui::DrawSpriteGrid(Texture* image, Color color, int image_size, int corner
 			&& corner_size > 0
 			&& image_size - corner_size * 2 > 0
 			&& size.x >= corner_size * 2
-			&& size.y >= corner_size * 2);
+			&& size.y >= corner_size * 2
+			&& size.x >= (image_size - corner_size * 2)
+			&& size.y >= (image_size - corner_size * 2));
 		static GridF pos_grid(4), uv_grid(4);
 		uv_grid.Set({ 0.f, float(corner_size) / image_size, float(image_size - corner_size) / image_size, 1.f });
 		pos_grid.Set({ pos.x, pos.x + corner_size, pos.x + size.x - corner_size, pos.x + size.x },
@@ -449,4 +448,15 @@ void Gui::CloseDialog()
 		dialog->parent = nullptr;
 	}
 	dialog = nullptr;
+}
+
+void Gui::TakeFocus(Control* control)
+{
+	assert(control);
+	if(control == focused)
+		return;
+	if(focused)
+		focused->focus = false;
+	focused = control;
+	focused->focus = true;
 }

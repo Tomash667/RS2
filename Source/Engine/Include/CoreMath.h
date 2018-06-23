@@ -476,6 +476,7 @@ struct Int2
 	int Clamp(int d) const;
 	int Lerp(float t) const;
 	int Random() const;
+	Int2 YX() const { return Int2(y, x); }
 
 	// Static functions
 	static int Distance(const Int2& i1, const Int2& i2);

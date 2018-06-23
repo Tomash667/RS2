@@ -78,7 +78,7 @@ void Button::Update(float dt)
 {
 	if(state == DISABLED)
 		return;
-	if(mouse_focus)
+	if(mouse_focus && Rect::IsInside(global_pos, size, gui->GetCursorPos()))
 	{
 		state = HOVER;
 		if(gui->GetInput()->PressedOnce(Key::LeftButton) && event)
@@ -124,7 +124,7 @@ void CheckBox::Draw()
 
 void CheckBox::Update(float dt)
 {
-	if(mouse_focus)
+	if(mouse_focus && Rect::IsInside(global_pos, size, gui->GetCursorPos()))
 	{
 		focus = true;
 		if(gui->GetInput()->PressedOnce(Key::LeftButton))
@@ -139,8 +139,8 @@ void CheckBox::Update(float dt)
 void ScrollBar::Draw()
 {
 	gui->DrawSpriteGrid(layout.background, Color::White, layout.corners.y, layout.corners.x, global_pos, size);
-	Vec2 arrow_mid = Vec2(layout.arrow.image_region) / 2;
 
+	Vec2 arrow_mid = Vec2(layout.arrow.image_region) / 2;
 	if(horizontal)
 	{
 		// arrow left
@@ -153,13 +153,15 @@ void ScrollBar::Draw()
 	}
 	else
 	{
+		Int2 move = (layout.arrow.image_region.YX() - layout.arrow.image_region) / 2;
+
 		// arrow top
-		Matrix mat = Matrix::Transform2D(nullptr, 0.f, nullptr, &arrow_mid, PI / 2, &Vec2(global_pos));
+		Matrix mat = Matrix::Transform2D(nullptr, 0.f, nullptr, &arrow_mid, PI * 3 / 2, &Vec2(global_pos + move));
 		gui->DrawSpriteComplex(layout.arrow.image[hover == HOVER_ARROW_LESS ? 1 : 0], layout.arrow.color, layout.arrow.image_region, layout.arrow.ToUV(), mat);
 
 		// arrow bottom
-		mat = Matrix::Transform2D(nullptr, 0.f, nullptr, &arrow_mid, PI * 3 / 2,
-			&Vec2(Int2(global_pos.x, global_pos.y + size.y - layout.arrow.image_region.y)));
+		mat = Matrix::Transform2D(nullptr, 0.f, nullptr, &arrow_mid, PI / 2,
+			&Vec2(Int2(global_pos.x, global_pos.y + size.y - layout.arrow.image_region.x) + move));
 		gui->DrawSpriteComplex(layout.arrow.image[hover == HOVER_ARROW_MORE ? 1 : 0], layout.arrow.color, layout.arrow.image_region, layout.arrow.ToUV(), mat);
 	}
 
@@ -189,12 +191,21 @@ void ScrollBar::Update(float dt)
 			Int2 dif = (cursor_pos - scroll_pos) - click_pt;
 			if(horizontal)
 			{
-				scroll_pos.x = Clamp(scroll_pos.x + dif.x, global_pos.x + layout.arrow.image_region.x, global_pos.x + size.x - layout.arrow.image_region.x);
-
+				scroll_pos.x = Clamp(scroll_pos.x + dif.x, global_pos.x + layout.arrow.image_region.x + layout.pad.x,
+					global_pos.x + size.x - layout.arrow.image_region.x - layout.pad.x);
+				int scroll_offset = scroll_pos.x - global_pos.x - layout.arrow.image_region.x - layout.pad.x;
+				int scroll_offset_max = size.x - (layout.arrow.image_region.x + layout.pad.x) * 2 - scroll_size.x;
+				scroll_offset = Clamp(scroll_offset, 0, scroll_offset_max);
+				offset = float(scroll_offset) / scroll_offset_max * (total - part);
 			}
 			else
 			{
-
+				scroll_pos.y = Clamp(scroll_pos.y + dif.y, global_pos.y + layout.arrow.image_region.x + layout.pad.x,
+					global_pos.y + size.y - layout.arrow.image_region.x - layout.pad.x);
+				int scroll_offset = scroll_pos.y - global_pos.y - layout.arrow.image_region.x - layout.pad.x;
+				int scroll_offset_max = size.y - (layout.arrow.image_region.x + layout.pad.x) * 2 - scroll_size.y;
+				scroll_offset = Clamp(scroll_offset, 0, scroll_offset_max);
+				offset = float(scroll_offset) / scroll_offset_max * (total - part);
 			}
 		}
 	}
@@ -241,7 +252,7 @@ void ScrollBar::Update(float dt)
 				if(less)
 					offset = max(0.f, offset - part);
 				else
-					offset = max(float(total - part), offset + part);
+					offset = min(float(total - part), offset + part);
 			}
 		}
 		else if(input->DownRepeat(Key::LeftButton))
@@ -249,39 +260,50 @@ void ScrollBar::Update(float dt)
 			if(hover == HOVER_ARROW_LESS)
 				offset = max(0.f, offset - click_step);
 			else
-				offset = max(float(total - part), offset + click_step);
+				offset = min(float(total - part), offset + click_step);
 		}
+
+		int wheel = gui->GetInput()->GetMouseWheel();
+		offset = Clamp(offset - wheel * click_step, 0.f, float(total - part));
 	}
+}
+
+void ScrollBar::SetExtent(int part, int total)
+{
+	this->part = part;
+	this->total = total;
 }
 
 void ScrollBar::GetScrollPosSize(Int2& scroll_pos, Int2& scroll_size)
 {
 	if(horizontal)
 	{
-		Int2 scroll_region = Int2(size.x - layout.arrow.image_region.x * 2, size.y);
+		Int2 scroll_region = Int2(size.x - (layout.arrow.image_region.x + layout.pad.x) * 2, size.y - layout.pad.y * 2);
 		if(part >= total || total == 0 || part == 0)
 		{
-			scroll_pos = Int2(global_pos.x + layout.arrow.image_region.x, global_pos.y);
+			scroll_pos = Int2(global_pos.x + layout.arrow.image_region.x + layout.pad.x, global_pos.y + layout.pad.y);
 			scroll_size = scroll_region;
 		}
 		else
 		{
-			scroll_size = Int2(float(part) / total * scroll_region.x, scroll_region.y);
-			scroll_pos = Int2(global_pos.x + layout.arrow.image_region.x + int((offset / total) * (scroll_region.x - scroll_size.x)), global_pos.y);
+			scroll_size = Int2(float(part) / (total - part) * scroll_region.x, scroll_region.y);
+			scroll_pos = Int2(global_pos.x + layout.arrow.image_region.x + layout.pad.x + int((offset / (total - part)) * (scroll_region.x - scroll_size.x)),
+				global_pos.y + layout.pad.y);
 		}
 	}
 	else
 	{
-		Int2 scroll_region = Int2(size.x, size.y - layout.arrow.image_region.x * 2);
+		Int2 scroll_region = Int2(size.x - layout.pad.y * 2, size.y - (layout.arrow.image_region.x + layout.pad.x) * 2);
 		if(part >= total || total == 0 || part == 0)
 		{
-			scroll_pos = Int2(global_pos.x, global_pos.y + layout.arrow.image_region.x);
+			scroll_pos = Int2(global_pos.x + layout.pad.y, global_pos.y + layout.arrow.image_region.x + layout.pad.x);
 			scroll_size = scroll_region;
 		}
 		else
 		{
-			scroll_size = Int2(scroll_region.x, float(part) / total * scroll_region.y);
-			scroll_pos = Int2(global_pos.x, global_pos.y + layout.arrow.image_region.x + int((offset / total) * (scroll_region.y - scroll_size.y)));
+			scroll_size = Int2(scroll_region.x, float(part) / (total - part) * scroll_region.y);
+			scroll_pos = Int2(global_pos.x + layout.pad.y,
+				global_pos.y + layout.arrow.image_region.x + layout.pad.x + int((offset / (total - part)) * (scroll_region.y - scroll_size.y)));
 		}
 	}
 }
@@ -297,21 +319,37 @@ void DropDownList::Init()
 		Int2 item_size = font->CalculateSize(item.text);
 		size = Int2::Max(size, item_size);
 	}
-	total_height = items.size() * (size.y + layout.item_pad * 2);
+	item_height = size.y + 2;
+	total_height = items.size() * item_height;
 	size += Int2(layout.pad * 2, layout.pad * 2 + layout.arrow.image_region.x);
 }
 
 void DropDownList::Draw()
 {
 	gui->DrawSpriteGrid(layout.background, Color::White, layout.corners.y, layout.corners.x, global_pos, size);
+	gui->DrawSprite(layout.arrow.image[(hover || is_open) ? 1 : 0],
+		Int2(global_pos.x + size.x - layout.arrow.image_region.x, global_pos.y + (size.y - layout.arrow.image_region.y) / 2),
+		layout.arrow.image_size, layout.arrow.color);
 	if(selected_index != -1)
 	{
 		Rect rect = Rect::Create(global_pos, size, 2);
-		gui->DrawText(items[selected_index].text, layout.font, layout.font_color, Font::Center | Font::VCenter, rect, &rect);
+		gui->DrawText(items[selected_index].text, layout.font, layout.font_color, Font::VCenter, rect, &rect);
 	}
 	if(is_open)
 	{
-		// list
+		gui->DrawSpriteGrid(layout.background, Color::White, layout.corners.y, layout.corners.x,
+			Int2(global_pos.x, global_pos.y + size.y), Int2(size.x, total_height));
+		int offset = global_pos.y + size.y + layout.pad;
+		int index = 0;
+		for(Item& item : items)
+		{
+			Rect rect = Rect(global_pos.x + layout.pad, offset, global_pos.x + size.x - layout.pad, offset + item_height);
+			if(hover_index == index)
+				gui->DrawSprite(nullptr, rect.p1, rect.Size(), layout.hover_color);
+			gui->DrawText(item.text, layout.font, layout.font_color, Font::VCenter, rect);
+			++index;
+			offset += item_height;
+		}
 	}
 }
 
@@ -329,13 +367,23 @@ void DropDownList::Update(float dt)
 				else
 				{
 					is_open = true;
-					hover_index = selected_index;
+					hover_index = -1;
 				}
 				gui->TakeFocus(this);
 			}
 		}
 		else
 			hover = false;
+
+		if(is_open && Rect::IsInside(global_pos + Int2(0, size.y), Int2(size.x, total_height), gui->GetCursorPos()))
+		{
+			hover_index = (gui->GetCursorPos().y - global_pos.y - size.y) / item_height;
+			if(gui->GetInput()->PressedOnce(Key::LeftButton))
+			{
+				selected_index = hover_index;
+				is_open = false;
+			}
+		}
 	}
 	else
 	{

@@ -16,7 +16,7 @@ void Input::Process(Key key, bool down)
 		{
 			if(k <= IS_RELEASED)
 				k = IS_PRESSED;
-			keyrepeat[key] = true;
+			keyrepeat[(int)key] = true;
 		}
 		else
 		{

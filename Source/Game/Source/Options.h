@@ -17,7 +17,10 @@ private:
 	GameState* game_state;
 	CheckBox* cb_fullscreen, *cb_vsync;
 	DropDownList* ddl_resolution;
-	Slider* sl_volume;
+	ScrollBar* scroll_volume;
+	Label* lab_volume;
+	Sound* sound_test;
 	int volume, resolution_index;
+	float last_sound_test;
 	bool fullscreen, vsync;
 };

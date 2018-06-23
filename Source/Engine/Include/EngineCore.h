@@ -43,7 +43,7 @@ struct DropDownList;
 struct Label;
 struct Panel;
 struct ProgressBar;
-struct Slider;
+struct ScrollBar;
 struct Sprite;
 
 // internal classes

@@ -76,6 +76,7 @@ void MainMenu::Init(ResourceManager* res_mgr, GameState* game_state)
 	options = new Options(game_state);
 
 	// show
+	size = wnd_size;
 	gui->Add(this);
 	Show();
 }
@@ -102,11 +103,23 @@ void MainMenu::InitLayout(ResourceManager* res_mgr)
 	ScrollBar::default_layout.arrow.image[1] = res_mgr->GetTexture("scroll_arrow_hover.png");
 	ScrollBar::default_layout.arrow.color = Color::White;
 	ScrollBar::default_layout.arrow.image_size = Int2(16, 16);
-	ScrollBar::default_layout.arrow.image_region = Int2(8, 12);
+	ScrollBar::default_layout.arrow.image_region = Int2(9, 13);
 	ScrollBar::default_layout.background = res_mgr->GetTexture("scrollbar.png");
-	ScrollBar::default_layout.corners = Int2(2, 16);
-	ScrollBar::default_layout.scroll_color = Color(128, 0, 0, 255); // FIXME
-	ScrollBar::default_layout.scroll_hover_color = Color(255, 0, 0, 255); // FIXME
+	ScrollBar::default_layout.corners = Int2(2, 8);
+	ScrollBar::default_layout.scroll_color = Color(38, 127, 0, 255);
+	ScrollBar::default_layout.scroll_hover_color = Color(1, 248, 31, 255);
+	ScrollBar::default_layout.pad = Int2(1, 2);
+
+	DropDownList::default_layout.arrow.image[0] = res_mgr->GetTexture("dropdownlist_arrow.png");
+	DropDownList::default_layout.arrow.image[1] = res_mgr->GetTexture("dropdownlist_arrow_hover.png");
+	DropDownList::default_layout.arrow.image_size = Int2(16, 8);
+	DropDownList::default_layout.arrow.image_region = Int2(15, 7);
+	DropDownList::default_layout.arrow.color = Color::White;
+	DropDownList::default_layout.background = res_mgr->GetTexture("scrollbar.png");
+	DropDownList::default_layout.corners = Int2(2, 8);
+	DropDownList::default_layout.font_color = Color(0, 255, 33);
+	DropDownList::default_layout.pad = 2;
+	DropDownList::default_layout.hover_color = Color(0, 255, 33, 128);
 
 	DialogBox::default_layout.background = res_mgr->GetTexture("panel.png");
 	DialogBox::default_layout.corners = Int2(6, 32);
@@ -129,7 +142,7 @@ void MainMenu::Hide()
 
 void MainMenu::Update(float dt)
 {
-	if(gui->GetInput()->Pressed(Key::Escape))
+	if(mouse_focus && gui->GetInput()->Pressed(Key::Escape))
 		game_state->SetChangeState(GameState::QUIT);
 	else
 		Container::Update(dt);

@@ -45,7 +45,7 @@ void Container::Update(float dt)
 	{
 		if(control->visible)
 		{
-			control->mouse_focus = mouse_focus && Rect::IsInside(control->global_pos, control->size, gui->GetCursorPos());
+			control->mouse_focus = mouse_focus;
 			control->Update(dt);
 		}
 	}

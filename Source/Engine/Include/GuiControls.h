@@ -136,18 +136,22 @@ struct ScrollBar : Control
 	{
 		Texture* background;
 		SpriteLayout<2> arrow;
-		Int2 corners;
+		Int2 corners, pad;
 		Color scroll_color, scroll_hover_color;
 	};
 
-	explicit ScrollBar(bool horizontal = false) : ScrollBar(default_layout) {}
+	explicit ScrollBar(bool horizontal = false) : ScrollBar(default_layout, horizontal) {}
 	explicit ScrollBar(Layout& layout, bool horizontal = false) : layout(layout), horizontal(horizontal), hover(HOVER_NONE), part(0), total(0), offset(0.f),
-		clicked(false), click_step(10), step(0) {}
+		clicked(false), click_step(10) {}
 	void Draw() override;
 	void Update(float dt) override;
-	void UpdateValues(int part, int total);
+	void SetExtent(int part, int total);
+	void SetValue(float value) { offset = value; }
 
-	int click_step, step;
+	bool IsScrolling() const { return clicked; }
+	float GetValue() const { return offset; }
+
+	int click_step;
 
 private:
 	enum Hover
@@ -176,12 +180,12 @@ struct DropDownList : Control
 {
 	struct Layout
 	{
-		Texture* background, *background_hover, *list_background, *list_hover;
-		SpriteLayout<1> arrow;
+		Texture* background;
+		SpriteLayout<2> arrow;
 		Int2 corners;
 		Font* font;
-		Color font_color;
-		int pad, item_pad;
+		Color font_color, hover_color;
+		int pad;
 	};
 
 	struct Item
@@ -197,16 +201,10 @@ struct DropDownList : Control
 
 	Layout& layout;
 	vector<Item> items;
-	int selected_index, hover_index, status, total_height;
+	int selected_index, hover_index, status, total_height, item_height;
 	bool is_open, hover;
 
 	static Layout default_layout;
-};
-
-//-----------------------------------------------------------------------------
-struct Slider : Control
-{
-	int value, max_value, step;
 };
 
 //-----------------------------------------------------------------------------

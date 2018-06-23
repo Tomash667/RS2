@@ -9,6 +9,7 @@
 #include <Input.h>
 #include <Config.h>
 #include <Font.h>
+#include <ResourceManager.h>
 
 Options::Options(GameState* game_state) : game_state(game_state)
 {
@@ -19,11 +20,12 @@ Options::Options(GameState* game_state) : game_state(game_state)
 	// <----X> Volume
 	//    [Ok]
 
-	size = Int2(200, 200);
+	size = Int2(442, 400);
 
 	Label* label = new Label;
 	label->text = "Options";
 	label->color = Color(0, 255, 33);
+	label->font = game_state->engine->GetResourceManager()->GetFont("Cestellar", 30);
 	label->size = label->CalculateSize();
 	label->flags = Font::Center | Font::VCenter;
 	label->SetPos(Int2((size.x - label->size.x) / 2, 10));
@@ -31,34 +33,34 @@ Options::Options(GameState* game_state) : game_state(game_state)
 
 	// fullscreen checkboox
 	cb_fullscreen = new CheckBox;
-	cb_fullscreen->SetPos(Int2(15, 40));
+	cb_fullscreen->SetPos(Int2(35, 70));
 	Add(cb_fullscreen);
 
 	label = new Label;
 	label->text = "Fullscreen";
 	label->color = Color(0, 255, 33);
 	label->size = Int2(100, 40);
-	label->SetPos(Int2(15 + 36, 40));
+	label->SetPos(Int2(35 + 36, 75));
 	Add(label);
 
 	// vsync checkboox
 	cb_vsync = new CheckBox;
-	cb_vsync->SetPos(Int2(15, 70));
+	cb_vsync->SetPos(Int2(35, 120));
 	Add(cb_vsync);
 
 	label = new Label;
 	label->text = "Vsync";
 	label->color = Color(0, 255, 33);
 	label->size = Int2(100, 40);
-	label->SetPos(Int2(15 + 36, 70));
+	label->SetPos(Int2(35 + 36, 125));
 	Add(label);
 
 	// resolution
 	label = new Label;
-	label->text = "Resolution";
+	label->text = "Resolution:";
 	label->color = Color(0, 255, 33);
 	label->size = Int2(100, 40);
-	label->SetPos(Int2(15 + 36, 100));
+	label->SetPos(Int2(35 + 36, 170));
 	Add(label);
 
 	ddl_resolution = new DropDownList;
@@ -72,34 +74,36 @@ Options::Options(GameState* game_state) : game_state(game_state)
 		item.value = i;
 	}
 	ddl_resolution->Init();
-	ddl_resolution->visible = false;
+	ddl_resolution->size = Int2(300, 40);
+	ddl_resolution->SetPos(Int2(35+36, 200));
 	Add(ddl_resolution);
 
-	sl_volume = new Slider;
-	sl_volume->max_value = 100;
-	sl_volume->step = 1;
-	sl_volume->visible = false; // FIXME
-	Add(sl_volume);
+	// volume
+	scroll_volume = new ScrollBar(true);
+	scroll_volume->SetPos(Int2(35 + 36, 280));
+	scroll_volume->SetExtent(5, 105);
+	scroll_volume->size = Int2(300, 13);
+	scroll_volume->click_step = 5;
+	Add(scroll_volume);
 
+	label = new Label;
+	label->text = "Volume:";
+	label->color = Color(0, 255, 33);
+	label->size = Int2(200, 40);
+	label->SetPos(Int2(35 + 36, 250));
+	Add(label);
+	lab_volume = label;
+
+	sound_test = game_state->engine->GetResourceManager()->GetSound("zombie attack.wav");
+
+	// button
 	Button* bt = new Button;
 	bt->text = "OK";
 	bt->event = delegate<void(int)>(this, &Options::OnEvent);
 	bt->size = Int2(100, 30);
-	bt->SetPos(Int2((size.x - bt->size.x) / 2, size.y - bt->size.y - 10));
+	bt->SetPos(Int2((size.x - bt->size.x) / 2, size.y - bt->size.y - 30));
 	Add(bt);
-
-	// TEST
-	ScrollBar* scroll = new ScrollBar(true);
-	scroll->size = Int2(100, 12);
-	scroll->UpdateValues(10, 100);
-	Add(scroll);
-
-	scroll = new ScrollBar(false);
-	scroll->SetPos(Int2(100, 0));
-	scroll->size = Int2(12, 100);
-	scroll->step = 10;
-	Add(scroll);
-
+	
 	visible = false;
 }
 
@@ -146,10 +150,19 @@ void Options::Update(float dt)
 		window->SetSize(render->GetAvailableResolutions()[resolution_index]);
 	}
 
-	if(volume != sl_volume->value)
+	if(volume != (int)scroll_volume->GetValue())
 	{
-		volume = sl_volume->value;
+		volume = (int)scroll_volume->GetValue();
 		sound_mgr->SetSoundVolume(volume);
+		lab_volume->text = Format("Volume (%d):", volume);
+		
+	}
+
+	last_sound_test -= dt;
+	if(last_sound_test <= 0.f && scroll_volume->IsScrolling())
+	{
+		game_state->engine->GetSoundManager()->PlaySound2d(sound_test);
+		last_sound_test = 1.f;
 	}
 
 	Panel::Update(dt);
@@ -183,7 +196,9 @@ void Options::Show()
 	ddl_resolution->is_open = false;
 
 	volume = sound_mgr->GetSoundVolume();
-	sl_volume->value = volume;
+	lab_volume->text = Format("Volume (%d):", volume);
+	scroll_volume->SetValue((float)volume);
+	last_sound_test = 0.f;
 
 	gui->ShowDialog(this);
 }

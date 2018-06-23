@@ -94,6 +94,15 @@ void GameGui::Init(Engine* engine, GameState* game_state)
 	hp_bar->SetPos(Int2(0, wnd_size.y - hp_bar->size.y));
 	Add(hp_bar);
 
+	// food icon
+	sprite_food = new Sprite;
+	sprite_food->image = res_mgr->GetTexture("food_icon.png");
+	sprite_food->size = Int2(32, 32);
+	sprite_food->SetPos(Int2(8, hp_bar->GetPos().y - 40));
+	sprite_food->visible = false;
+	Add(sprite_food);
+
+	// panel with medkits/ammo
 	Panel* panel_bg = new Panel;
 	panel_bg->SetPos(Int2(260, wnd_size.y - 36));
 	panel_bg->size = Int2(200, 80);
@@ -103,7 +112,7 @@ void GameGui::Init(Engine* engine, GameState* game_state)
 	Sprite* sprite_medkit = new Sprite;
 	sprite_medkit->image = res_mgr->GetTexture("medkit_icon.png");
 	sprite_medkit->size = Int2(32, 32);
-	sprite_medkit->SetPos(Int2(256 + 8, wnd_size.y - 32));
+	sprite_medkit->SetPos(Int2(6, 4));
 	panel_bg->Add(sprite_medkit);
 
 	label_medkits = new Label;
@@ -113,13 +122,6 @@ void GameGui::Init(Engine* engine, GameState* game_state)
 	label_medkits->color = Color(0, 255, 33);
 	panel_bg->Add(label_medkits);
 
-	// food icon
-	sprite_food = new Sprite;
-	sprite_food->image = res_mgr->GetTexture("food_icon.png");
-	sprite_food->size = Int2(32, 32);
-	sprite_food->SetPos(Int2(8, hp_bar->GetPos().y - 40));
-	sprite_food->visible = false;
-	Add(sprite_food);
 
 	// ammo counter
 	Sprite* sprite_ammo = new Sprite;
