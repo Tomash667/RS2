@@ -21,7 +21,7 @@ public:
 	void DrawSpritePart(Texture* image, const Int2& pos, const Int2& size, const Vec2& part, Color color = Color::White);
 	void DrawSpriteGrid(Texture* image, Color color, const GridF& pos, const GridF& uv);
 	void DrawSpriteGrid(Texture* image, Color color, int image_size, int corner_size, const Int2& pos, const Int2& size);
-	void DrawSpriteComplex(Texture* image, Color color, const Box2d& uv, const Matrix& mat);
+	void DrawSpriteComplex(Texture* image, Color color, const Int2& size, const Box2d& uv, const Matrix& mat);
 	bool DrawText(Cstring text, Font* font, Color color, int flags, const Rect& rect, const Rect* clip = nullptr);
 	bool DrawTextOutline(Cstring text, Font* font, Color color, Color outline_color, int flags, const Rect& rect, const Rect* clip = nullptr);
 

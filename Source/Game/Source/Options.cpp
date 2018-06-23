@@ -26,7 +26,7 @@ Options::Options(GameState* game_state) : game_state(game_state)
 	label->color = Color(0, 255, 33);
 	label->size = label->CalculateSize();
 	label->flags = Font::Center | Font::VCenter;
-	label->SetPos(Int2(size - label->size.x) / 2, 10);
+	label->SetPos(Int2((size.x - label->size.x) / 2, 10));
 	Add(label);
 
 	// fullscreen checkboox
@@ -71,13 +71,14 @@ Options::Options(GameState* game_state) : game_state(game_state)
 		item.text = Format("%d x %d", res.x, res.y);
 		item.value = i;
 	}
-	ddl_resolution->size = ddl_resolution->Init();
+	ddl_resolution->Init();
+	ddl_resolution->visible = false;
 	Add(ddl_resolution);
 
 	sl_volume = new Slider;
-	sl_volume->min_value = 0;
 	sl_volume->max_value = 100;
 	sl_volume->step = 1;
+	sl_volume->visible = false; // FIXME
 	Add(sl_volume);
 
 	Button* bt = new Button;
@@ -90,11 +91,11 @@ Options::Options(GameState* game_state) : game_state(game_state)
 	// TEST
 	ScrollBar* scroll = new ScrollBar(true);
 	scroll->size = Int2(100, 12);
-	scroll->SetValue(0, 100);
+	//scroll->SetValue(0, 100);
 	Add(scroll);
 
 	scroll = new ScrollBar(false);
-	scroll->pos = Int2(100, 0);
+	scroll->SetPos(Int2(100, 0));
 	scroll->size = Int2(12, 100);
 	Add(scroll);
 

@@ -169,7 +169,7 @@ struct DropDownList : Control
 	struct Layout
 	{
 		Texture* background, *background_hover, *list_background, *list_hover;
-		SpriteLayout arrow;
+		SpriteLayout<1> arrow;
 		Int2 corners;
 		Font* font;
 		Color font_color;

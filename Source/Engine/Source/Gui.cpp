@@ -328,11 +328,44 @@ void Gui::DrawSpriteGrid(Texture* image, Color color, int image_size, int corner
 		DrawSprite(image, pos, size, color);
 }
 
-void Gui::DrawSpriteComplex(Texture* image, Color color, const Box2d& uv, const Matrix& mat)
+void Gui::DrawSpriteComplex(Texture* image, Color color, const Int2& size, const Box2d& tex, const Matrix& mat)
 {
 	assert(image);
 	Lock();
 	Vec4 current_color = color;
+	
+	v->pos = Vec2::Transform(Vec2::Zero, mat);
+	v->tex = tex.LeftTop();
+	v->color = color;
+	++v;
+
+	v->pos = Vec2::Transform(Vec2((float)size.x, 0), mat);
+	v->tex = tex.RightTop();
+	v->color = color;
+	++v;
+
+	v->pos = Vec2::Transform(Vec2(0, (float)size.y), mat);
+	v->tex = tex.LeftBottom();
+	v->color = color;
+	++v;
+
+	v->pos = Vec2::Transform(Vec2(0, (float)size.y), mat);
+	v->tex = tex.LeftBottom();
+	v->color = color;
+	++v;
+
+	v->pos = Vec2::Transform(Vec2((float)size.x, 0), mat);
+	v->tex = tex.RightTop();
+	v->color = color;
+	++v;
+
+	v->pos = Vec2::Transform(Vec2(size), mat);
+	v->tex = tex.RightBottom();
+	v->color = color;
+	++v;
+
+	in_buffer += 2;
+	Flush(image);
 
 }
 

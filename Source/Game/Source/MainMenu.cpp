@@ -93,12 +93,13 @@ void MainMenu::InitLayout(ResourceManager* res_mgr)
 	Button::default_layout.font_color_disabled = Color(50, 50, 50);
 	Button::default_layout.corners = Int2(6, 32);
 
-	CheckBox::default_layout.background = res_mgr->GetTexture("checbox.png");
-	CheckBox::default_layout.hover = res_mgr->GetTexture("checbox_hover.png");
+	CheckBox::default_layout.background = res_mgr->GetTexture("checkbox.png");
+	CheckBox::default_layout.hover = res_mgr->GetTexture("checkbox_hover.png");
 	CheckBox::default_layout.checkbox = res_mgr->GetTexture("checked.png");
 	CheckBox::default_layout.size = Int2(32, 32);
 
-	ScrollBar::default_layout.arrow.image = res_mgr->GetTexture("scroll_arrow.png");
+	ScrollBar::default_layout.arrow.image[0] = res_mgr->GetTexture("scroll_arrow.png");
+	ScrollBar::default_layout.arrow.image[1] = res_mgr->GetTexture("scroll_arrow_hover.png");
 	ScrollBar::default_layout.arrow.color = Color::White;
 	ScrollBar::default_layout.arrow.image_size = Int2(16, 16);
 	ScrollBar::default_layout.arrow.image_region = Int2(8, 12);

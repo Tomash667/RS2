@@ -1,0 +1,17 @@
+Screen space:
++-----------------------+
+|Left top               |
+|(X:0 Y:0)              |
+|                       |
+|            (X:1 Y:1)  |
+|          Right bottom |
++-----------------------+
+
+Correct triangle order: clockwise
++----+ 1,4
+0   /
+   /
+  /
+ /
++----+
+2,3   5

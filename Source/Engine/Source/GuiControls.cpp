@@ -9,6 +9,7 @@ Panel::Layout Panel::default_layout;
 Button::Layout Button::default_layout;
 DialogBox::Layout DialogBox::default_layout;
 CheckBox::Layout CheckBox::default_layout;
+ScrollBar::Layout ScrollBar::default_layout;
 DropDownList::Layout DropDownList::default_layout;
 
 
@@ -143,11 +144,11 @@ void ScrollBar::Draw()
 	{
 		// arrow left
 		Matrix mat = Matrix::Transform2D(nullptr, 0.f, nullptr, &arrow_mid, PI, &Vec2(global_pos));
-		gui->DrawSpriteComplex(layout.arrow.image[hover == HOVER_ARROW_LESS ? 1 : 0], layout.arrow.color, layout.arrow.ToUV(), mat);
+		gui->DrawSpriteComplex(layout.arrow.image[hover == HOVER_ARROW_LESS ? 1 : 0], layout.arrow.color, layout.arrow.image_region, layout.arrow.ToUV(), mat);
 
 		// arrow right
 		mat = Matrix::Transform2D(nullptr, 0.f, nullptr, nullptr, 0.f, &Vec2(Int2(global_pos.x + size.x - layout.arrow.image_region.x, global_pos.y)));
-		gui->DrawSpriteComplex(layout.arrow.image[hover == HOVER_ARROW_MORE ? 1 : 0], layout.arrow.color, layout.arrow.ToUV(), mat);
+		gui->DrawSpriteComplex(layout.arrow.image[hover == HOVER_ARROW_MORE ? 1 : 0], layout.arrow.color, layout.arrow.image_region, layout.arrow.ToUV(), mat);
 
 		// scroll
 		//gui->DrawSprite(nullptr, )
@@ -156,12 +157,12 @@ void ScrollBar::Draw()
 	{
 		// arrow top
 		Matrix mat = Matrix::Transform2D(nullptr, 0.f, nullptr, &arrow_mid, PI / 2, &Vec2(global_pos));
-		gui->DrawSpriteComplex(layout.arrow.image[hover == HOVER_ARROW_LESS ? 1 : 0], layout.arrow.color, layout.arrow.ToUV(), mat);
+		gui->DrawSpriteComplex(layout.arrow.image[hover == HOVER_ARROW_LESS ? 1 : 0], layout.arrow.color, layout.arrow.image_region, layout.arrow.ToUV(), mat);
 
 		// arrow bottom
 		mat = Matrix::Transform2D(nullptr, 0.f, nullptr, &arrow_mid, PI * 3 / 2,
-			&Vec2(Int2(global_pos.x, global_pos.y + size.y - layout.arrow.image_region.y));
-		gui->DrawSpriteComplex(layout.arrow.image[hover == HOVER_ARROW_MORE ? 1 : 0], layout.arrow.color, layout.arrow.ToUV(), mat);
+			&Vec2(Int2(global_pos.x, global_pos.y + size.y - layout.arrow.image_region.y)));
+		gui->DrawSpriteComplex(layout.arrow.image[hover == HOVER_ARROW_MORE ? 1 : 0], layout.arrow.color, layout.arrow.image_region, layout.arrow.ToUV(), mat);
 
 		// scroll
 	}
