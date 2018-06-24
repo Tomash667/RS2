@@ -170,11 +170,14 @@
     <ClInclude Include="Source\DebugShader.h">
       <Filter>2. Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Include\WindowHandler.h">
-      <Filter>1. Include\Engine</Filter>
-    </ClInclude>
     <ClInclude Include="Include\MeshBuilder.h">
       <Filter>1. Include\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Config.h">
+      <Filter>1. Include\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Tokenizer.h">
+      <Filter>1. Include\Core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -297,6 +300,12 @@
     </ClCompile>
     <ClCompile Include="Include\MeshBuilder.cpp">
       <Filter>3. Source Files\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Config.cpp">
+      <Filter>3. Source Files\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Tokenizer.cpp">
+      <Filter>3. Source Files\Core</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

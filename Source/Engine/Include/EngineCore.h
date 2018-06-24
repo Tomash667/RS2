@@ -13,7 +13,6 @@ class ResourceManager;
 class Scene;
 class SoundManager;
 class Window;
-class WindowHandler;
 
 // entities
 struct Camera;
@@ -35,12 +34,15 @@ struct Texture;
 
 // gui controls
 struct Button;
+struct CheckBox;
 struct Container;
 struct Control;
 struct DialogBox;
+struct DropDownList;
 struct Label;
 struct Panel;
 struct ProgressBar;
+struct ScrollBar;
 struct Sprite;
 
 // internal classes
@@ -55,6 +57,8 @@ class SoundLoader;
 class TextureLoader;
 
 // directx
+struct IDXGIFactory;
+struct IDXGIAdapter;
 struct IDXGISwapChain;
 struct ID3D11Device;
 struct ID3D11DeviceContext;

@@ -404,9 +404,12 @@ inline Int2 Rect::Size() const
 
 inline Rect Rect::Create(const Int2& pos, const Int2& size)
 {
-	Rect box;
-	box.Set(pos, size);
-	return box;
+	return Rect(pos.x, pos.y, pos.x + size.x, pos.y + size.y);
+}
+
+inline Rect Rect::Create(const Int2& pos, const Int2& size, int pad)
+{
+	return Rect(pos.x + pad, pos.y + pad, pos.x + size.x - pad, pos.y + size.y - pad);
 }
 
 inline Rect Rect::Intersect(const Rect& r1, const Rect& r2)

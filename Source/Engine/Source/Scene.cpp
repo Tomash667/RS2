@@ -325,3 +325,8 @@ void Scene::RecycleMeshInstance(SceneNode* node)
 		}
 	}
 }
+
+void Scene::OnChangeResolution(const Int2& wnd_size)
+{
+	camera->aspect = float(wnd_size.x) / wnd_size.y;
+}

@@ -15,10 +15,10 @@ Inventory::Inventory(ResourceManager* res_mgr, GameState* game_state)
 	this->game_state = game_state;
 	tooltip_index = -1;
 
-	image = res_mgr->GetTexture("panel.png");
+	custom_layout.image = res_mgr->GetTexture("panel.png");
+	custom_layout.corners = Int2(6, 32);
+	custom_layout.color = Color(255, 255, 255, 200);
 	size = Int2(grid_size * SLOT_MAX + 16, grid_size + 40);
-	corners = Int2(6, 32);
-	color = Color(255, 255, 255, 200);
 	visible = false;
 
 	tex_grid = res_mgr->GetTexture("grid.png");

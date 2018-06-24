@@ -12,6 +12,7 @@
 Engine::Engine() : handler(nullptr), input(new Input), window(new Window), render(new Render), sound_mgr(new SoundManager), res_mgr(new ResourceManager),
 scene(new Scene), gui(new Gui), fps(0)
 {
+	render->Prepare();
 }
 
 Engine::~Engine()
@@ -30,8 +31,9 @@ void Engine::Init(GameHandler* handler)
 	if(!XMVerifyCPUSupport())
 		throw "Unsupported CPU.";
 
-	window->Init(input.get(), render.get());
+	window->Init(this, input.get());
 	render->Init(window->GetSize(), window->GetHandle());
+	window->StartFullscreen();
 	sound_mgr->Init();
 	res_mgr->Init(render.get(), sound_mgr.get());
 	scene->Init(render.get(), res_mgr.get());
@@ -83,4 +85,11 @@ void Engine::ShowError(cstring err)
 	Logger::Get()->Log(Logger::L_ERROR, err);
 	Logger::Get()->Flush();
 	window->ShowError(err);
+}
+
+void Engine::OnChangeResolution(const Int2& wnd_size)
+{
+	render->OnChangeResolution(wnd_size);
+	scene->OnChangeResolution(wnd_size);
+	gui->SetWindowSize(wnd_size);
 }

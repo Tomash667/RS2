@@ -8,6 +8,7 @@ public:
 	void Init(GameHandler* handler);
 	void Run();
 	void ShowError(cstring err);
+	void OnChangeResolution(const Int2& wnd_size);
 
 	Input* GetInput() { return input.get(); }
 	Render* GetRender() { return render.get(); }

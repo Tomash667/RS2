@@ -72,6 +72,9 @@
     <ClInclude Include="Source\Tree.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Options.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Main.cpp">
@@ -117,6 +120,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Building.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Options.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -13,14 +13,18 @@ public:
 	void Update(float dt) override;
 	bool To2dPoint(const Vec3& pos, Int2& pt);
 	void ShowMessageBox(Cstring text);
+	void ShowDialog(Control* control);
 	void CloseDialog();
+	void TakeFocus(Control* control);
 
 	void DrawSprite(Texture* image, const Int2& pos, const Int2& size, Color color = Color::White);
 	void DrawSpritePart(Texture* image, const Int2& pos, const Int2& size, const Vec2& part, Color color = Color::White);
 	void DrawSpriteGrid(Texture* image, Color color, const GridF& pos, const GridF& uv);
 	void DrawSpriteGrid(Texture* image, Color color, int image_size, int corner_size, const Int2& pos, const Int2& size);
+	void DrawSpriteComplex(Texture* image, Color color, const Int2& size, const Box2d& uv, const Matrix& mat);
 	bool DrawText(Cstring text, Font* font, Color color, int flags, const Rect& rect, const Rect* clip = nullptr);
 	bool DrawTextOutline(Cstring text, Font* font, Color color, Color outline_color, int flags, const Rect& rect, const Rect* clip = nullptr);
+	void DrawMenu(delegate<void()> draw_clbk) { this->draw_clbk = draw_clbk; }
 
 	void SetCursorTexture(Texture* tex) { tex_cursor = tex; }
 	void SetCursorVisible(bool visible) { cursor_visible = visible; }
@@ -68,6 +72,8 @@ private:
 	Int2 wnd_size, cursor_pos;
 	Matrix mat_view_proj;
 	Texture* tex_cursor;
-	DialogBox* dialog;
-	bool cursor_visible;
+	delegate<void()> draw_clbk;
+	Control* focused, *dialog;
+	Color dialog_overlay;
+	bool cursor_visible, own_dialog;
 };

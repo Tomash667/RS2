@@ -31,6 +31,7 @@ public:
 	}
 	bool Released(Key key) const { return keystate[(int)key] == IS_RELEASED; }
 	bool Down(Key key) const { return keystate[(int)key] >= IS_DOWN; }
+	bool DownRepeat(Key key) const { return Down(key) && keyrepeat[(int)key]; }
 	bool Up(Key key) const { return keystate[(int)key] <= IS_RELEASED; }
 
 	void SetMouseDif(const Int2& mouse_dif) { this->mouse_dif = mouse_dif; }
@@ -42,6 +43,7 @@ public:
 private:
 	vector<Key> to_release;
 	byte keystate[(uint)Key::Max];
+	bool keyrepeat[(uint)Key::Max];
 	Int2 mouse_dif;
 	int mouse_wheel;
 };

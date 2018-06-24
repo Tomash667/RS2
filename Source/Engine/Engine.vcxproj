@@ -142,6 +142,7 @@
   <ItemGroup>
     <ClInclude Include="Include\Camera.h" />
     <ClInclude Include="Include\Color.h" />
+    <ClInclude Include="Include\Config.h" />
     <ClInclude Include="Include\Containers.h" />
     <ClInclude Include="Include\Control.h" />
     <ClInclude Include="Include\Core.h" />
@@ -175,9 +176,9 @@
     <ClInclude Include="Include\Text.h" />
     <ClInclude Include="Include\Texture.h" />
     <ClInclude Include="Include\Timer.h" />
+    <ClInclude Include="Include\Tokenizer.h" />
     <ClInclude Include="Include\Vertex.h" />
     <ClInclude Include="Include\Window.h" />
-    <ClInclude Include="Include\WindowHandler.h" />
     <ClInclude Include="Source\DebugShader.h" />
     <ClInclude Include="Source\FontLoader.h" />
     <ClInclude Include="Source\GuiShader.h" />
@@ -195,6 +196,7 @@
     <ClCompile Include="Include\MeshBuilder.cpp" />
     <ClCompile Include="Source\Camera.cpp" />
     <ClCompile Include="Source\Color.cpp" />
+    <ClCompile Include="Source\Config.cpp" />
     <ClCompile Include="Source\Control.cpp" />
     <ClCompile Include="Source\CoreMath.cpp" />
     <ClCompile Include="Source\CoreMemory.cpp" />
@@ -230,6 +232,7 @@
     <ClCompile Include="Source\Texture.cpp" />
     <ClCompile Include="Source\TextureLoader.cpp" />
     <ClCompile Include="Source\Timer.cpp" />
+    <ClCompile Include="Source\Tokenizer.cpp" />
     <ClCompile Include="Source\WICTextureLoader.cpp" />
     <ClCompile Include="Source\Window.cpp" />
   </ItemGroup>

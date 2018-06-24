@@ -8,7 +8,7 @@ class Game : public GameHandler
 public:
 	Game();
 	~Game();
-	int Start(bool quickstart);
+	int Start(cstring cmd_line);
 	
 private:
 	void InitLogger();
@@ -35,12 +35,14 @@ private:
 	void LoadGame();
 	void Load(FileReader& f);
 	void ShowErrorMessage(cstring err);
+	void LoadConfig(cstring cmd_line);
 
 	unique_ptr<Engine> engine;
 	Scene* scene;
 	Input* input;
 	ResourceManager* res_mgr;
 	SoundManager* sound_mgr;
+	Config* config;
 	GameState game_state;
 	ThirdPersonCamera* camera;
 	MainMenu* main_menu;

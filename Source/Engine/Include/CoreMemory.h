@@ -314,3 +314,171 @@ namespace internal
 		}
 	};
 }
+
+//-----------------------------------------------------------------------------
+extern ObjectPool<string> StringPool;
+
+//-----------------------------------------------------------------------------
+// String using StringPool
+struct LocalString
+{
+	LocalString()
+	{
+		s = StringPool.Get();
+		s->clear();
+	}
+
+	LocalString(cstring str)
+	{
+		assert(str);
+		s = StringPool.Get();
+		*s = str;
+	}
+
+	LocalString(cstring str, cstring str_to)
+	{
+		s = StringPool.Get();
+		uint len = str_to - str;
+		s->resize(len);
+		memcpy((char*)s->data(), str, len);
+	}
+
+	LocalString(const string& str)
+	{
+		s = StringPool.Get();
+		*s = str;
+	}
+
+	~LocalString()
+	{
+		if(s)
+			StringPool.Free(s);
+	}
+
+	void operator = (cstring str)
+	{
+		*s = str;
+	}
+
+	void operator = (const string& str)
+	{
+		*s = str;
+	}
+
+	char at_back(uint offset) const
+	{
+		assert(offset < s->size());
+		return s->at(s->size() - 1 - offset);
+	}
+
+	void pop(uint count)
+	{
+		assert(s->size() > count);
+		s->resize(s->size() - count);
+	}
+
+	void operator += (cstring str)
+	{
+		*s += str;
+	}
+
+	void operator += (const string& str)
+	{
+		*s += str;
+	}
+
+	void operator += (char c)
+	{
+		*s += c;
+	}
+
+	operator cstring() const
+	{
+		return s->c_str();
+	}
+
+	string& operator * ()
+	{
+		return *s;
+	}
+
+	string& get_ref()
+	{
+		return *s;
+	}
+
+	string* get_ptr()
+	{
+		return s;
+	}
+
+	string* operator -> ()
+	{
+		return s;
+	}
+
+	const string* operator -> () const
+	{
+		return s;
+	}
+
+	bool operator == (cstring str) const
+	{
+		return *s == str;
+	}
+
+	bool operator == (const string& str) const
+	{
+		return *s == str;
+	}
+
+	bool operator == (const LocalString& str) const
+	{
+		return *s == *str.s;
+	}
+
+	bool operator != (cstring str) const
+	{
+		return *s != str;
+	}
+
+	bool operator != (const string& str) const
+	{
+		return *s != str;
+	}
+
+	bool operator != (const LocalString& str) const
+	{
+		return *s != *str.s;
+	}
+
+	bool empty() const
+	{
+		return s->empty();
+	}
+
+	cstring c_str() const
+	{
+		return s->c_str();
+	}
+
+	void clear()
+	{
+		s->clear();
+	}
+
+	uint length() const
+	{
+		return s->length();
+	}
+
+	string* Pin()
+	{
+		string* str = s;
+		s = nullptr;
+		return str;
+	}
+
+private:
+	string * s;
+};

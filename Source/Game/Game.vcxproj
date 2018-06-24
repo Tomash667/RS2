@@ -176,6 +176,7 @@
     <ClInclude Include="Source\Item.h" />
     <ClInclude Include="Source\Level.h" />
     <ClInclude Include="Source\MainMenu.h" />
+    <ClInclude Include="Source\Options.h" />
     <ClInclude Include="Source\Pathfinding.h" />
     <ClInclude Include="Source\Player.h" />
     <ClInclude Include="Source\ThirdPersonCamera.h" />
@@ -194,6 +195,7 @@
     <ClCompile Include="Source\Level.cpp" />
     <ClCompile Include="Source\Main.cpp" />
     <ClCompile Include="Source\MainMenu.cpp" />
+    <ClCompile Include="Source\Options.cpp" />
     <ClCompile Include="Source\Pathfinding.cpp" />
     <ClCompile Include="Source\Player.cpp" />
     <ClCompile Include="Source\ThirdPersonCamera.cpp" />

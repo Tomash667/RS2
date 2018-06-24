@@ -7,48 +7,47 @@
 #include <Input.h>
 #include "Version.h"
 #include "GameState.h"
+#include "Options.h"
+
+MainMenu::MainMenu() : options(nullptr)
+{
+}
+
+MainMenu::~MainMenu()
+{
+	delete options;
+}
 
 void MainMenu::Init(ResourceManager* res_mgr, GameState* game_state)
 {
 	this->game_state = game_state;
 
-	const Int2& wnd_size = gui->GetWindowSize();
+	InitLayout(res_mgr);
 
-	Sprite* sprite = new Sprite;
-	sprite->image = res_mgr->GetTexture("background.jpg");
-	sprite->pos = Int2(0, 0);
-	sprite->size = gui->GetWindowSize();
-	Add(sprite);
+	// background
+	sprite_background = new Sprite;
+	sprite_background->image = res_mgr->GetTexture("background.jpg");
+	Add(sprite_background);
 
-	sprite = new Sprite;
-	sprite->image = res_mgr->GetTexture("logo.png");
-	sprite->pos = Int2(200, 200);
-	sprite->size = Int2(512, 256);
-	Add(sprite);
+	// logo
+	sprite_logo = new Sprite;
+	sprite_logo->image = res_mgr->GetTexture("logo.png");
+	sprite_logo->size = Int2(512, 256);
+	Add(sprite_logo);
 
-	Label* label = new Label;
-	label->text = "version " VERSION_STR;
-	label->pos = Int2(200, 200 + 180);
-	label->size = Int2(512, 50);
-	label->color = Color(255, 0, 0);
-	label->flags = Font::Center;
-	Add(label);
+	// version label
+	lab_version = new Label;
+	lab_version->text = "version " VERSION_STR;
+	lab_version->size = Int2(512, 50);
+	lab_version->color = Color(255, 0, 0);
+	lab_version->flags = Font::Center;
+	Add(lab_version);
 
-	Button::default_layout.image = res_mgr->GetTexture("button.png");
-	Button::default_layout.image_hover = res_mgr->GetTexture("button_hover.png");
-	Button::default_layout.image_disabled = res_mgr->GetTexture("button_disabled.png");
-	Button::default_layout.font_color = Color(0, 255, 33);
-	Button::default_layout.font_color_disabled = Color(50, 50, 50);
-	Button::default_layout.corners = Int2(6, 32);
-
-	DialogBox::default_layout.background = res_mgr->GetTexture("panel.png");
-	DialogBox::default_layout.corners = Int2(6, 32);
-	DialogBox::default_layout.background_color = Color(255, 255, 255, 200);
-	DialogBox::default_layout.font_color = Color(0, 255, 33);
-
+	// buttons
 	cstring texts[BUTTON_MAX] = {
 		"Continue",
 		"New game",
+		"Options",
 		"Exit"
 	};
 
@@ -63,15 +62,80 @@ void MainMenu::Init(ResourceManager* res_mgr, GameState* game_state)
 	}
 	Button::NormalizeSize(buttons, BUTTON_MAX, Int2(10, 10));
 
-	int part = wnd_size.x / 3;
-	int pos_y = wnd_size.y - buttons[0]->size.y * 2;
+	// options
+	options = new Options(game_state);
 
-	for(int i = 0; i < 3; ++i)
-		buttons[i]->pos = Int2(part * i + (part - buttons[0]->size.x) / 2, pos_y);
-
+	// show
+	PositionControls();
 	gui->Add(this);
-
 	Show();
+}
+
+void MainMenu::Event(GuiEvent event)
+{
+	if(event == G_CHANGED_RESOLUTION)
+		PositionControls();
+}
+
+void MainMenu::PositionControls()
+{
+	size = gui->GetWindowSize();
+	sprite_background->size = size;
+
+	sprite_logo->SetPos(Int2((size.x - 200 - sprite_logo->size.x) / 2, 200));
+	lab_version->SetPos(Int2(sprite_logo->GetPos().x, 200 + 180));
+
+	int part = size.x / BUTTON_MAX;
+	int pos_y = size.y - buttons[0]->size.y * 2;
+
+	for(int i = 0; i < BUTTON_MAX; ++i)
+		buttons[i]->SetPos(Int2(part * i + (part - buttons[0]->size.x) / 2, pos_y));
+}
+
+void MainMenu::InitLayout(ResourceManager* res_mgr)
+{
+	Panel::default_layout.image = res_mgr->GetTexture("panel.png");
+	Panel::default_layout.corners = Int2(6, 32);
+	Panel::default_layout.color = Color(255, 255, 255, 200);
+
+	Button::default_layout.image = res_mgr->GetTexture("button.png");
+	Button::default_layout.image_hover = res_mgr->GetTexture("button_hover.png");
+	Button::default_layout.image_disabled = res_mgr->GetTexture("button_disabled.png");
+	Button::default_layout.font_color = Color(0, 255, 33);
+	Button::default_layout.font_color_disabled = Color(50, 50, 50);
+	Button::default_layout.corners = Int2(6, 32);
+
+	CheckBox::default_layout.background = res_mgr->GetTexture("checkbox.png");
+	CheckBox::default_layout.hover = res_mgr->GetTexture("checkbox_hover.png");
+	CheckBox::default_layout.checkbox = res_mgr->GetTexture("checked.png");
+	CheckBox::default_layout.size = Int2(32, 32);
+
+	ScrollBar::default_layout.arrow.image[0] = res_mgr->GetTexture("scroll_arrow.png");
+	ScrollBar::default_layout.arrow.image[1] = res_mgr->GetTexture("scroll_arrow_hover.png");
+	ScrollBar::default_layout.arrow.color = Color::White;
+	ScrollBar::default_layout.arrow.image_size = Int2(16, 16);
+	ScrollBar::default_layout.arrow.image_region = Int2(9, 13);
+	ScrollBar::default_layout.background = res_mgr->GetTexture("scrollbar.png");
+	ScrollBar::default_layout.corners = Int2(2, 8);
+	ScrollBar::default_layout.scroll_color = Color(38, 127, 0, 255);
+	ScrollBar::default_layout.scroll_hover_color = Color(1, 248, 31, 255);
+	ScrollBar::default_layout.pad = Int2(1, 2);
+
+	DropDownList::default_layout.arrow.image[0] = res_mgr->GetTexture("dropdownlist_arrow.png");
+	DropDownList::default_layout.arrow.image[1] = res_mgr->GetTexture("dropdownlist_arrow_hover.png");
+	DropDownList::default_layout.arrow.image_size = Int2(16, 8);
+	DropDownList::default_layout.arrow.image_region = Int2(15, 7);
+	DropDownList::default_layout.arrow.color = Color::White;
+	DropDownList::default_layout.background = res_mgr->GetTexture("scrollbar.png");
+	DropDownList::default_layout.corners = Int2(2, 8);
+	DropDownList::default_layout.font_color = Color(0, 255, 33);
+	DropDownList::default_layout.pad = 2;
+	DropDownList::default_layout.hover_color = Color(0, 255, 33, 128);
+
+	DialogBox::default_layout.background = res_mgr->GetTexture("panel.png");
+	DialogBox::default_layout.corners = Int2(6, 32);
+	DialogBox::default_layout.background_color = Color(255, 255, 255, 200);
+	DialogBox::default_layout.font_color = Color(0, 255, 33);
 }
 
 void MainMenu::Show()
@@ -89,7 +153,7 @@ void MainMenu::Hide()
 
 void MainMenu::Update(float dt)
 {
-	if(gui->GetInput()->Pressed(Key::Escape))
+	if(mouse_focus && gui->GetInput()->Pressed(Key::Escape))
 		game_state->SetChangeState(GameState::QUIT);
 	else
 		Container::Update(dt);
@@ -104,6 +168,9 @@ void MainMenu::OnEvent(int id)
 		break;
 	case NEW_GAME:
 		game_state->SetChangeState(GameState::NEW_GAME);
+		break;
+	case OPTIONS:
+		options->Show();
 		break;
 	case EXIT:
 		game_state->SetChangeState(GameState::QUIT);

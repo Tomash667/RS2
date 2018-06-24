@@ -25,26 +25,28 @@
 #include "GameState.h"
 #include "Pathfinding.h"
 #include <Gui.h>
+#include <Config.h>
 
 
 const int level_size = 32;
 
 
-Game::Game() : camera(nullptr)
+Game::Game() : camera(nullptr), quickstart(false), config(nullptr)
 {
 }
 
 Game::~Game()
 {
 	delete camera;
+	delete config;
 }
 
-int Game::Start(bool quickstart)
+int Game::Start(cstring cmd_line)
 {
-	this->quickstart = quickstart;
 	engine.reset(new Engine);
 
 	InitLogger();
+	LoadConfig(cmd_line);
 
 	try
 	{
@@ -65,6 +67,9 @@ int Game::Start(bool quickstart)
 		engine->ShowError(Format("Failed to initialize game: %s", err));
 		return 2;
 	}
+
+	// update config if required
+	config->Save();
 
 	try
 	{
@@ -109,15 +114,20 @@ void Game::InitLogger()
 void Game::InitEngine()
 {
 	Info("Initializing engine.");
+
 	Window* window = engine->GetWindow();
 	window->SetTitle("Rouge Survival v" VERSION_STR);
+	window->SetFullscreen(config->GetBool("fullscreen"));
+	window->SetSize(config->GetInt2("resolution"));
+	engine->GetRender()->SetVsync(config->GetBool("vsync"));
+
 	engine->Init(this);
-	//window->SetFullscreen(true);
 
 	scene = engine->GetScene();
 	input = engine->GetInput();
 	res_mgr = engine->GetResourceManager();
 	sound_mgr = engine->GetSoundManager();
+	sound_mgr->SetSoundVolume(config->GetInt("volume"));
 }
 
 void Game::InitGame()
@@ -131,6 +141,8 @@ void Game::InitGame()
 	level.reset(new Level);
 	level->Init(scene, res_mgr, &game_state, CityGenerator::tile_size * level_size);
 	game_state.level = level.get();
+	game_state.engine = engine.get();
+	game_state.config = config;
 
 	pathfinding.reset(new Pathfinding);
 
@@ -160,7 +172,7 @@ void Game::InitGame()
 	main_menu->Init(res_mgr, &game_state);
 
 	game_gui = new GameGui;
-	game_gui->Init(engine.get(), &game_state);
+	game_gui->Init(engine.get(), &game_state, main_menu->options);
 	game_gui->visible = false;
 }
 
@@ -223,8 +235,13 @@ bool Game::OnTick(float dt)
 
 	Window* window = engine->GetWindow();
 	if(input->Down(Key::Alt) && input->Pressed(Key::Enter))
-		window->SetFullscreen(!window->IsFullscreen());
-	
+	{
+		bool fullscreen = !window->IsFullscreen();
+		window->SetFullscreen(fullscreen);
+		config->SetBool("fullscreen", fullscreen);
+		config->Save();
+	}
+
 	if(input->Pressed(Key::U))
 		window->SetCursorLock(!window->IsCursorLocked());
 
@@ -424,7 +441,7 @@ void Game::UpdatePlayer(float dt)
 					{
 						player->ranged_weapon = player->item_before->item;
 						player->current_ammo = 10;
-				}
+					}
 					else
 						player->ammo += 10;
 					break;
@@ -1379,4 +1396,54 @@ void Game::Load(FileReader& f)
 void Game::ShowErrorMessage(cstring err)
 {
 	engine->GetGui()->ShowMessageBox(err);
+}
+
+void Game::LoadConfig(cstring cmd_line)
+{
+	string config_file = "rs.config";
+
+	// parse command line
+	vector<string> cmds;
+	Config::SplitCommandLine(cmd_line, cmds);
+	for(uint i = 0; i < cmds.size(); ++i)
+	{
+		const string& str = cmds[i];
+		if(str[0] != '-')
+			continue;
+		if(str == "-config")
+		{
+			if(i + 1 < cmds.size())
+			{
+				++i;
+				config_file = cmds[i];
+			}
+			else
+				Warn("Missing command line argument for '-config'.");
+		}
+		else if(str, "-qs")
+			quickstart = true;
+		else
+			Warn("Unknown command line switch '%s'.", str.c_str());
+	}
+
+	// load config
+	Info("Using '%s' configuration file.", config_file.c_str());
+	config = new Config(config_file);
+	config->Add(new Config::Var("fullscreen", true));
+	config->Add(new Config::Var("vsync", true));
+	config->Add(new Config::Var("resolution", Int2::Zero));
+	config->Add(new Config::Var("volume", 100));
+	config->Load();
+	config->ParseCommandLine(cmd_line);
+
+	// validate settings
+	Int2 res = config->GetInt2("resolution");
+	Int2 valid_res = engine->GetRender()->CheckResolution(res);
+	if(res != valid_res)
+		config->SetInt2("resolution", valid_res);
+
+	int volume = config->GetInt("volume");
+	int valid_volume = Clamp(volume, 0, 100);
+	if(volume != valid_volume)
+		config->SetInt("volume", valid_volume);
 }

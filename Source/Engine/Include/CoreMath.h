@@ -476,6 +476,7 @@ struct Int2
 	int Clamp(int d) const;
 	int Lerp(float t) const;
 	int Random() const;
+	Int2 YX() const { return Int2(y, x); }
 
 	// Static functions
 	static int Distance(const Int2& i1, const Int2& i2);
@@ -562,6 +563,7 @@ struct Rect
 
 	// Static functions
 	static Rect Create(const Int2& pos, const Int2& size);
+	static Rect Create(const Int2& pos, const Int2& size, int pad);
 	static Rect Intersect(const Rect& r1, const Rect& r2);
 	static bool Intersect(const Rect& r1, const Rect& r2, Rect& result);
 	static bool IsInside(const Int2& pos, const Int2& size, const Int2& pt);

@@ -14,6 +14,7 @@ public:
 	void Add(ParticleEmitter* pe);
 	void Remove(SceneNode* node);
 	void RecycleMeshInstance(SceneNode* node);
+	void OnChangeResolution(const Int2& wnd_size);
 
 	void SetAmbientColor(const Vec3& ambient_color) { this->ambient_color = ambient_color; }
 	void SetDebugDrawEnabled(bool enabled) { debug_draw_enabled = enabled; }

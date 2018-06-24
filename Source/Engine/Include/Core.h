@@ -19,6 +19,7 @@
 #include <vector>
 #include <set>
 #include <unordered_map>
+#include <map>
 #include <string>
 #include <algorithm>
 #include <memory>
@@ -92,3 +93,11 @@ const destT &absolute_cast(const srcT &v)
 
 //-----------------------------------------------------------------------------
 struct QuadTree;
+class Config;
+namespace tokenizer
+{
+	class Tokenizer;
+};
+using tokenizer::Tokenizer;
+template<typename T>
+using delegate = ssvu::FastFunc<T>;

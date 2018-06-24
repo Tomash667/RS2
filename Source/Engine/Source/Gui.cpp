@@ -6,13 +6,14 @@
 #include "Font.h"
 #include "Input.h"
 
-Gui::Gui() : v(nullptr), cursor_visible(false), tex_cursor(nullptr), dialog(nullptr)
+Gui::Gui() : v(nullptr), cursor_visible(false), tex_cursor(nullptr), dialog(nullptr), dialog_overlay(Color(50, 50, 50, 150))
 {
 }
 
 Gui::~Gui()
 {
-	delete dialog;
+	if(own_dialog)
+		delete dialog;
 }
 
 void Gui::Init(Render* render, ResourceManager* res_mgr, Input* input)
@@ -34,11 +35,19 @@ void Gui::Draw(const Matrix& mat_view_proj)
 	this->mat_view_proj = mat_view_proj;
 
 	gui_shader->Prepare();
+	draw_clbk = nullptr;
 
 	Container::Draw();
 
 	if(HaveDialog())
+	{
+		if(dialog_overlay.a > 0)
+			DrawSprite(nullptr, Int2::Zero, wnd_size, dialog_overlay);
 		dialog->Draw();
+	}
+
+	if(draw_clbk)
+		draw_clbk();
 
 	if((cursor_visible || HaveDialog()) && tex_cursor)
 		DrawSprite(tex_cursor, cursor_pos, Int2(32, 32));
@@ -64,6 +73,12 @@ void Gui::Update(float dt)
 		Container::Update(dt);
 		dialog->mouse_focus = true;
 		dialog->Update(dt);
+	}
+
+	if(focused && input->PressedOnce(Key::LeftButton))
+	{
+		focused->focus = false;
+		focused = nullptr;
 	}
 }
 
@@ -309,7 +324,9 @@ void Gui::DrawSpriteGrid(Texture* image, Color color, int image_size, int corner
 			&& corner_size > 0
 			&& image_size - corner_size * 2 > 0
 			&& size.x >= corner_size * 2
-			&& size.y >= corner_size * 2);
+			&& size.y >= corner_size * 2
+			&& size.x >= (image_size - corner_size * 2)
+			&& size.y >= (image_size - corner_size * 2));
 		static GridF pos_grid(4), uv_grid(4);
 		uv_grid.Set({ 0.f, float(corner_size) / image_size, float(image_size - corner_size) / image_size, 1.f });
 		pos_grid.Set({ pos.x, pos.x + corner_size, pos.x + size.x - corner_size, pos.x + size.x },
@@ -318,6 +335,47 @@ void Gui::DrawSpriteGrid(Texture* image, Color color, int image_size, int corner
 	}
 	else
 		DrawSprite(image, pos, size, color);
+}
+
+void Gui::DrawSpriteComplex(Texture* image, Color color, const Int2& size, const Box2d& tex, const Matrix& mat)
+{
+	assert(image);
+	Lock();
+	Vec4 current_color = color;
+	
+	v->pos = Vec2::Transform(Vec2::Zero, mat);
+	v->tex = tex.LeftTop();
+	v->color = color;
+	++v;
+
+	v->pos = Vec2::Transform(Vec2((float)size.x, 0), mat);
+	v->tex = tex.RightTop();
+	v->color = color;
+	++v;
+
+	v->pos = Vec2::Transform(Vec2(0, (float)size.y), mat);
+	v->tex = tex.LeftBottom();
+	v->color = color;
+	++v;
+
+	v->pos = Vec2::Transform(Vec2(0, (float)size.y), mat);
+	v->tex = tex.LeftBottom();
+	v->color = color;
+	++v;
+
+	v->pos = Vec2::Transform(Vec2((float)size.x, 0), mat);
+	v->tex = tex.RightTop();
+	v->color = color;
+	++v;
+
+	v->pos = Vec2::Transform(Vec2(size), mat);
+	v->tex = tex.RightBottom();
+	v->color = color;
+	++v;
+
+	in_buffer += 2;
+	Flush(image);
+
 }
 
 bool Gui::To2dPoint(const Vec3& pos, Int2& pt)
@@ -348,16 +406,25 @@ bool Gui::To2dPoint(const Vec3& pos, Int2& pt)
 
 void Gui::SetWindowSize(const Int2& wnd_size)
 {
-	this->wnd_size = wnd_size;
-	if(gui_shader)
-		gui_shader->SetWindowSize(wnd_size);
-	cursor_pos = wnd_size / 2;
+	float aspect = float(wnd_size.x) / wnd_size.y;
+	Int2 new_wnd_size = Int2(int(aspect * 800), 800);
+	if(this->wnd_size != new_wnd_size)
+	{
+		this->wnd_size = new_wnd_size;
+		if(gui_shader)
+			gui_shader->SetWindowSize(this->wnd_size);
+		cursor_pos = this->wnd_size / 2;
+		Container::Event(G_CHANGED_RESOLUTION);
+		if(dialog)
+			dialog->SetPos((this->wnd_size - dialog->size) / 2);
+	}
 }
 
 void Gui::ShowMessageBox(Cstring text)
 {
 	assert(!dialog); // max 1 dialog at once currently
-	dialog = new DialogBox;
+
+	DialogBox* dialog = new DialogBox;
 	dialog->text = text;
 	dialog->button.text = "OK";
 	dialog->button.CalculateSize();
@@ -365,16 +432,49 @@ void Gui::ShowMessageBox(Cstring text)
 	Int2 text_size = font->CalculateSize(dialog->text, wnd_size.x - 100);
 	dialog->size.x = max(text_size.x, dialog->button.size.x) + 10 + dialog->layout.corners.x * 2;
 	dialog->size.y = text_size.y + dialog->button.size.y + 15 + dialog->layout.corners.x * 2;
-	dialog->pos = (wnd_size - dialog->size) / 2;
-	dialog->button.pos = Int2((wnd_size.x - dialog->button.size.x) / 2, dialog->pos.y + 10 + dialog->layout.corners.x + text_size.y);
-	dialog->rect = Rect(dialog->pos.x + dialog->layout.corners.x + 5, dialog->pos.y + dialog->layout.corners.x + 5);
+	Int2 pos = (wnd_size - dialog->size) / 2;
+	dialog->SetPos(pos);
+	dialog->button.SetPos(Int2((wnd_size.x - dialog->button.size.x) / 2, pos.y + 10 + dialog->layout.corners.x + text_size.y));
+	dialog->rect = Rect(pos.x + dialog->layout.corners.x + 5, pos.y + dialog->layout.corners.x + 5);
 	dialog->rect.p2 += text_size;
 	dialog->button.event = delegate<void(int)>(dialog, &DialogBox::OnEvent);
+	dialog->parent = this;
+
+	this->dialog = dialog;
+	own_dialog = true;
+}
+
+void Gui::ShowDialog(Control* control)
+{
+	assert(!dialog); // max 1 dialog at once currently
+
+	control->SetPos(Int2((wnd_size.x - control->size.x) / 2, (wnd_size.y - control->size.y) / 2));
+	control->visible = true;
+	control->parent = this;
+	dialog = control;
+	own_dialog = false;
 }
 
 void Gui::CloseDialog()
 {
 	assert(HaveDialog());
-	delete dialog;
+	if(own_dialog)
+		delete dialog;
+	else
+	{
+		dialog->visible = false;
+		dialog->parent = nullptr;
+	}
 	dialog = nullptr;
+}
+
+void Gui::TakeFocus(Control* control)
+{
+	assert(control);
+	if(control == focused)
+		return;
+	if(focused)
+		focused->focus = false;
+	focused = control;
+	focused->focus = true;
 }

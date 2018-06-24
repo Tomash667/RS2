@@ -12,6 +12,7 @@
 #include "Inventory.h"
 #include <Font.h>
 #include "GameState.h"
+#include "Options.h"
 
 
 enum DIR
@@ -70,10 +71,11 @@ GameGui::~GameGui()
 	delete sprite_crosshair;
 }
 
-void GameGui::Init(Engine* engine, GameState* game_state)
+void GameGui::Init(Engine* engine, GameState* game_state, Options* options)
 {
 	this->engine = engine;
 	this->game_state = game_state;
+	this->options = options;
 
 	const Int2& wnd_size = gui->GetWindowSize();
 	ResourceManager* res_mgr = engine->GetResourceManager();
@@ -84,21 +86,27 @@ void GameGui::Init(Engine* engine, GameState* game_state)
 	sprite_crosshair = new Sprite;
 	sprite_crosshair->image = res_mgr->GetTexture("crosshair_dot.png");
 	sprite_crosshair->size = Int2(16, 16);
-	sprite_crosshair->pos = (wnd_size - sprite_crosshair->size) / 2;
+	sprite_crosshair->SetPos((wnd_size - sprite_crosshair->size) / 2);
 
 	// hp bar
 	hp_bar = new ProgressBar;
 	hp_bar->image = res_mgr->GetTexture("hp_bar.png");
 	hp_bar->background = res_mgr->GetTexture("bar_empty.png");
 	hp_bar->size = Int2(256, 30);
-	hp_bar->pos.y = wnd_size.y - hp_bar->size.y;
+	hp_bar->SetPos(Int2(0, wnd_size.y - hp_bar->size.y));
 	Add(hp_bar);
 
+	// food icon
+	sprite_food = new Sprite;
+	sprite_food->image = res_mgr->GetTexture("food_icon.png");
+	sprite_food->size = Int2(32, 32);
+	sprite_food->SetPos(Int2(8, hp_bar->GetPos().y - 40));
+	sprite_food->visible = false;
+	Add(sprite_food);
+
+	// panel with medkits/ammo
 	Panel* panel_bg = new Panel;
-	panel_bg->image = res_mgr->GetTexture("panel.png");
-	panel_bg->corners = Int2(6, 32);
-	panel_bg->color = Color(255, 255, 255, 200);
-	panel_bg->pos = Int2(260, wnd_size.y - 36);
+	panel_bg->SetPos(Int2(260, wnd_size.y - 36));
 	panel_bg->size = Int2(200, 80);
 	Add(panel_bg);
 
@@ -106,34 +114,26 @@ void GameGui::Init(Engine* engine, GameState* game_state)
 	Sprite* sprite_medkit = new Sprite;
 	sprite_medkit->image = res_mgr->GetTexture("medkit_icon.png");
 	sprite_medkit->size = Int2(32, 32);
-	sprite_medkit->pos = Int2(256 + 8, wnd_size.y - 32);
+	sprite_medkit->SetPos(Int2(6, 4));
 	panel_bg->Add(sprite_medkit);
 
 	label_medkits = new Label;
 	label_medkits->font = res_mgr->GetFont("Arial", 20);
-	label_medkits->pos = sprite_medkit->pos + Int2(32, 2);
+	label_medkits->SetPos(sprite_medkit->GetPos() + Int2(32, 2));
 	label_medkits->size = Int2(100, 100);
 	label_medkits->color = Color(0, 255, 33);
 	panel_bg->Add(label_medkits);
 
-	// food icon
-	sprite_food = new Sprite;
-	sprite_food->image = res_mgr->GetTexture("food_icon.png");
-	sprite_food->size = Int2(32, 32);
-	sprite_food->pos = Int2(8, hp_bar->pos.y - 40);
-	sprite_food->visible = false;
-	Add(sprite_food);
-
 	// ammo counter
 	Sprite* sprite_ammo = new Sprite;
 	sprite_ammo->image = res_mgr->GetTexture("ammo.png");
-	sprite_ammo->pos = Int2(label_medkits->pos + Int2(32, -2));
+	sprite_ammo->SetPos(Int2(label_medkits->GetPos() + Int2(32, -2)));
 	sprite_ammo->size = Int2(32, 32);
 	panel_bg->Add(sprite_ammo);
 
 	label_ammo = new Label;
 	label_ammo->font = label_medkits->font;
-	label_ammo->pos = Int2(sprite_ammo->pos + Int2(32, 2));
+	label_ammo->SetPos(Int2(sprite_ammo->GetPos() + Int2(32, 2)));
 	label_ammo->size = Int2(100, 32);
 	label_ammo->color = Color(0, 255, 33);
 	label_ammo->visible = false;
@@ -141,26 +141,30 @@ void GameGui::Init(Engine* engine, GameState* game_state)
 
 	// fps panel
 	label_fps = new Label;
-	label_fps->pos = Int2(6, 6);
+	label_fps->SetPos(Int2(6, 6));
 	label_fps->color = Color(0, 255, 33, 255);
 	panel_fps = new Panel;
-	panel_fps->image = res_mgr->GetTexture("panel.png");
-	panel_fps->corners = Int2(6, 32);
-	panel_fps->color = Color(255, 255, 255, 200);
 	panel_fps->visible = false;
 	panel_fps->Add(label_fps);
 	Add(panel_fps);
 
 	// inventory
 	inventory = new Inventory(res_mgr, game_state);
-	inventory->pos = Int2(wnd_size.x - inventory->size.x, wnd_size.y - inventory->size.y);
 	Add(inventory);
 
 	tex_background = res_mgr->GetTexture("background.png");
 	res_mgr->AddFontFromFile("pertili.ttf");
 	font_big = res_mgr->GetFont("Perpetua Titling MT", 40);
 
+	PositionControls();
 	engine->GetGui()->Add(this);
+}
+
+void GameGui::PositionControls()
+{
+	const Int2& wnd_size = gui->GetWindowSize();
+	inventory->SetPos(Int2(wnd_size.x - inventory->size.x, wnd_size.y - inventory->size.y));
+	sprite_crosshair->SetPos((wnd_size - sprite_crosshair->size) / 2);
 }
 
 void GameGui::Draw()
@@ -211,8 +215,9 @@ void GameGui::Draw()
 	{
 		// paused
 		gui->DrawSprite(nullptr, Int2::Zero, gui->GetWindowSize(), Color(50, 50, 50, 150));
-		gui->DrawTextOutline("GAME PAUSED", font_big, Color(0, 255, 33), Color::Black, Font::Center | Font::VCenter, Rect::Create(Int2::Zero, gui->GetWindowSize()));
-		gui->DrawTextOutline("Esc to continue, Enter to save & quit", nullptr, Color(0, 255, 33), Color::Black, Font::Center | Font::VCenter,
+		gui->DrawTextOutline("GAME PAUSED", font_big, Color(0, 255, 33), Color::Black, Font::Center | Font::VCenter,
+			Rect::Create(Int2::Zero, gui->GetWindowSize()));
+		gui->DrawTextOutline("Esc to continue, Enter to save & quit, O for options", nullptr, Color(0, 255, 33), Color::Black, Font::Center | Font::VCenter,
 			Rect::Create(Int2(0, 100), gui->GetWindowSize()));
 	}
 	else
@@ -234,7 +239,7 @@ void GameGui::Update(float dt)
 	Player* player = game_state->player;
 
 	// fps panel
-	if(input->Pressed(Key::F1))
+	if(mouse_focus && input->Pressed(Key::F1))
 		panel_fps->visible = !panel_fps->visible;
 	if(panel_fps->visible)
 	{
@@ -242,10 +247,12 @@ void GameGui::Update(float dt)
 			FLT10(player->node->pos.x), FLT10(player->node->pos.y), FLT10(player->node->pos.z),
 			FLT10(player->node->rot.y), dir_name[AngleToDir(player->node->rot.y)]);
 		label_fps->size = label_fps->CalculateSize();
-		Int2 panel_size = label_fps->size + Int2(2 * panel_fps->corners.x, 2 * panel_fps->corners.x);
+		Int2 panel_size = label_fps->size + Int2(2 * panel_fps->layout.corners.x, 2 * panel_fps->layout.corners.x);
 		if(panel_size > panel_fps->size)
 			panel_fps->size = Int2::Max(panel_size, panel_fps->size);
 	}
+	if(!mouse_focus)
+		return;
 
 	// hp bar
 	hp_bar->progress = player->GetHpp();
@@ -308,6 +315,8 @@ void GameGui::Update(float dt)
 			game_state->SetChangeState(GameState::SAVE_AND_EXIT);
 		else if(input->Pressed(Key::Escape))
 			game_state->SetPaused(false);
+		else if(input->Pressed(Key::O))
+			options->Show();
 	}
 	else if(input->Pressed(Key::Escape))
 	{
@@ -316,6 +325,12 @@ void GameGui::Update(float dt)
 		else if(death_timer > 2.f)
 			game_state->SetChangeState(GameState::EXIT_TO_MENU);
 	}
+}
+
+void GameGui::Event(GuiEvent event)
+{
+	if(event == G_CHANGED_RESOLUTION)
+		PositionControls();
 }
 
 bool GameGui::IsInventoryOpen()
