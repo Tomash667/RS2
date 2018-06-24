@@ -94,7 +94,7 @@ Options::Options(GameState* game_state) : game_state(game_state)
 	Add(label);
 	lab_volume = label;
 
-	sound_test = game_state->engine->GetResourceManager()->GetSound("zombie attack.wav");
+	sound_test = game_state->engine->GetResourceManager()->GetSound("sounds/zombie attack.wav");
 
 	// button
 	Button* bt = new Button;

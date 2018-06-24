@@ -163,7 +163,7 @@ void Game::InitGame()
 
 	LoadResources();
 
-	scene->SetSkybox(res_mgr->GetMesh("skybox.qmsh"));
+	scene->SetSkybox(res_mgr->GetMesh("skybox/skybox.qmsh"));
 
 	city_generator.reset(new CityGenerator);
 	city_generator->Init(scene, level.get(), pathfinding.get(), res_mgr, level_size, 3);
@@ -179,24 +179,24 @@ void Game::InitGame()
 void Game::LoadResources()
 {
 	// particle texture
-	tex_blood = res_mgr->GetTexture("blood.png");
-	tex_zombie_blood = res_mgr->GetTexture("zombie_blood.png");
-	tex_hit_object = res_mgr->GetTexture("hit_object.png");
+	tex_blood = res_mgr->GetTexture("particles/blood.png");
+	tex_zombie_blood = res_mgr->GetTexture("particles/zombie_blood.png");
+	tex_hit_object = res_mgr->GetTexture("particles/hit_object.png");
 
 	// sounds
-	sound_player_hurt = res_mgr->GetSound("player_hurt.mp3");
-	sound_player_die = res_mgr->GetSound("player_die.mp3");
-	sound_zombie_hurt = res_mgr->GetSound("zombie_hurt.mp3");
-	sound_zombie_die = res_mgr->GetSound("zombie_die.mp3");
-	sound_zombie_attack = res_mgr->GetSound("zombie attack.wav");
-	sound_zombie_alert = res_mgr->GetSound("zombie alert.wav");
-	sound_hit = res_mgr->GetSound("hit.mp3");
-	sound_medkit = res_mgr->GetSound("medkit.mp3");
-	sound_eat = res_mgr->GetSound("eat.mp3");
-	sound_hungry = res_mgr->GetSound("hungry.mp3");
-	sound_shoot = res_mgr->GetSound("shoot.mp3");
-	sound_shoot_try = res_mgr->GetSound("shoot_try.mp3");
-	sound_reload = res_mgr->GetSound("reload.mp3");
+	sound_player_hurt = res_mgr->GetSound("sounds/player_hurt.mp3");
+	sound_player_die = res_mgr->GetSound("sounds/player_die.mp3");
+	sound_zombie_hurt = res_mgr->GetSound("sounds/zombie_hurt.mp3");
+	sound_zombie_die = res_mgr->GetSound("sounds/zombie_die.mp3");
+	sound_zombie_attack = res_mgr->GetSound("sounds/zombie attack.wav");
+	sound_zombie_alert = res_mgr->GetSound("sounds/zombie alert.wav");
+	sound_hit = res_mgr->GetSound("sounds/hit.mp3");
+	sound_medkit = res_mgr->GetSound("sounds/medkit.mp3");
+	sound_eat = res_mgr->GetSound("sounds/eat.mp3");
+	sound_hungry = res_mgr->GetSound("sounds/hungry.mp3");
+	sound_shoot = res_mgr->GetSound("sounds/shoot.mp3");
+	sound_shoot_try = res_mgr->GetSound("sounds/shoot_try.mp3");
+	sound_reload = res_mgr->GetSound("sounds/reload.mp3");
 
 	level->LoadResources();
 	Item::LoadData(res_mgr);

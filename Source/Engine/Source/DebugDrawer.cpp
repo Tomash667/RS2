@@ -16,8 +16,8 @@ void DebugDrawer::Init()
 	shader.reset(new DebugShader(render));
 	shader->Init();
 
-	mesh_cube = res_mgr->GetMesh("cube.qmsh");
-	mesh_sphere = res_mgr->GetMesh("sphere.qmsh");
+	mesh_cube = res_mgr->GetMesh("engine/cube.qmsh");
+	mesh_sphere = res_mgr->GetMesh("engine/sphere.qmsh");
 }
 
 void DebugDrawer::Draw(const Matrix& mat_view, const Matrix& mat_view_proj, const Vec3& cam_pos, delegate<void(DebugDrawer*)> handler)
@@ -37,19 +37,6 @@ void DebugDrawer::DrawLine(const Vec3& from, const Vec3& to, float width)
 	Vec3* v = shader->Lock();
 
 	width /= 2;
-
-	/*mat_view_inv._41 = from.x;
-	mat_view_inv._42 = from.y;
-	mat_view_inv._43 = from.z;
-	v[0] = Vec3::Transform(Vec3(-width, 0, 0), mat_view_inv);
-	v[1] = Vec3::Transform(Vec3(width, 0, 0), mat_view_inv);
-	mat_view_inv._41 = to.x;
-	mat_view_inv._42 = to.y;
-	mat_view_inv._43 = to.z;
-	v[2] = Vec3::Transform(Vec3(-width, 0, 0), mat_view_inv);
-	v[3] = v[1];
-	v[4] = v[2];
-	v[5] = Vec3::Transform(Vec3(width, 0, 0), mat_view_inv);*/
 
 	Vec3 line_dir = from - to;
 	Vec3 quad_normal = cam_pos - (to + from) / 2;

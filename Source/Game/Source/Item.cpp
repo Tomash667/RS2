@@ -4,12 +4,12 @@
 #include <Mesh.h>
 
 Item items[] = {
-	Item(Item::MELEE_WEAPON, "baseball_bat", "Baseball bat", "baseball_bat.qmsh", "baseball_bat.png", 45, 55),
-	Item(Item::MELEE_WEAPON, "axe", "Axe", "axe.qmsh", "axe.png", 55, 104),
-	Item(Item::RANGED_WEAPON, "pistol", "Pistol", "pistol.qmsh", "pistol.png", 81, 100),
-	Item(Item::AMMO, "pistol_ammo", "Pistol ammo", "pistol_ammo.qmsh", "pistol_ammo.png"),
-	Item(Item::MEDKIT, "medkit", "Medkit", "medkit.qmsh", "medkit_ico.png"),
-	Item(Item::FOOD, "canned_food", "Canned food", "canned_food.qmsh", "canned_food.png")
+	Item(Item::MELEE_WEAPON, "baseball_bat", "Baseball bat", "items/baseball_bat.qmsh", "items/baseball_bat.png", 45, 55),
+	Item(Item::MELEE_WEAPON, "axe", "Axe", "items/axe.qmsh", "items/axe.png", 55, 104),
+	Item(Item::RANGED_WEAPON, "pistol", "Pistol", "items/pistol.qmsh", "items/pistol.png", 81, 100),
+	Item(Item::AMMO, "pistol_ammo", "Pistol ammo", "items/pistol_ammo.qmsh", "items/pistol_ammo.png"),
+	Item(Item::MEDKIT, "medkit", "Medkit", "items/medkit.qmsh", "items/medkit_ico.png"),
+	Item(Item::FOOD, "canned_food", "Canned food", "items/canned_food.qmsh", "items/canned_food.png")
 };
 
 Item* Item::Get(Cstring id)

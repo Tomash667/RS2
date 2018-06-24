@@ -80,25 +80,25 @@ void GameGui::Init(Engine* engine, GameState* game_state, Options* options)
 	const Int2& wnd_size = gui->GetWindowSize();
 	ResourceManager* res_mgr = engine->GetResourceManager();
 
-	gui->SetCursorTexture(res_mgr->GetTexture("cursor.png"));
+	gui->SetCursorTexture(res_mgr->GetTexture("gui/cursor.png"));
 
 	// crosshair
 	sprite_crosshair = new Sprite;
-	sprite_crosshair->image = res_mgr->GetTexture("crosshair_dot.png");
+	sprite_crosshair->image = res_mgr->GetTexture("gui/crosshair_dot.png");
 	sprite_crosshair->size = Int2(16, 16);
 	sprite_crosshair->SetPos((wnd_size - sprite_crosshair->size) / 2);
 
 	// hp bar
 	hp_bar = new ProgressBar;
-	hp_bar->image = res_mgr->GetTexture("hp_bar.png");
-	hp_bar->background = res_mgr->GetTexture("bar_empty.png");
+	hp_bar->image = res_mgr->GetTexture("gui/hp_bar.png");
+	hp_bar->background = res_mgr->GetTexture("gui/bar_empty.png");
 	hp_bar->size = Int2(256, 30);
 	hp_bar->SetPos(Int2(0, wnd_size.y - hp_bar->size.y));
 	Add(hp_bar);
 
 	// food icon
 	sprite_food = new Sprite;
-	sprite_food->image = res_mgr->GetTexture("food_icon.png");
+	sprite_food->image = res_mgr->GetTexture("gui/food_icon.png");
 	sprite_food->size = Int2(32, 32);
 	sprite_food->SetPos(Int2(8, hp_bar->GetPos().y - 40));
 	sprite_food->visible = false;
@@ -112,7 +112,7 @@ void GameGui::Init(Engine* engine, GameState* game_state, Options* options)
 
 	// medkit icon & counter
 	Sprite* sprite_medkit = new Sprite;
-	sprite_medkit->image = res_mgr->GetTexture("medkit_icon.png");
+	sprite_medkit->image = res_mgr->GetTexture("gui/medkit_icon.png");
 	sprite_medkit->size = Int2(32, 32);
 	sprite_medkit->SetPos(Int2(6, 4));
 	panel_bg->Add(sprite_medkit);
@@ -126,7 +126,7 @@ void GameGui::Init(Engine* engine, GameState* game_state, Options* options)
 
 	// ammo counter
 	Sprite* sprite_ammo = new Sprite;
-	sprite_ammo->image = res_mgr->GetTexture("ammo.png");
+	sprite_ammo->image = res_mgr->GetTexture("gui/ammo.png");
 	sprite_ammo->SetPos(Int2(label_medkits->GetPos() + Int2(32, -2)));
 	sprite_ammo->size = Int2(32, 32);
 	panel_bg->Add(sprite_ammo);
@@ -152,8 +152,8 @@ void GameGui::Init(Engine* engine, GameState* game_state, Options* options)
 	inventory = new Inventory(res_mgr, game_state);
 	Add(inventory);
 
-	tex_background = res_mgr->GetTexture("background.png");
-	res_mgr->AddFontFromFile("pertili.ttf");
+	tex_background = res_mgr->GetTexture("gui/background.png");
+	res_mgr->AddFontFromFile("fonts/pertili.ttf");
 	font_big = res_mgr->GetFont("Perpetua Titling MT", 40);
 
 	PositionControls();

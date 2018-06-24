@@ -15,6 +15,12 @@ Mesh* QmshLoader::Load(cstring name, cstring path, bool raw)
 {
 	Mesh* mesh = new Mesh(name);
 
+	cstring dir_part = strrchr(name, '/');
+	if(!dir_part)
+		dir.clear();
+	else
+		dir = string(name, dir_part - name + 1);
+
 	try
 	{
 		FileReader f(path);
@@ -154,7 +160,7 @@ void QmshLoader::LoadInternal(Mesh& mesh, FileReader& f, bool raw)
 		f >> filename;
 
 		if(!filename.empty())
-			sub.tex = res_mgr->GetTexture(filename);
+			sub.tex = res_mgr->GetTexture(Format("%s%s", dir.c_str(), filename.c_str()));
 		else
 			sub.tex = nullptr;
 
@@ -169,7 +175,7 @@ void QmshLoader::LoadInternal(Mesh& mesh, FileReader& f, bool raw)
 			f >> filename;
 			if(!filename.empty())
 			{
-				sub.tex_normal = res_mgr->GetTexture(filename);
+				sub.tex_normal = res_mgr->GetTexture(Format("%s%s", dir.c_str(), filename.c_str()));
 				f >> sub.normal_factor;
 			}
 			else
@@ -182,7 +188,7 @@ void QmshLoader::LoadInternal(Mesh& mesh, FileReader& f, bool raw)
 		f >> filename;
 		if(!filename.empty())
 		{
-			sub.tex_specular = res_mgr->GetTexture(filename);
+			sub.tex_specular = res_mgr->GetTexture(Format("%s%s", dir.c_str(), filename.c_str()));
 			f >> sub.specular_factor;
 			f >> sub.specular_color_factor;
 		}

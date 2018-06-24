@@ -32,23 +32,23 @@ void CityGenerator::Init(Scene* scene, Level* level, Pathfinding* pathfinding, R
 	map.resize(size * size);
 	map_size = tile_size * size;
 
-	mesh[T_ASPHALT] = res_mgr->GetMesh("asphalt.qmsh");
-	mesh[T_PAVEMENT] = res_mgr->GetMesh("brick_pavement.qmsh");
-	mesh[T_BUILDING] = res_mgr->GetMesh("building_floor.qmsh");
+	mesh[T_ASPHALT] = res_mgr->GetMesh("buildings/asphalt.qmsh");
+	mesh[T_PAVEMENT] = res_mgr->GetMesh("buildings/brick_pavement.qmsh");
+	mesh[T_BUILDING] = res_mgr->GetMesh("buildings/building_floor.qmsh");
 
 	mesh_offset[T_ASPHALT] = 0;
 	mesh_offset[T_PAVEMENT] = floor_y;
 	mesh_offset[T_BUILDING] = floor_y;
 
-	mesh_curb = res_mgr->GetMesh("curb.qmsh");
-	mesh_table = res_mgr->GetMesh("table.qmsh");
+	mesh_curb = res_mgr->GetMesh("buildings/curb.qmsh");
+	mesh_table = res_mgr->GetMesh("objects/table.qmsh");
 
-	mesh_wall = res_mgr->GetMeshRaw("wall.qmsh");
-	mesh_wall_inner = res_mgr->GetMeshRaw("wall_inner.qmsh");
-	mesh_corner = res_mgr->GetMeshRaw("corner.qmsh");
-	mesh_door_jamb = res_mgr->GetMeshRaw("door_jamb.qmsh");
-	mesh_door_jamb_inner = res_mgr->GetMeshRaw("door_jamb_inner.qmsh");
-	mesh_ceil = res_mgr->GetMeshRaw("ceil.qmsh");
+	mesh_wall = res_mgr->GetMeshRaw("buildings/wall.qmsh");
+	mesh_wall_inner = res_mgr->GetMeshRaw("buildings/wall_inner.qmsh");
+	mesh_corner = res_mgr->GetMeshRaw("buildings/corner.qmsh");
+	mesh_door_jamb = res_mgr->GetMeshRaw("buildings/door_jamb.qmsh");
+	mesh_door_jamb_inner = res_mgr->GetMeshRaw("buildings/door_jamb_inner.qmsh");
+	mesh_ceil = res_mgr->GetMeshRaw("buildings/ceil.qmsh");
 }
 
 void CityGenerator::Reset()

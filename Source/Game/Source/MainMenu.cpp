@@ -26,12 +26,12 @@ void MainMenu::Init(ResourceManager* res_mgr, GameState* game_state)
 
 	// background
 	sprite_background = new Sprite;
-	sprite_background->image = res_mgr->GetTexture("background.jpg");
+	sprite_background->image = res_mgr->GetTexture("gui/background.jpg");
 	Add(sprite_background);
 
 	// logo
 	sprite_logo = new Sprite;
-	sprite_logo->image = res_mgr->GetTexture("logo.png");
+	sprite_logo->image = res_mgr->GetTexture("gui/logo.png");
 	sprite_logo->size = Int2(512, 256);
 	Add(sprite_logo);
 
@@ -94,45 +94,45 @@ void MainMenu::PositionControls()
 
 void MainMenu::InitLayout(ResourceManager* res_mgr)
 {
-	Panel::default_layout.image = res_mgr->GetTexture("panel.png");
+	Panel::default_layout.image = res_mgr->GetTexture("gui/panel.png");
 	Panel::default_layout.corners = Int2(6, 32);
 	Panel::default_layout.color = Color(255, 255, 255, 200);
 
-	Button::default_layout.image = res_mgr->GetTexture("button.png");
-	Button::default_layout.image_hover = res_mgr->GetTexture("button_hover.png");
-	Button::default_layout.image_disabled = res_mgr->GetTexture("button_disabled.png");
+	Button::default_layout.image = res_mgr->GetTexture("gui/button.png");
+	Button::default_layout.image_hover = res_mgr->GetTexture("gui/button_hover.png");
+	Button::default_layout.image_disabled = res_mgr->GetTexture("gui/button_disabled.png");
 	Button::default_layout.font_color = Color(0, 255, 33);
 	Button::default_layout.font_color_disabled = Color(50, 50, 50);
 	Button::default_layout.corners = Int2(6, 32);
 
-	CheckBox::default_layout.background = res_mgr->GetTexture("checkbox.png");
-	CheckBox::default_layout.hover = res_mgr->GetTexture("checkbox_hover.png");
-	CheckBox::default_layout.checkbox = res_mgr->GetTexture("checked.png");
+	CheckBox::default_layout.background = res_mgr->GetTexture("gui/checkbox.png");
+	CheckBox::default_layout.hover = res_mgr->GetTexture("gui/checkbox_hover.png");
+	CheckBox::default_layout.checkbox = res_mgr->GetTexture("gui/checked.png");
 	CheckBox::default_layout.size = Int2(32, 32);
 
-	ScrollBar::default_layout.arrow.image[0] = res_mgr->GetTexture("scroll_arrow.png");
-	ScrollBar::default_layout.arrow.image[1] = res_mgr->GetTexture("scroll_arrow_hover.png");
+	ScrollBar::default_layout.arrow.image[0] = res_mgr->GetTexture("gui/scroll_arrow.png");
+	ScrollBar::default_layout.arrow.image[1] = res_mgr->GetTexture("gui/scroll_arrow_hover.png");
 	ScrollBar::default_layout.arrow.color = Color::White;
 	ScrollBar::default_layout.arrow.image_size = Int2(16, 16);
 	ScrollBar::default_layout.arrow.image_region = Int2(9, 13);
-	ScrollBar::default_layout.background = res_mgr->GetTexture("scrollbar.png");
+	ScrollBar::default_layout.background = res_mgr->GetTexture("gui/scrollbar.png");
 	ScrollBar::default_layout.corners = Int2(2, 8);
 	ScrollBar::default_layout.scroll_color = Color(38, 127, 0, 255);
 	ScrollBar::default_layout.scroll_hover_color = Color(1, 248, 31, 255);
 	ScrollBar::default_layout.pad = Int2(1, 2);
 
-	DropDownList::default_layout.arrow.image[0] = res_mgr->GetTexture("dropdownlist_arrow.png");
-	DropDownList::default_layout.arrow.image[1] = res_mgr->GetTexture("dropdownlist_arrow_hover.png");
+	DropDownList::default_layout.arrow.image[0] = res_mgr->GetTexture("gui/dropdownlist_arrow.png");
+	DropDownList::default_layout.arrow.image[1] = res_mgr->GetTexture("gui/dropdownlist_arrow_hover.png");
 	DropDownList::default_layout.arrow.image_size = Int2(16, 8);
 	DropDownList::default_layout.arrow.image_region = Int2(15, 7);
 	DropDownList::default_layout.arrow.color = Color::White;
-	DropDownList::default_layout.background = res_mgr->GetTexture("scrollbar.png");
+	DropDownList::default_layout.background = res_mgr->GetTexture("gui/scrollbar.png");
 	DropDownList::default_layout.corners = Int2(2, 8);
 	DropDownList::default_layout.font_color = Color(0, 255, 33);
 	DropDownList::default_layout.pad = 2;
 	DropDownList::default_layout.hover_color = Color(0, 255, 33, 128);
 
-	DialogBox::default_layout.background = res_mgr->GetTexture("panel.png");
+	DialogBox::default_layout.background = res_mgr->GetTexture("gui/panel.png");
 	DialogBox::default_layout.corners = Int2(6, 32);
 	DialogBox::default_layout.background_color = Color(255, 255, 255, 200);
 	DialogBox::default_layout.font_color = Color(0, 255, 33);
