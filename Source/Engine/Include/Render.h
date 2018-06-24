@@ -1,8 +1,6 @@
 #pragma once
 
-#include "WindowHandler.h"
-
-class Render : public WindowHandler
+class Render
 {
 public:
 	enum DepthState
@@ -28,6 +26,7 @@ public:
 	ID3DBlob* CompileShader(cstring filename, cstring entry, bool is_vertex);
 	ID3D11Buffer* CreateConstantBuffer(uint size);
 	Int2 CheckResolution(const Int2& res);
+	void OnChangeResolution(const Int2& wnd_size);
 
 	void SetClearColor(const Vec4& clear_color) { this->clear_color = clear_color; }
 	void SetAlphaBlend(bool enabled);
@@ -50,7 +49,6 @@ private:
 	void CreateDepthStencilState();
 	void CreateRasterState();
 	void CreateBlendState();
-	void OnSizeChange(const Int2& new_wnd_size) override;
 
 	IDXGIFactory* factory;
 	IDXGIAdapter* adapter;

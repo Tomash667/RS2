@@ -82,7 +82,10 @@ void Button::Update(float dt)
 	{
 		state = HOVER;
 		if(gui->GetInput()->PressedOnce(Key::LeftButton) && event)
+		{
+			gui->TakeFocus(this);
 			event(id);
+		}
 	}
 	else
 		state = UP;
@@ -128,7 +131,10 @@ void CheckBox::Update(float dt)
 	{
 		focus = true;
 		if(gui->GetInput()->PressedOnce(Key::LeftButton))
+		{
+			gui->TakeFocus(this);
 			checked = !checked;
+		}
 	}
 	else
 		focus = false;
@@ -240,6 +246,7 @@ void ScrollBar::Update(float dt)
 				{
 					click_pt = cursor_pos - scroll_pos;
 					clicked = true;
+					gui->TakeFocus(this);
 				}
 			}
 			else if(input->DownRepeat(Key::LeftButton))
@@ -337,19 +344,22 @@ void DropDownList::Draw()
 	}
 	if(is_open)
 	{
-		gui->DrawSpriteGrid(layout.background, Color::White, layout.corners.y, layout.corners.x,
-			Int2(global_pos.x, global_pos.y + size.y), Int2(size.x, total_height));
-		int offset = global_pos.y + size.y + layout.pad;
-		int index = 0;
-		for(Item& item : items)
+		gui->DrawMenu([this]
 		{
-			Rect rect = Rect(global_pos.x + layout.pad, offset, global_pos.x + size.x - layout.pad, offset + item_height);
-			if(hover_index == index)
-				gui->DrawSprite(nullptr, rect.p1, rect.Size(), layout.hover_color);
-			gui->DrawText(item.text, layout.font, layout.font_color, Font::VCenter, rect);
-			++index;
-			offset += item_height;
-		}
+			gui->DrawSpriteGrid(layout.background, Color::White, layout.corners.y, layout.corners.x,
+				Int2(global_pos.x, global_pos.y + size.y), Int2(size.x, total_height));
+			int offset = global_pos.y + size.y + layout.pad;
+			int index = 0;
+			for(Item& item : items)
+			{
+				Rect rect = Rect(global_pos.x + layout.pad, offset, global_pos.x + size.x - layout.pad, offset + item_height);
+				if(hover_index == index)
+					gui->DrawSprite(nullptr, rect.p1, rect.Size(), layout.hover_color);
+				gui->DrawText(item.text, layout.font, layout.font_color, Font::VCenter, rect);
+				++index;
+				offset += item_height;
+			}
+		});
 	}
 }
 
@@ -375,14 +385,20 @@ void DropDownList::Update(float dt)
 		else
 			hover = false;
 
-		if(is_open && Rect::IsInside(global_pos + Int2(0, size.y), Int2(size.x, total_height), gui->GetCursorPos()))
+		if(is_open)
 		{
-			hover_index = (gui->GetCursorPos().y - global_pos.y - size.y) / item_height;
-			if(gui->GetInput()->PressedOnce(Key::LeftButton))
+			if(Rect::IsInside(global_pos + Int2(0, size.y), Int2(size.x, total_height), gui->GetCursorPos()))
 			{
-				selected_index = hover_index;
-				is_open = false;
+				hover_index = (gui->GetCursorPos().y - global_pos.y - size.y) / item_height;
+				if(gui->GetInput()->PressedOnce(Key::LeftButton))
+				{
+					selected_index = hover_index;
+					is_open = false;
+				}
 			}
+
+			if(gui->GetInput()->PressedOnce(Key::Escape))
+				is_open = false;
 		}
 	}
 	else

@@ -25,26 +25,23 @@ void MainMenu::Init(ResourceManager* res_mgr, GameState* game_state)
 	InitLayout(res_mgr);
 
 	// background
-	Sprite* sprite = new Sprite;
-	sprite->image = res_mgr->GetTexture("background.jpg");
-	sprite->size = gui->GetWindowSize();
-	Add(sprite);
+	sprite_background = new Sprite;
+	sprite_background->image = res_mgr->GetTexture("background.jpg");
+	Add(sprite_background);
 
 	// logo
-	sprite = new Sprite;
-	sprite->image = res_mgr->GetTexture("logo.png");
-	sprite->SetPos(Int2(200, 200));
-	sprite->size = Int2(512, 256);
-	Add(sprite);
+	sprite_logo = new Sprite;
+	sprite_logo->image = res_mgr->GetTexture("logo.png");
+	sprite_logo->size = Int2(512, 256);
+	Add(sprite_logo);
 
 	// version label
-	Label* label = new Label;
-	label->text = "version " VERSION_STR;
-	label->SetPos(Int2(200, 200 + 180));
-	label->size = Int2(512, 50);
-	label->color = Color(255, 0, 0);
-	label->flags = Font::Center;
-	Add(label);
+	lab_version = new Label;
+	lab_version->text = "version " VERSION_STR;
+	lab_version->size = Int2(512, 50);
+	lab_version->color = Color(255, 0, 0);
+	lab_version->flags = Font::Center;
+	Add(lab_version);
 
 	// buttons
 	cstring texts[BUTTON_MAX] = {
@@ -65,20 +62,34 @@ void MainMenu::Init(ResourceManager* res_mgr, GameState* game_state)
 	}
 	Button::NormalizeSize(buttons, BUTTON_MAX, Int2(10, 10));
 
-	const Int2& wnd_size = gui->GetWindowSize();
-	int part = wnd_size.x / BUTTON_MAX;
-	int pos_y = wnd_size.y - buttons[0]->size.y * 2;
-
-	for(int i = 0; i < BUTTON_MAX; ++i)
-		buttons[i]->SetPos(Int2(part * i + (part - buttons[0]->size.x) / 2, pos_y));
-
 	// options
 	options = new Options(game_state);
 
 	// show
-	size = wnd_size;
+	PositionControls();
 	gui->Add(this);
 	Show();
+}
+
+void MainMenu::Event(GuiEvent event)
+{
+	if(event == G_CHANGED_RESOLUTION)
+		PositionControls();
+}
+
+void MainMenu::PositionControls()
+{
+	size = gui->GetWindowSize();
+	sprite_background->size = size;
+
+	sprite_logo->SetPos(Int2((size.x - 200 - sprite_logo->size.x) / 2, 200));
+	lab_version->SetPos(Int2(sprite_logo->GetPos().x, 200 + 180));
+
+	int part = size.x / BUTTON_MAX;
+	int pos_y = size.y - buttons[0]->size.y * 2;
+
+	for(int i = 0; i < BUTTON_MAX; ++i)
+		buttons[i]->SetPos(Int2(part * i + (part - buttons[0]->size.x) / 2, pos_y));
 }
 
 void MainMenu::InitLayout(ResourceManager* res_mgr)

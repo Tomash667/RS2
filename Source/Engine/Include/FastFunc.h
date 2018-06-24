@@ -20,6 +20,9 @@ namespace ssvu
 		template<typename TReturn, typename TThis, typename... TArgs>
 		struct MemFuncToFunc<TReturn(TThis::*)(TArgs...) const> { using Type = TReturn(*)(TArgs...); };
 
+		template<typename T>
+		using LambdaToFunc = typename MemFuncToFunc<decltype(&std::decay<T>::type::operator())>::Type;
+
 		template<class TOut, class TIn>
 		TOut horrible_cast(TIn mIn) noexcept
 		{
@@ -205,17 +208,16 @@ namespace ssvu
 		};
 	}
 
-
 	template<typename T> class FastFunc;
 	template<typename TReturn, typename... TArgs>
 	class FastFunc<TReturn(TArgs...)>
 	{
 	private:
 		Internal::Closure<TReturn, TArgs...> closure;
+		std::shared_ptr<void> storage;
+
 		TReturn invokeStaticFunc(TArgs... mArgs) const { return (*(closure.getStaticFunc()))(std::forward<TArgs>(mArgs)...); }
-
 		template<typename T> static void funcDeleter(void* mPtr) { static_cast<T*>(mPtr)->~T(); operator delete(mPtr); }
-
 		template<class TThis, class TFunc> void bind(TThis* mThis, TFunc mFunc) noexcept { closure.bind(mThis, mFunc); }
 		template<class TFunc> void bind(TFunc mFunc) noexcept { closure.bind(this, &FastFunc::invokeStaticFunc, mFunc); }
 
@@ -225,18 +227,28 @@ namespace ssvu
 		template<typename TThis>
 		using ThisPtrT = Internal::MethodPtr<TThis, TReturn, TArgs...>;
 
+#define IS_NOT_DELEGATE !std::is_same<FastFunc, typename std::decay<TFunc>::type>{}
+#define HAVE_CORRECT_SIGNATURE std::is_same<PtrStaticFuncT, typename Internal::LambdaToFunc<TFunc>>::value
+#define IS_CONSTRUCTIBLE std::is_constructible<typename Internal::LambdaToFunc<TFunc>, TFunc>::value
+
 		FastFunc() noexcept = default;
 		FastFunc(std::nullptr_t) noexcept {}
 		FastFunc(PtrStaticFuncT mFunc) noexcept { bind(mFunc); }
 		template<typename TThis>
 		FastFunc(TThis* mThis, ThisPtrT<TThis> mFunc) noexcept { bind(mThis, mFunc); }
-		template<typename TFunc, typename = typename std::enable_if <
-			!std::is_same<FastFunc, typename std::decay<TFunc>::type>{}
-		&& std::is_same<PtrStaticFuncT, typename Internal::MemFuncToFunc<decltype(&std::decay<TFunc>::type::operator())>::Type>::value > ::type >
-			FastFunc(TFunc&& mFunc)
+		template<typename TFunc, typename = typename std::enable_if<IS_NOT_DELEGATE && HAVE_CORRECT_SIGNATURE>::type>
+		FastFunc(TFunc&& mFunc, typename std::enable_if<IS_CONSTRUCTIBLE>::type* = nullptr)
 		{
 			using FuncType = typename std::decay<TFunc>::type;
 			this->bind(&mFunc, &FuncType::operator());
+		}
+		template<typename TFunc, typename = typename std::enable_if<IS_NOT_DELEGATE && HAVE_CORRECT_SIGNATURE>::type>
+		FastFunc(TFunc&& mFunc, typename std::enable_if<!IS_CONSTRUCTIBLE>::type* = nullptr)
+			: storage(operator new(sizeof(TFunc)), funcDeleter<typename std::decay<TFunc>::type>)
+		{
+			using FuncType = typename std::decay<TFunc>::type;
+			new (storage.get()) FuncType(std::forward<TFunc>(mFunc));
+			this->bind(storage.get(), &FuncType::operator());
 		}
 
 		TReturn operator()(TArgs... mArgs) const { return (closure.getPtrThis()->*(closure.getPtrFunction()))(std::forward<TArgs>(mArgs)...); }
@@ -250,3 +262,7 @@ namespace ssvu
 		operator bool() const { return closure != nullptr; }
 	};
 }
+
+#undef IS_NOT_DELEGATE
+#undef HAVE_CORRECT_SIGNATURE
+#undef IS_CONSTRUCTIBLE

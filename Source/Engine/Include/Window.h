@@ -6,9 +6,10 @@ public:
 	typedef void* Handle;
 
 	Window();
-	void Init(Input* input, WindowHandler* handler);
+	void Init(Engine* engine, Input* input);
 	bool Update();
 	void ShowError(cstring err);
+	void StartFullscreen();
 
 	void SetCursorLock(bool locked);
 	void SetFullscreen(bool fullscreen);
@@ -34,11 +35,11 @@ private:
 	void PlaceCursor();
 	void ShowCursor(bool show);
 
+	Engine* engine;
 	Input* input;
-	WindowHandler* handler;
 	Handle hwnd;
 	string title;
-	Int2 size, real_size, prev_size, cursor_move;
+	Int2 size, client_size, real_size, cursor_move;
 	int mouse_wheel;
-	bool fullscreen, active, cursor_locked, cursor_visible;
+	bool fullscreen, active, cursor_locked, cursor_visible, in_resize;
 };

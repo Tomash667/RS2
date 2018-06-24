@@ -1,7 +1,7 @@
 #include "EngineCore.h"
 #include "Window.h"
-#include "WindowHandler.h"
 #include "Input.h"
+#include "Engine.h"
 #include <Windows.h>
 #include "InternalHelper.h"
 
@@ -14,19 +14,20 @@
 #endif
 
 const int WINDOWED_FLAGS = WS_OVERLAPPEDWINDOW ^ WS_THICKFRAME;
-const int FULLSCREEN_FLAGS = WS_POPUPWINDOW;
+const int FULLSCREEN_FLAGS = WS_POPUP;
 
 
-Window::Window() : input(nullptr), hwnd(nullptr), title("Window"), fullscreen(false), size(1024, 768), active(false), cursor_locked(false),
-cursor_visible(true), handler(nullptr)
+Window::Window() : engine(nullptr), input(nullptr), hwnd(nullptr), title("Window"), fullscreen(false), size(1024, 768), active(false), cursor_locked(false),
+cursor_visible(true), in_resize(false)
 {
+	client_size = size;
 }
 
-void Window::Init(Input* input, WindowHandler* handler)
+void Window::Init(Engine* engine, Input* input)
 {
-	assert(input && handler);
+	assert(engine && input);
+	this->engine = engine;
 	this->input = input;
-	this->handler = handler;
 
 	RegisterWindowClass();
 	AdjustWindowSize();
@@ -195,14 +196,17 @@ IntPointer Window::HandleMessage(uint msg, IntPointer wParam, UIntPointer lParam
 			SetFullscreen(true);
 		else if(wParam != SIZE_MINIMIZED)
 		{
-			RECT rect = {};
-			GetWindowRect((HWND)hwnd, &rect);
-			real_size = Int2(rect.right - rect.left, rect.bottom - rect.top);
+			if(!in_resize)
+			{
+				RECT rect = {};
+				GetWindowRect((HWND)hwnd, &rect);
+				real_size = Int2(rect.right - rect.left, rect.bottom - rect.top);
 
-			GetClientRect((HWND)hwnd, &rect);
-			size = Int2(rect.right - rect.left, rect.bottom - rect.top);
+				GetClientRect((HWND)hwnd, &rect);
+				client_size = Int2(rect.right - rect.left, rect.bottom - rect.top);
+			}
 
-			handler->OnSizeChange(size);
+			engine->OnChangeResolution(client_size);
 		}
 		return 0;
 	}
@@ -322,7 +326,7 @@ void Window::SetCursorLock(bool locked)
 
 void Window::PlaceCursor()
 {
-	POINT dest_pt = { size.x / 2, size.y / 2 };
+	POINT dest_pt = { client_size.x / 2, client_size.y / 2 };
 	ClientToScreen((HWND)hwnd, &dest_pt);
 	SetCursorPos(dest_pt.x, dest_pt.y);
 }
@@ -342,19 +346,21 @@ void Window::SetFullscreen(bool fullscreen)
 	this->fullscreen = fullscreen;
 	if(!hwnd)
 		return;
+	in_resize = true;
 	if(fullscreen)
 	{
-		prev_size = size;
+		client_size = Int2(GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN));
+		real_size = client_size;
 		SetWindowLong((HWND)hwnd, GWL_STYLE, FULLSCREEN_FLAGS);
 		SetWindowPos((HWND)hwnd, HWND_NOTOPMOST,
 			0, 0,
-			GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN),
+			client_size.x, client_size.y,
 			SWP_FRAMECHANGED | SWP_NOACTIVATE);
 		ShowWindow((HWND)hwnd, SW_MAXIMIZE);
 	}
 	else
 	{
-		size = prev_size;
+		client_size = size;
 		AdjustWindowSize();
 		SetWindowLong((HWND)hwnd, GWL_STYLE, WINDOWED_FLAGS);
 		SetWindowPos((HWND)hwnd, HWND_NOTOPMOST,
@@ -364,6 +370,7 @@ void Window::SetFullscreen(bool fullscreen)
 			SWP_FRAMECHANGED | SWP_NOACTIVATE);
 		ShowWindow((HWND)hwnd, SW_NORMAL);
 	}
+	in_resize = false;
 }
 
 void Window::SetSize(const Int2& size)
@@ -371,11 +378,11 @@ void Window::SetSize(const Int2& size)
 	if(this->size == size)
 		return;
 	this->size = size;
-	prev_size = size;
 	if(!hwnd)
 		return;
 	if(!fullscreen)
 	{
+		client_size = size;
 		AdjustWindowSize();
 		SetWindowPos((HWND)hwnd, HWND_NOTOPMOST,
 			(GetSystemMetrics(SM_CXSCREEN) - real_size.x) / 2,
@@ -383,4 +390,12 @@ void Window::SetSize(const Int2& size)
 			real_size.x, real_size.y,
 			SWP_NOACTIVATE);
 	}
+}
+
+void Window::StartFullscreen()
+{
+	if(!fullscreen)
+		return;
+	fullscreen = false;
+	SetFullscreen(true);
 }

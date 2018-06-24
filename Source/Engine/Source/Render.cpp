@@ -466,7 +466,7 @@ void Render::SetCulling(bool enabled)
 	}
 }
 
-void Render::OnSizeChange(const Int2& wnd_size)
+void Render::OnChangeResolution(const Int2& wnd_size)
 {
 	if(this->wnd_size == wnd_size || !swap_chain)
 		return;

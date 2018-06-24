@@ -31,36 +31,12 @@ Options::Options(GameState* game_state) : game_state(game_state)
 	label->SetPos(Int2((size.x - label->size.x) / 2, 10));
 	Add(label);
 
-	// fullscreen checkboox
-	cb_fullscreen = new CheckBox;
-	cb_fullscreen->SetPos(Int2(35, 70));
-	Add(cb_fullscreen);
-
-	label = new Label;
-	label->text = "Fullscreen";
-	label->color = Color(0, 255, 33);
-	label->size = Int2(100, 40);
-	label->SetPos(Int2(35 + 36, 75));
-	Add(label);
-
-	// vsync checkboox
-	cb_vsync = new CheckBox;
-	cb_vsync->SetPos(Int2(35, 120));
-	Add(cb_vsync);
-
-	label = new Label;
-	label->text = "Vsync";
-	label->color = Color(0, 255, 33);
-	label->size = Int2(100, 40);
-	label->SetPos(Int2(35 + 36, 125));
-	Add(label);
-
 	// resolution
 	label = new Label;
 	label->text = "Resolution:";
 	label->color = Color(0, 255, 33);
 	label->size = Int2(100, 40);
-	label->SetPos(Int2(35 + 36, 170));
+	label->SetPos(Int2(35 + 36, 70));
 	Add(label);
 
 	ddl_resolution = new DropDownList;
@@ -75,12 +51,36 @@ Options::Options(GameState* game_state) : game_state(game_state)
 	}
 	ddl_resolution->Init();
 	ddl_resolution->size = Int2(300, 40);
-	ddl_resolution->SetPos(Int2(35+36, 200));
+	ddl_resolution->SetPos(Int2(35 + 36, 100));
 	Add(ddl_resolution);
+
+	// fullscreen checkboox
+	cb_fullscreen = new CheckBox;
+	cb_fullscreen->SetPos(Int2(35, 150));
+	Add(cb_fullscreen);
+
+	label = new Label;
+	label->text = "Fullscreen";
+	label->color = Color(0, 255, 33);
+	label->size = Int2(100, 40);
+	label->SetPos(Int2(35 + 36, 155));
+	Add(label);
+
+	// vsync checkboox
+	cb_vsync = new CheckBox;
+	cb_vsync->SetPos(Int2(35, 200));
+	Add(cb_vsync);
+
+	label = new Label;
+	label->text = "Vsync";
+	label->color = Color(0, 255, 33);
+	label->size = Int2(100, 40);
+	label->SetPos(Int2(35 + 36, 205));
+	Add(label);
 
 	// volume
 	scroll_volume = new ScrollBar(true);
-	scroll_volume->SetPos(Int2(35 + 36, 280));
+	scroll_volume->SetPos(Int2(35 + 36, 300));
 	scroll_volume->SetExtent(5, 105);
 	scroll_volume->size = Int2(300, 13);
 	scroll_volume->click_step = 5;
@@ -90,7 +90,7 @@ Options::Options(GameState* game_state) : game_state(game_state)
 	label->text = "Volume:";
 	label->color = Color(0, 255, 33);
 	label->size = Int2(200, 40);
-	label->SetPos(Int2(35 + 36, 250));
+	label->SetPos(Int2(35 + 36, 255));
 	Add(label);
 	lab_volume = label;
 
@@ -114,11 +114,7 @@ void Options::Draw()
 
 void Options::Update(float dt)
 {
-	if(gui->GetInput()->PressedOnce(Key::Escape))
-	{
-		Close();
-		return;
-	}
+	Panel::Update(dt);
 
 	Window* window = game_state->engine->GetWindow();
 	Render* render = game_state->engine->GetRender();
@@ -165,7 +161,8 @@ void Options::Update(float dt)
 		last_sound_test = 1.f;
 	}
 
-	Panel::Update(dt);
+	if(gui->GetInput()->PressedOnce(Key::Escape))
+		Close();
 }
 
 void Options::Show()
@@ -208,6 +205,9 @@ void Options::Close()
 	Window* window = game_state->engine->GetWindow();
 	Render* render = game_state->engine->GetRender();
 	SoundManager* sound_mgr = game_state->engine->GetSoundManager();
+
+	// stop scrolling
+	scroll_volume->EndScrolling();
 
 	game_state->config->SetBool("fullscreen", window->IsFullscreen());
 	game_state->config->SetBool("vsync", render->IsVsyncEnabled());

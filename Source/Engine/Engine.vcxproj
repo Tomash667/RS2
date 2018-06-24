@@ -179,7 +179,6 @@
     <ClInclude Include="Include\Tokenizer.h" />
     <ClInclude Include="Include\Vertex.h" />
     <ClInclude Include="Include\Window.h" />
-    <ClInclude Include="Include\WindowHandler.h" />
     <ClInclude Include="Source\DebugShader.h" />
     <ClInclude Include="Source\FontLoader.h" />
     <ClInclude Include="Source\GuiShader.h" />

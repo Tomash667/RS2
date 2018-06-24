@@ -12,6 +12,7 @@
 #include "Inventory.h"
 #include <Font.h>
 #include "GameState.h"
+#include "Options.h"
 
 
 enum DIR
@@ -70,10 +71,11 @@ GameGui::~GameGui()
 	delete sprite_crosshair;
 }
 
-void GameGui::Init(Engine* engine, GameState* game_state)
+void GameGui::Init(Engine* engine, GameState* game_state, Options* options)
 {
 	this->engine = engine;
 	this->game_state = game_state;
+	this->options = options;
 
 	const Int2& wnd_size = gui->GetWindowSize();
 	ResourceManager* res_mgr = engine->GetResourceManager();
@@ -122,7 +124,6 @@ void GameGui::Init(Engine* engine, GameState* game_state)
 	label_medkits->color = Color(0, 255, 33);
 	panel_bg->Add(label_medkits);
 
-
 	// ammo counter
 	Sprite* sprite_ammo = new Sprite;
 	sprite_ammo->image = res_mgr->GetTexture("ammo.png");
@@ -149,14 +150,21 @@ void GameGui::Init(Engine* engine, GameState* game_state)
 
 	// inventory
 	inventory = new Inventory(res_mgr, game_state);
-	inventory->SetPos(Int2(wnd_size.x - inventory->size.x, wnd_size.y - inventory->size.y));
 	Add(inventory);
 
 	tex_background = res_mgr->GetTexture("background.png");
 	res_mgr->AddFontFromFile("pertili.ttf");
 	font_big = res_mgr->GetFont("Perpetua Titling MT", 40);
 
+	PositionControls();
 	engine->GetGui()->Add(this);
+}
+
+void GameGui::PositionControls()
+{
+	const Int2& wnd_size = gui->GetWindowSize();
+	inventory->SetPos(Int2(wnd_size.x - inventory->size.x, wnd_size.y - inventory->size.y));
+	sprite_crosshair->SetPos((wnd_size - sprite_crosshair->size) / 2);
 }
 
 void GameGui::Draw()
@@ -207,8 +215,9 @@ void GameGui::Draw()
 	{
 		// paused
 		gui->DrawSprite(nullptr, Int2::Zero, gui->GetWindowSize(), Color(50, 50, 50, 150));
-		gui->DrawTextOutline("GAME PAUSED", font_big, Color(0, 255, 33), Color::Black, Font::Center | Font::VCenter, Rect::Create(Int2::Zero, gui->GetWindowSize()));
-		gui->DrawTextOutline("Esc to continue, Enter to save & quit", nullptr, Color(0, 255, 33), Color::Black, Font::Center | Font::VCenter,
+		gui->DrawTextOutline("GAME PAUSED", font_big, Color(0, 255, 33), Color::Black, Font::Center | Font::VCenter,
+			Rect::Create(Int2::Zero, gui->GetWindowSize()));
+		gui->DrawTextOutline("Esc to continue, Enter to save & quit, O for options", nullptr, Color(0, 255, 33), Color::Black, Font::Center | Font::VCenter,
 			Rect::Create(Int2(0, 100), gui->GetWindowSize()));
 	}
 	else
@@ -230,7 +239,7 @@ void GameGui::Update(float dt)
 	Player* player = game_state->player;
 
 	// fps panel
-	if(input->Pressed(Key::F1))
+	if(mouse_focus && input->Pressed(Key::F1))
 		panel_fps->visible = !panel_fps->visible;
 	if(panel_fps->visible)
 	{
@@ -242,6 +251,8 @@ void GameGui::Update(float dt)
 		if(panel_size > panel_fps->size)
 			panel_fps->size = Int2::Max(panel_size, panel_fps->size);
 	}
+	if(!mouse_focus)
+		return;
 
 	// hp bar
 	hp_bar->progress = player->GetHpp();
@@ -304,6 +315,8 @@ void GameGui::Update(float dt)
 			game_state->SetChangeState(GameState::SAVE_AND_EXIT);
 		else if(input->Pressed(Key::Escape))
 			game_state->SetPaused(false);
+		else if(input->Pressed(Key::O))
+			options->Show();
 	}
 	else if(input->Pressed(Key::Escape))
 	{
@@ -312,6 +325,12 @@ void GameGui::Update(float dt)
 		else if(death_timer > 2.f)
 			game_state->SetChangeState(GameState::EXIT_TO_MENU);
 	}
+}
+
+void GameGui::Event(GuiEvent event)
+{
+	if(event == G_CHANGED_RESOLUTION)
+		PositionControls();
 }
 
 bool GameGui::IsInventoryOpen()

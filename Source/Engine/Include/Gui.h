@@ -24,6 +24,7 @@ public:
 	void DrawSpriteComplex(Texture* image, Color color, const Int2& size, const Box2d& uv, const Matrix& mat);
 	bool DrawText(Cstring text, Font* font, Color color, int flags, const Rect& rect, const Rect* clip = nullptr);
 	bool DrawTextOutline(Cstring text, Font* font, Color color, Color outline_color, int flags, const Rect& rect, const Rect* clip = nullptr);
+	void DrawMenu(delegate<void()> draw_clbk) { this->draw_clbk = draw_clbk; }
 
 	void SetCursorTexture(Texture* tex) { tex_cursor = tex; }
 	void SetCursorVisible(bool visible) { cursor_visible = visible; }
@@ -71,8 +72,8 @@ private:
 	Int2 wnd_size, cursor_pos;
 	Matrix mat_view_proj;
 	Texture* tex_cursor;
-	Control* focused;
-	Control* dialog;
+	delegate<void()> draw_clbk;
+	Control* focused, *dialog;
 	Color dialog_overlay;
 	bool cursor_visible, own_dialog;
 };

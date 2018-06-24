@@ -172,7 +172,7 @@ void Game::InitGame()
 	main_menu->Init(res_mgr, &game_state);
 
 	game_gui = new GameGui;
-	game_gui->Init(engine.get(), &game_state);
+	game_gui->Init(engine.get(), &game_state, main_menu->options);
 	game_gui->visible = false;
 }
 

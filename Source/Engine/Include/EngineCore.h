@@ -13,7 +13,6 @@ class ResourceManager;
 class Scene;
 class SoundManager;
 class Window;
-class WindowHandler;
 
 // entities
 struct Camera;

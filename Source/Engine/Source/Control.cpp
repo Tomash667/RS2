@@ -61,4 +61,9 @@ void Container::Event(GuiEvent event)
 			control->Event(G_MOVED);
 		}
 	}
+	else
+	{
+		for(Control* control : controls)
+			control->Event(G_CHANGED_RESOLUTION);
+	}
 }

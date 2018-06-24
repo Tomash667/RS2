@@ -147,6 +147,7 @@ struct ScrollBar : Control
 	void Update(float dt) override;
 	void SetExtent(int part, int total);
 	void SetValue(float value) { offset = value; }
+	void EndScrolling() { clicked = false; }
 
 	bool IsScrolling() const { return clicked; }
 	float GetValue() const { return offset; }

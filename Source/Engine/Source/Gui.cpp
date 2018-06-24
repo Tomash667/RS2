@@ -35,6 +35,7 @@ void Gui::Draw(const Matrix& mat_view_proj)
 	this->mat_view_proj = mat_view_proj;
 
 	gui_shader->Prepare();
+	draw_clbk = nullptr;
 
 	Container::Draw();
 
@@ -44,6 +45,9 @@ void Gui::Draw(const Matrix& mat_view_proj)
 			DrawSprite(nullptr, Int2::Zero, wnd_size, dialog_overlay);
 		dialog->Draw();
 	}
+
+	if(draw_clbk)
+		draw_clbk();
 
 	if((cursor_visible || HaveDialog()) && tex_cursor)
 		DrawSprite(tex_cursor, cursor_pos, Int2(32, 32));
@@ -69,6 +73,12 @@ void Gui::Update(float dt)
 		Container::Update(dt);
 		dialog->mouse_focus = true;
 		dialog->Update(dt);
+	}
+
+	if(focused && input->PressedOnce(Key::LeftButton))
+	{
+		focused->focus = false;
+		focused = nullptr;
 	}
 }
 
@@ -396,10 +406,18 @@ bool Gui::To2dPoint(const Vec3& pos, Int2& pt)
 
 void Gui::SetWindowSize(const Int2& wnd_size)
 {
-	this->wnd_size = wnd_size;
-	if(gui_shader)
-		gui_shader->SetWindowSize(wnd_size);
-	cursor_pos = wnd_size / 2;
+	float aspect = float(wnd_size.x) / wnd_size.y;
+	Int2 new_wnd_size = Int2(int(aspect * 800), 800);
+	if(this->wnd_size != new_wnd_size)
+	{
+		this->wnd_size = new_wnd_size;
+		if(gui_shader)
+			gui_shader->SetWindowSize(this->wnd_size);
+		cursor_pos = this->wnd_size / 2;
+		Container::Event(G_CHANGED_RESOLUTION);
+		if(dialog)
+			dialog->SetPos((this->wnd_size - dialog->size) / 2);
+	}
 }
 
 void Gui::ShowMessageBox(Cstring text)
