@@ -556,13 +556,11 @@ uint Tokenizer::FindFirstNotOf(SeekData& s, cstring _str, uint _start)
 	assert(_start < str->length());
 
 	uint len = strlen(_str);
-	char c;
-	bool found;
 
 	for(uint i = _start, end = str->length(); i < end; ++i)
 	{
-		c = str->at(i);
-		found = false;
+		char c = str->at(i);
+		bool found = false;
 
 		for(uint j = 0; j < len; ++j)
 		{
@@ -594,11 +592,10 @@ uint Tokenizer::FindFirstOf(SeekData& s, cstring _str, uint _start)
 	assert(_start < str->length());
 
 	uint len = strlen(_str);
-	char c;
 
 	for(uint i = _start, end = str->length(); i < end; ++i)
 	{
-		c = str->at(i);
+		char c = str->at(i);
 
 		for(uint j = 0; j < len; ++j)
 		{

@@ -125,7 +125,6 @@ void Pathfinding::DrawPath(DebugDrawer* debug_drawer, const Vec3& from, const Ve
 				Vec3(tile_size * pt.x + tile_size / 2, 0.5f, tile_size * pt.y + tile_size / 2), width);
 		}
 		debug_drawer->SetColor(c[c_index]);
-		c_index = (c_index + 1) % 6;
 		Int2 end = path.back();
 		debug_drawer->DrawLine(Vec3(tile_size * end.x + tile_size / 2, 0.5f, tile_size * end.y + tile_size / 2), to + Vec3(0, 0.5f, 0), width);
 	}

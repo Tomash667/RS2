@@ -321,7 +321,7 @@ private:
 class TextWriter
 {
 public:
-	TextWriter(Cstring filename) : file(filename)
+	explicit TextWriter(Cstring filename) : file(filename)
 	{
 	}
 

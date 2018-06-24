@@ -63,6 +63,8 @@ void Engine::Run()
 			frame_time = 0.f;
 		}
 
+		assert(_CrtCheckMemory());
+
 		if(dt > 0.3f)
 			dt = 0.3f;
 		if(!handler->OnTick(dt))
