@@ -179,6 +179,12 @@
     <ClInclude Include="Include\Tokenizer.h">
       <Filter>1. Include\Core</Filter>
     </ClInclude>
+    <ClInclude Include="Include\Sky.h">
+      <Filter>1. Include\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SkyShader.h">
+      <Filter>2. Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Text.cpp">
@@ -306,6 +312,12 @@
     </ClCompile>
     <ClCompile Include="Source\Tokenizer.cpp">
       <Filter>3. Source Files\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Sky.cpp">
+      <Filter>3. Source Files\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SkyShader.cpp">
+      <Filter>3. Source Files\Engine</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

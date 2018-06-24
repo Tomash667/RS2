@@ -21,6 +21,7 @@ struct ParticleEmitter;
 struct SceneNode;
 struct ScenePart;
 struct Shader;
+struct Sky;
 
 // resources
 struct Font;

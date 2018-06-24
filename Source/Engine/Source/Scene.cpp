@@ -27,7 +27,7 @@ struct ScenePartFactory : QuadTree::Factory
 } scene_part_factory;
 
 
-Scene::Scene() : fog_color(Color::White), fog_params(1000, 2000, 1000), skybox(nullptr), light_dir(0, 1, 0), light_color(1, 1, 1), ambient_color(1, 1, 1),
+Scene::Scene() : fog_color(Color::White), fog_params(1000, 2000, 1000), sky(nullptr), light_dir(0, 1, 0), light_color(1, 1, 1), ambient_color(1, 1, 1),
 debug_draw_enabled(false)
 {
 	camera.reset(new Camera);
