@@ -1400,4 +1400,12 @@ bool RayToBox(const Vec3& ray_pos, const Vec3& ray_dir, const Box& box, float* o
 bool RayToCylinder(const Vec3& sa, const Vec3& sb, const Vec3& p, const Vec3& q, float r, float& t);
 
 //-----------------------------------------------------------------------------
+// More math functions
+//-----------------------------------------------------------------------------
+namespace math
+{
+	void SphericalToCartesian(Vec3& out, float yaw, float pitch, float r);
+}
+
+//-----------------------------------------------------------------------------
 #include "CoreMath.inl"

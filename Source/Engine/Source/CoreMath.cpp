@@ -650,3 +650,14 @@ bool RayToCylinder(const Vec3& sa, const Vec3& sb, const Vec3& p, const Vec3& q,
 	// Segment intersects cylinder between the endcaps; t is correct
 	return true;
 }
+
+//=================================================================================================
+void math::SphericalToCartesian(Vec3& out, float yaw, float pitch, float r)
+{
+	float sy = sinf(yaw), cy = cosf(yaw);
+	float sp = sinf(pitch), cp = cosf(pitch);
+
+	out.x = r * cp * cy;
+	out.y = r * sp;
+	out.z = -r * cp * sy;
+}

@@ -11,6 +11,7 @@
 #include "ScenePart.h"
 #include "SkyboxShader.h"
 #include "SkyShader.h"
+#include "Sky.h"
 #include "DebugDrawer.h"
 
 
@@ -91,10 +92,15 @@ void Scene::Draw()
 
 void Scene::DrawSkybox()
 {
+	if(!skybox && !sky)
+		return;
+
+	Matrix mat_combined = Matrix::Translation(camera->from) * mat_view_proj;
+
 	if(skybox)
-		skybox_shader->Draw(skybox, camera->from, mat_view_proj);
+		skybox_shader->Draw(skybox, mat_combined);
 	if(sky)
-		sky_shader->Draw();
+		sky_shader->Draw(sky, mat_combined);
 }
 
 void Scene::DrawNodes()

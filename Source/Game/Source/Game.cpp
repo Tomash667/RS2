@@ -156,6 +156,8 @@ void Game::InitGame()
 
 	// sky
 	sky = new Sky;
+	sky->tex_clouds_noise = res_mgr->GetTexture("skybox/noise.png");
+	scene->SetSky(sky);
 
 	//scene->SetDebugDrawHandler(delegate<void(DebugDrawer*)>(this, &Game::OnDebugDraw));
 	//scene->SetDebugDrawEnabled(true);
@@ -167,7 +169,7 @@ void Game::InitGame()
 
 	LoadResources();
 
-	scene->SetSkybox(res_mgr->GetMesh("skybox/skybox.qmsh"));
+	//scene->SetSkybox(res_mgr->GetMesh("skybox/skybox.qmsh"));
 
 	city_generator.reset(new CityGenerator);
 	city_generator->Init(scene, level.get(), pathfinding.get(), res_mgr, level_size, 3);
@@ -284,7 +286,9 @@ void Game::UpdateGame(float dt)
 	camera->Update(dt, allow_mouse);
 	level->Update(dt);
 	UpdateWorld(dt);
-	sky->SetTime(Clip(sky->GetTime() + dt / 5, 1.f));
+	//sky->SetTime(Clip(sky->GetTime() + dt / 5, 1.f));
+	sky->time = Clip(sky->time + dt / 5, 1.f); // FIXME
+	sky->Update(dt);
 
 	scene->Update(dt);
 }

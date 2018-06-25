@@ -52,7 +52,7 @@ void SkyboxShader::Init()
 		throw Format("Failed to create skybox sampler state (%u).", result);
 }
 
-void SkyboxShader::Draw(Mesh* mesh, const Vec3& center, const Matrix& mat_view_proj)
+void SkyboxShader::Draw(Mesh* mesh, const Matrix& mat_combined)
 {
 	render->SetAlphaBlend(false);
 	render->SetDepthState(Render::DEPTH_READONLY);
@@ -65,11 +65,10 @@ void SkyboxShader::Draw(Mesh* mesh, const Vec3& center, const Matrix& mat_view_p
 	device_context->PSSetShader(shader.pixel_shader, nullptr, 0);
 	device_context->PSSetSamplers(0, 1, &sampler);
 
-	Matrix m = Matrix::Translation(center) * mat_view_proj;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	C(device_context->Map(shader.vs_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource));
 	Matrix& g = *(Matrix*)mappedResource.pData;
-	g = m.Transpose();
+	g = mat_combined.Transpose();
 	device_context->Unmap(shader.vs_buffer, 0);
 
 	uint stride = sizeof(Vertex),
