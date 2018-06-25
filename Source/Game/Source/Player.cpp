@@ -21,7 +21,7 @@ hungry_timer(hunger_timestep), ranged_weapon(nullptr), ammo(0), current_ammo(0),
 
 void Player::UseMedkit()
 {
-	if(action == A_NONE && hp != 100 && medkits != 0)
+	if(action == A_NONE && hp != maxhp && medkits != 0)
 	{
 		action = A_USE_MEDKIT;
 		action_state = 0;
@@ -192,6 +192,12 @@ void Player::GetAvailablePerks(vector<std::pair<PerkId, int>>& available_perks)
 
 void Player::AddPerk(PerkId id)
 {
+	if(id == PerkId::Tough)
+	{
+		hp += 20;
+		maxhp += 20;
+	}
+
 	for(std::pair<PerkId, int>& perk : perks)
 	{
 		if(perk.first == id)
@@ -201,4 +207,14 @@ void Player::AddPerk(PerkId id)
 		}
 	}
 	perks.push_back({ id, 1 });
+}
+
+int Player::GetPerkLevel(PerkId id)
+{
+	for(std::pair<PerkId, int>& perk : perks)
+	{
+		if(perk.first == id)
+			return perk.second;
+	}
+	return 0;
 }

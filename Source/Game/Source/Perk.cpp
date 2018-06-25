@@ -2,6 +2,7 @@
 #include "Perk.h"
 
 Perk Perk::perks[] = {
+	PerkId::Agile, "Agile", "Increase running speed.",
 	PerkId::Firearms, "Firearms", "Increase accuracy and damage when using firearms.",
 	PerkId::LightEater, "Light eater", "Increase max satiation and value gained from eating food.",
 	PerkId::Medic, "Medic", "Increase health recovery from medkits.",

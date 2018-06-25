@@ -27,6 +27,7 @@
 #include <Gui.h>
 #include <Config.h>
 #include "PickPerkDialog.h"
+#include "Perk.h"
 
 
 const int level_size = 32;
@@ -405,7 +406,25 @@ void Game::UpdatePlayer(float dt)
 		}
 		if(player->node->mesh_inst->GetEndResult(1))
 		{
-			player->hp = min(player->hp + 50, 100);
+			int medic_level = player->GetPerkLevel(PerkId::Medic);
+			float gain;
+			switch(medic_level)
+			{
+			case 0:
+				gain = 0.5f;
+				break;
+			case 1:
+				gain = 0.66f;
+				break;
+			case 2:
+				gain = 0.83f;
+				break;
+			case 3:
+			default:
+				gain = 1.f;
+				break;
+			}
+			player->hp = min(player->hp + int(gain * player->maxhp), player->maxhp);
 			--player->medkits;
 			player->action = A_NONE;
 			player->weapon->visible = true;

@@ -2,6 +2,7 @@
 
 enum class PerkId
 {
+	Agile,
 	Firearms,
 	LightEater,
 	Medic,

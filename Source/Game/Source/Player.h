@@ -36,6 +36,7 @@ struct Player : Unit
 	FoodLevel GetFoodLevel();
 	Vec3 GetShootPos();
 	void GetAvailablePerks(vector<std::pair<PerkId, int>>& available_perks);
+	int GetPerkLevel(PerkId id);
 
 	Level* level;
 	Action action;

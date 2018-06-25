@@ -72,6 +72,7 @@ void Unit::Save(FileWriter& f)
 	f << node->rot.y;
 
 	f << hp;
+	f << maxhp;
 	if(!IsAlive())
 		f << dying;
 	f << last_damage;
@@ -87,6 +88,7 @@ void Unit::Load(FileReader& f)
 	node->rot.z = 0;
 
 	f >> hp;
+	f >> maxhp;
 	if(!IsAlive())
 		f >> dying;
 	f >> last_damage;

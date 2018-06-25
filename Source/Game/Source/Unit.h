@@ -15,10 +15,10 @@ enum Animation
 
 struct Unit
 {
-	explicit Unit(bool is_zombie) : hp(100), animation(ANI_STAND), is_zombie(is_zombie), last_damage(0), dying(false) {}
+	explicit Unit(bool is_zombie) : hp(100), maxhp(100), animation(ANI_STAND), is_zombie(is_zombie), last_damage(0), dying(false) {}
 	virtual ~Unit() {}
 	void Update(Animation new_animation);
-	float GetHpp() const { return float(hp) / 100; }
+	float GetHpp() const { return float(hp) / maxhp; }
 	Box GetBox() const;
 	Vec3 GetSoundPos() const;
 	float GetAngleDiff(const Vec3& target) const;
@@ -27,7 +27,7 @@ struct Unit
 	void Load(FileReader& f);
 
 	SceneNode* node;
-	int hp;
+	int hp, maxhp;
 	float last_damage;
 	Animation animation;
 	bool is_zombie, dying;
