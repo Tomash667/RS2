@@ -135,7 +135,7 @@ void MainMenu::InitLayout(ResourceManager* res_mgr)
 	ListBox::default_layout.background = res_mgr->GetTexture("gui/scrollbar.png");
 	ListBox::default_layout.corners = Int2(2, 8);
 	ListBox::default_layout.font_color = Color(0, 255, 33);
-	ListBox::default_layout.pad = Int2(4, 1);
+	ListBox::default_layout.pad = Int2(8, 4);
 	ListBox::default_layout.selected_color = Color(0, 255, 33, 128);
 
 	TextBox::default_layout.background = res_mgr->GetTexture("gui/scrollbar.png");

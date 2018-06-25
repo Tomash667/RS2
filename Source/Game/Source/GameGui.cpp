@@ -214,11 +214,14 @@ void GameGui::Draw()
 	else if(game_state->IsPaused())
 	{
 		// paused
-		gui->DrawSprite(nullptr, Int2::Zero, gui->GetWindowSize(), Color(50, 50, 50, 150));
-		gui->DrawTextOutline("GAME PAUSED", font_big, Color(0, 255, 33), Color::Black, Font::Center | Font::VCenter,
-			Rect::Create(Int2::Zero, gui->GetWindowSize()));
-		gui->DrawTextOutline("Esc to continue, Enter to save & quit, O for options", nullptr, Color(0, 255, 33), Color::Black, Font::Center | Font::VCenter,
-			Rect::Create(Int2(0, 100), gui->GetWindowSize()));
+		if(!gui->HaveDialog())
+		{
+			gui->DrawSprite(nullptr, Int2::Zero, gui->GetWindowSize(), Color(50, 50, 50, 150));
+			gui->DrawTextOutline("GAME PAUSED", font_big, Color(0, 255, 33), Color::Black, Font::Center | Font::VCenter,
+				Rect::Create(Int2::Zero, gui->GetWindowSize()));
+			gui->DrawTextOutline("Esc to continue, Enter to save & quit, O for options", nullptr, Color(0, 255, 33), Color::Black, Font::Center | Font::VCenter,
+				Rect::Create(Int2(0, 100), gui->GetWindowSize()));
+		}
 	}
 	else
 	{

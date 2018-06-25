@@ -5,16 +5,18 @@
 #include <ResourceManager.h>
 #include <Font.h>
 #include <Gui.h>
+#include "GameState.h"
 
-PickPerkDialog::PickPerkDialog(ResourceManager* res_mgr)
+PickPerkDialog::PickPerkDialog(GameState* game_state, ResourceManager* res_mgr)
 {
-	size = Int2(200, 200);
+	this->game_state = game_state;
+	size = Int2(600, 400);
 
 	// label
 	Label* label = new Label;
-	label->text = "You survived another night, pick new perk";
+	label->text = "You survived another night, pick a new perk";
 	label->color = Color(0, 255, 33);
-	label->font = res_mgr->GetFont("Cestellar", 30);
+	label->font = res_mgr->GetFont("Cestellar", 20);
 	label->size = label->CalculateSize();
 	label->flags = Font::Center | Font::VCenter;
 	label->SetPos(Int2((size.x - label->size.x) / 2, 10));
@@ -22,14 +24,15 @@ PickPerkDialog::PickPerkDialog(ResourceManager* res_mgr)
 
 	// perks
 	list_perks = new ListBox;
-	list_perks->size = Int2(100, 100);
-	list_perks->SetPos(Int2((size.x - list_perks->size.x) / 2, 50));
+	list_perks->size = Int2(300, 150);
+	list_perks->SetPos(Int2((size.x - list_perks->size.x) / 2, 60));
+	list_perks->Init();
 	Add(list_perks);
 
 	// perk desc
 	textbox_desc = new TextBox;
-	textbox_desc->size = Int2(100, 30);
-	textbox_desc->SetPos(Int2((size.x - textbox_desc->size.x) / 2, 150));
+	textbox_desc->size = Int2(500, 70);
+	textbox_desc->SetPos(Int2((size.x - textbox_desc->size.x) / 2, 220));
 	Add(textbox_desc);
 
 	// button
@@ -45,6 +48,8 @@ PickPerkDialog::PickPerkDialog(ResourceManager* res_mgr)
 
 void PickPerkDialog::Update(float dt)
 {
+	Panel::Update(dt);
+
 	if(list_perks->selected_index != last_index)
 	{
 		last_index = list_perks->selected_index;
@@ -80,6 +85,7 @@ void PickPerkDialog::Show(Player* player)
 	textbox_desc->text.clear();
 	bt->state = Button::DISABLED;
 
+	game_state->SetPaused(true);
 	gui->ShowDialog(this);
 }
 
@@ -87,5 +93,6 @@ void PickPerkDialog::OnEvent(int id)
 {
 	PerkId perk = perks[last_index].first;
 	player->AddPerk(perk);
+	game_state->SetPaused(false);
 	gui->CloseDialog();
 }

@@ -178,7 +178,7 @@ void Game::InitGame()
 	game_gui->Init(engine.get(), &game_state, main_menu->options);
 	game_gui->visible = false;
 
-	pick_perk = new PickPerkDialog(res_mgr);
+	pick_perk = new PickPerkDialog(&game_state, res_mgr);
 }
 
 void Game::LoadResources()

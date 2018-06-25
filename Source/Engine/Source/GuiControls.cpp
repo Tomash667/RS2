@@ -428,7 +428,7 @@ void ListBox::Draw()
 	{
 		Rect rect = Rect::Create(global_pos + Int2(layout.pad.x, offset), Int2(size.x - layout.pad.x * 2, item_height));
 		if(i == selected_index)
-			gui->DrawSprite(nullptr, rect.p1, rect.Size(), layout.selected_color);
+			gui->DrawSprite(nullptr, Int2(global_pos.x, global_pos.y + offset), Int2(size.x, item_height), layout.selected_color);
 		gui->DrawText(items[i].text, layout.font, layout.font_color, Font::VCenter, rect, &rect);
 		offset += item_height;
 	}
