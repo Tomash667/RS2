@@ -5,6 +5,12 @@
 #include <d3d11_1.h>
 #include "InternalHelper.h"
 
+struct ShaderGlobals
+{
+	Vec2 size;
+	Vec2 _pad;
+};
+
 GuiShader::GuiShader(Render* render) : render(render), device_context(nullptr), sampler(nullptr), vb(nullptr), empty_texture(nullptr), locked(false)
 {
 }

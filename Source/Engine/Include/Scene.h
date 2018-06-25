@@ -50,6 +50,7 @@ private:
 	unique_ptr<MeshShader> mesh_shader;
 	unique_ptr<ParticleShader> particle_shader;
 	unique_ptr<SkyboxShader> skybox_shader;
+	unique_ptr<SkyShader> sky_shader;
 	unique_ptr<DebugDrawer> debug_drawer;
 	unique_ptr<Camera> camera;
 	vector<SceneNode*> nodes, visible_nodes, visible_alpha_nodes;

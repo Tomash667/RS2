@@ -42,6 +42,7 @@ private:
 	Input* input;
 	ResourceManager* res_mgr;
 	SoundManager* sound_mgr;
+	Sky* sky;
 	Config* config;
 	GameState game_state;
 	ThirdPersonCamera* camera;

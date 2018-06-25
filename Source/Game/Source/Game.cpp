@@ -26,6 +26,7 @@
 #include "Pathfinding.h"
 #include <Gui.h>
 #include <Config.h>
+#include <Sky.h>
 
 
 const int level_size = 32;
@@ -152,6 +153,9 @@ void Game::InitGame()
 	scene->SetFogParams(5.f, 20.f);
 	scene->SetAmbientColor(Vec3(0.6f, 0.6f, 0.6f));
 	scene->SetLightDir(Vec3(10, 10, 10).Normalize());
+
+	// sky
+	sky = new Sky;
 
 	//scene->SetDebugDrawHandler(delegate<void(DebugDrawer*)>(this, &Game::OnDebugDraw));
 	//scene->SetDebugDrawEnabled(true);
@@ -280,6 +284,7 @@ void Game::UpdateGame(float dt)
 	camera->Update(dt, allow_mouse);
 	level->Update(dt);
 	UpdateWorld(dt);
+	sky->SetTime(Clip(sky->GetTime() + dt / 5, 1.f));
 
 	scene->Update(dt);
 }

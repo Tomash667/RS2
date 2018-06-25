@@ -9,8 +9,8 @@ struct skydome_vs_input
 {
 	float3 pos : POSITION;
 	float2 tex : TEXCOORD0;
-	float2 latitude : TEXCOORD1;
-}
+	float latitude : TEXCOORD1;
+};
 
 struct skydome_vs_output
 {
@@ -19,7 +19,7 @@ struct skydome_vs_output
 	float latitude : TEXCOORD1;
 };
 
-skydome_vs_output skydome_vs(Vskydome_vs_input In)
+skydome_vs_output skydome_vs(skydome_vs_input In)
 {
 	skydome_vs_output Out;
 	Out.pos = mul(float4(In.pos, 1), mat_combined);
@@ -61,7 +61,7 @@ struct celestial_vs_output
 	float2 tex : TEXCOORD0;
 };
 
-celestial_vs_output VS_Celestial(celestial_vs_input In)
+celestial_vs_output celestial_vs(celestial_vs_input In)
 {
 	celestial_vs_output Out;
 	Out.pos = mul(float4(In.pos, 1), mat_combined);
@@ -78,31 +78,13 @@ float4 celestial_ps(celestial_vs_output In) : SV_TARGET
 
 //==============================================================================
 // CLOUDS VS
-cbuffer clouds_vs_global
+cbuffer clouds_vs_globals
 {
-// TODO
-}
-float4x4 matCombined;
-texture tex0;
-float4 noiseTexA01;
-float4 noiseTexA23;
-float4 noiseTexB01;
-float4 noiseTexB23;
-float4 color1;
-float4 color2;
-float sharpness;
-float threshold;
-
-sampler2D sampler0 = sampler_state
-{
-	texture = <tex0>;
-};
-
-struct VS_SKYDOME_INPUT
-{
-	float3 pos : POSITION;
-	float2 tex : TEXCOORD0;
-	float latitude : TEXCOORD1;
+	matrix mat_combined_clouds;
+	float4 noiseTexA01;
+	float4 noiseTexA23;
+	float4 noiseTexB01;
+	float4 noiseTexB23;
 };
 
 struct clouds_vs_output
@@ -115,23 +97,35 @@ struct clouds_vs_output
 	float2 noiseTex3 : TEXCOORD4;
 };
 
-void VS_Clouds(in VS_SKYDOME_INPUT In, out VS_SKYDOME_OUTPUT Out)
+clouds_vs_output clouds_vs(skydome_vs_input In)
 {
-	Out.pos = mul(float4(In.pos, 1), matCombined);
+	clouds_vs_output Out;
+	Out.pos = mul(float4(In.pos, 1), mat_combined_clouds);
 	Out.latitude = In.latitude;
 	Out.noiseTex0 = In.tex * noiseTexA01.xy + noiseTexB01.xy;
 	Out.noiseTex1 = In.tex * noiseTexA01.zw + noiseTexB01.zw;
 	Out.noiseTex2 = In.tex * noiseTexA23.xy + noiseTexB23.xy;
 	Out.noiseTex3 = In.tex * noiseTexA23.zw + noiseTexB23.zw;
+	return Out;
 }
 
-float4 PS_Clouds(in VS_SKYDOME_OUTPUT In) : COLOR0
+//==============================================================================
+// CLOUDS PS
+cbuffer clouds_ps_globals
+{
+	float4 color1;
+	float4 color2;
+	float sharpness;
+	float threshold;
+}
+
+float4 clouds_ps(clouds_vs_output In) : SV_TARGET
 {
 	float4 cloudSamples;
-	cloudSamples.x = tex2D(sampler0, In.noiseTex0).r;
-	cloudSamples.y = tex2D(sampler0, In.noiseTex1).r;
-	cloudSamples.z = tex2D(sampler0, In.noiseTex2).r;
-	cloudSamples.w = tex2D(sampler0, In.noiseTex3).r;
+	cloudSamples.x = texture0.Sample(sampler0, In.noiseTex0).r;
+	cloudSamples.y = texture0.Sample(sampler0, In.noiseTex1).r;
+	cloudSamples.z = texture0.Sample(sampler0, In.noiseTex2).r;
+	cloudSamples.w = texture0.Sample(sampler0, In.noiseTex3).r;
 	float cloudSample = dot(cloudSamples, float4(1.0/1.0, 1.0/2.0, 1.0/4.0, 1.0/8.0)); //?
 	
 	//float f_1 = 1 - exp( Sharpness * (Threshold-1) );
@@ -142,13 +136,4 @@ float4 PS_Clouds(in VS_SKYDOME_OUTPUT In) : COLOR0
 	texel.a = cloudSample * In.latitude;
 	//return In.latitude;
 	return texel;
-}
-
-technique Clouds
-{
-	pass pass0
-	{
-		VertexShader = compile vs_2_0 VS_Clouds();
-		PixelShader = compile ps_2_0 PS_Clouds();
-	}
 }

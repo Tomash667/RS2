@@ -54,6 +54,7 @@ class MeshShader;
 class ParticleShader;
 class QmshLoader;
 class SkyboxShader;
+class SkyShader;
 class SoundLoader;
 class TextureLoader;
 
