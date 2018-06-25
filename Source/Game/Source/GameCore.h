@@ -11,6 +11,7 @@ class Inventory;
 class Level;
 class Options;
 class Pathfinding;
+class PickPerkDialog;
 
 struct Collider;
 struct GroundItem;
@@ -19,3 +20,5 @@ struct Player;
 struct ThirdPersonCamera;
 struct Unit;
 struct Zombie;
+
+enum class PerkId;

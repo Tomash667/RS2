@@ -7,10 +7,12 @@
 
 Panel::Layout Panel::default_layout;
 Button::Layout Button::default_layout;
-DialogBox::Layout DialogBox::default_layout;
 CheckBox::Layout CheckBox::default_layout;
 ScrollBar::Layout ScrollBar::default_layout;
 DropDownList::Layout DropDownList::default_layout;
+ListBox::Layout ListBox::default_layout;
+TextBox::Layout TextBox::default_layout;
+DialogBox::Layout DialogBox::default_layout;
 
 
 //-----------------------------------------------------------------------------
@@ -408,6 +410,48 @@ void DropDownList::Update(float dt)
 
 	if(is_open && !focus)
 		is_open = false;
+}
+
+
+//-----------------------------------------------------------------------------
+void ListBox::Init()
+{
+	Font* font = layout.font ? layout.font : gui->GetDefaultFont();
+	item_height = font->height + layout.pad.y * 2;
+}
+
+void ListBox::Draw()
+{
+	gui->DrawSpriteGrid(layout.background, Color::White, layout.corners.y, layout.corners.x, global_pos, size);
+	uint offset = 0;
+	for(uint i = 0; i < items.size(); ++i)
+	{
+		Rect rect = Rect::Create(global_pos + Int2(layout.pad.x, offset), Int2(size.x - layout.pad.x * 2, item_height));
+		if(i == selected_index)
+			gui->DrawSprite(nullptr, rect.p1, rect.Size(), layout.selected_color);
+		gui->DrawText(items[i].text, layout.font, layout.font_color, Font::VCenter, rect, &rect);
+		offset += item_height;
+	}
+}
+
+void ListBox::Update(float dt)
+{
+	if(mouse_focus && Rect::IsInside(global_pos, size, gui->GetCursorPos()) && gui->GetInput()->Pressed(Key::LeftButton))
+	{
+		gui->TakeFocus(this);
+		int index = (gui->GetCursorPos().y - global_pos.y) / item_height;
+		if(index < (int)items.size())
+			selected_index = index;
+	}
+}
+
+
+//-----------------------------------------------------------------------------
+void TextBox::Draw()
+{
+	gui->DrawSpriteGrid(layout.background, Color::White, layout.corners.y, layout.corners.x, global_pos, size);
+	Rect rect = Rect::Create(global_pos + layout.pad, size - layout.pad * 2);
+	gui->DrawText(text, layout.font, layout.font_color, layout.flags, rect, &rect);
 }
 
 

@@ -49,7 +49,10 @@ void Level::Reset()
 
 void Level::LoadResources()
 {
+	mesh_human = res_mgr->GetMesh("units/human.qmsh");
 	mesh_zombie = res_mgr->GetMesh("units/zombie.qmsh");
+	mesh_hair = res_mgr->GetMesh("units/hair.qmsh");
+	mesh_clothes = res_mgr->GetMesh("items/clothes.qmsh");
 	mesh_blood_pool = res_mgr->GetMesh("particles/blood_pool.qmsh");
 	mesh_zombie_blood_pool = res_mgr->GetMesh("particles/zombie_blood_pool.qmsh");
 }
@@ -65,7 +68,7 @@ void Level::SpawnItem(const Vec3& pos, Item* item)
 	ground_item.node = new SceneNode;
 	ground_item.node->mesh = item->mesh;
 	ground_item.node->use_matrix = true;
-	ground_item.node->mat =	Matrix::Rotation(-item->ground_rot.y, item->ground_rot.x, item->ground_rot.z)
+	ground_item.node->mat = Matrix::Rotation(-item->ground_rot.y, item->ground_rot.x, item->ground_rot.z)
 		* Matrix::Translation(item->ground_offset)
 		* Matrix::RotationY(-ground_item.rot)
 		* Matrix::Translation(ground_item.pos);
@@ -93,7 +96,7 @@ void Level::SpawnPlayer(const Vec3& pos)
 {
 	player = new Player(this);
 	player->node = new SceneNode;
-	player->node->mesh = res_mgr->GetMesh("units/human.qmsh");
+	player->node->mesh = mesh_human;
 	player->node->mesh_inst = new MeshInstance(player->node->mesh);
 	player->node->mesh_inst->Play("stoi", 0, 0);
 	player->node->mesh_inst->SetToEnd();
@@ -113,13 +116,13 @@ void Level::SpawnPlayer(const Vec3& pos)
 	player->weapon = weapon;
 
 	SceneNode* clothes = new SceneNode;
-	clothes->mesh = res_mgr->GetMesh("items/clothes.qmsh");
+	clothes->mesh = mesh_clothes;
 	clothes->pos = Vec3::Zero;
 	clothes->rot = Vec3::Zero;
 	player->node->Add(clothes, SceneNode::USE_PARENT_BONES);
 
 	SceneNode* hair = new SceneNode;
-	hair->mesh = res_mgr->GetMesh("units/hair.qmsh");
+	hair->mesh = mesh_hair;
 	hair->pos = Vec3::Zero;
 	hair->rot = Vec3::Zero;
 	hair->tint = Color(86, 34, 0, 255);

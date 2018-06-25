@@ -61,6 +61,31 @@ constexpr std::size_t countof(T const (&)[N]) noexcept
 }
 
 //-----------------------------------------------------------------------------
+template<typename T>
+void RandomShuffle(vector<T>& v)
+{
+	std::random_shuffle(v.begin(), v.end(), MyRand);
+}
+
+//-----------------------------------------------------------------------------
+// Get N random elements from vector, erase other
+template<typename T>
+void TakeRandomElements(vector<T>& v, uint count)
+{
+	if(v.size() <= count)
+		RandomShuffle(v);
+	else
+	{
+		for(uint i = 0; i < count; ++i)
+		{
+			uint index = Rand() % (count - i) + i;
+			std::iter_swap(v.begin() + i, v.begin() + index);
+		}
+		v.erase(v.begin() + count, v.end());
+	}
+}
+
+//-----------------------------------------------------------------------------
 // Return true if any element matches condition
 template<typename T, typename Arg>
 inline bool Any(const T& item, const Arg& arg)

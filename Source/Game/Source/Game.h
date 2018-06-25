@@ -9,7 +9,7 @@ public:
 	Game();
 	~Game();
 	int Start(cstring cmd_line);
-	
+
 private:
 	void InitLogger();
 	void InitEngine();
@@ -47,6 +47,7 @@ private:
 	ThirdPersonCamera* camera;
 	MainMenu* main_menu;
 	GameGui* game_gui;
+	PickPerkDialog* pick_perk;
 	unique_ptr<Level> level;
 	unique_ptr<CityGenerator> city_generator;
 	unique_ptr<Pathfinding> pathfinding;

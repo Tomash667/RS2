@@ -209,6 +209,56 @@ struct DropDownList : Control
 };
 
 //-----------------------------------------------------------------------------
+struct ListBox : Control
+{
+	struct Layout
+	{
+		Texture* background;
+		Int2 corners, pad;
+		Font* font;
+		Color font_color, selected_color;
+	};
+
+	struct Item
+	{
+		string text;
+		int value;
+	};
+
+	ListBox(Layout& layout = default_layout) : layout(layout), selected_index(-1) {}
+	void Init();
+	void Draw() override;
+	void Update(float dt) override;
+
+	Layout& layout;
+	vector<Item> items;
+	int selected_index, item_height;
+
+	static Layout default_layout;
+};
+
+//-----------------------------------------------------------------------------
+struct TextBox : Control
+{
+	struct Layout
+	{
+		Texture* background;
+		Int2 corners, pad;
+		Font* font;
+		Color font_color;
+		int flags;
+	};
+
+	TextBox(Layout& layout = default_layout) : layout(layout) {}
+	void Draw() override;
+
+	Layout& layout;
+	string text;
+
+	static Layout default_layout;
+};
+
+//-----------------------------------------------------------------------------
 struct DialogBox : Control
 {
 	struct Layout

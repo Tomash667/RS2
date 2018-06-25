@@ -31,9 +31,11 @@ struct Player : Unit
 	void Reload();
 	void Save(FileWriter& f);
 	void Load(FileReader& f);
+	void AddPerk(PerkId id);
 
 	FoodLevel GetFoodLevel();
 	Vec3 GetShootPos();
+	void GetAvailablePerks(vector<std::pair<PerkId, int>>& available_perks);
 
 	Level* level;
 	Action action;
@@ -43,6 +45,7 @@ struct Player : Unit
 	GroundItem* item_before;
 	float rot_buf, last_rot, hungry_timer, shot_delay, idle_timer, idle_timer_max, aim;
 	Item* melee_weapon, *ranged_weapon;
+	vector<std::pair<PerkId, int>> perks;
 	bool use_melee, death_starved;
 
 	static const float walk_speed;

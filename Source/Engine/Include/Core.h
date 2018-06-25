@@ -83,8 +83,8 @@ const destT &absolute_cast(const srcT &v)
 #include <DirectXMath.h>
 #include "FastFunc.h"
 #include "CoreMemory.h"
-#include "Containers.h"
 #include "CoreMath.h"
+#include "Containers.h"
 #include "Text.h"
 #include "File.h"
 #include "Timer.h"

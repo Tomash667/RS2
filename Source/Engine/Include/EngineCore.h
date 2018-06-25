@@ -40,10 +40,12 @@ struct Control;
 struct DialogBox;
 struct DropDownList;
 struct Label;
+struct ListBox;
 struct Panel;
 struct ProgressBar;
 struct ScrollBar;
 struct Sprite;
+struct TextBox;
 
 // internal classes
 class DebugShader;

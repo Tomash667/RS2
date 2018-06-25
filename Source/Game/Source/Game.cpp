@@ -26,12 +26,13 @@
 #include "Pathfinding.h"
 #include <Gui.h>
 #include <Config.h>
+#include "PickPerkDialog.h"
 
 
 const int level_size = 32;
 
 
-Game::Game() : camera(nullptr), quickstart(false), config(nullptr)
+Game::Game() : camera(nullptr), quickstart(false), config(nullptr), pick_perk(nullptr)
 {
 }
 
@@ -39,6 +40,7 @@ Game::~Game()
 {
 	delete camera;
 	delete config;
+	delete pick_perk;
 }
 
 int Game::Start(cstring cmd_line)
@@ -174,6 +176,8 @@ void Game::InitGame()
 	game_gui = new GameGui;
 	game_gui->Init(engine.get(), &game_state, main_menu->options);
 	game_gui->visible = false;
+
+	pick_perk = new PickPerkDialog(res_mgr);
 }
 
 void Game::LoadResources()
@@ -297,6 +301,10 @@ void Game::UpdatePlayer(float dt)
 		}
 		return;
 	}
+
+	// FIXME
+	if(input->Pressed(Key::P))
+		pick_perk->Show(player);
 
 	player->last_damage -= dt;
 	if((player->hungry_timer -= dt) <= 0.f)

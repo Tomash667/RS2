@@ -5,6 +5,7 @@
 #include <MeshInstance.h>
 #include "Level.h"
 #include <Scene.h>
+#include "Perk.h"
 
 const float Player::walk_speed = 2.5f;
 const float Player::run_speed = 7.f;
@@ -121,6 +122,8 @@ void Player::Save(FileWriter& f)
 	f << ammo;
 	f << current_ammo;
 	f << use_melee;
+
+	f << perks;
 }
 
 void Player::Load(FileReader& f)
@@ -155,6 +158,8 @@ void Player::Load(FileReader& f)
 	f >> current_ammo;
 	f >> use_melee;
 
+	f >> perks;
+
 	item_before = nullptr;
 	if(!use_melee)
 	{
@@ -162,4 +167,38 @@ void Player::Load(FileReader& f)
 		weapon->SetParentPoint(node->mesh->GetPoint("pistol"));
 		level->scene->RecycleMeshInstance(weapon);
 	}
+}
+
+void Player::GetAvailablePerks(vector<std::pair<PerkId, int>>& available_perks)
+{
+	available_perks.clear();
+	for(int i = 0; i < (int)PerkId::Max; ++i)
+	{
+		bool found = false;
+		for(std::pair<PerkId, int>& perk : perks)
+		{
+			if(perk.first == (PerkId)i)
+			{
+				if(perk.second != Perk::max_level)
+					available_perks.push_back({ perk.first, perk.second + 1 });
+				found = true;
+				break;
+			}
+		}
+		if(!found)
+			available_perks.push_back({ (PerkId)i, 1 });
+	}
+}
+
+void Player::AddPerk(PerkId id)
+{
+	for(std::pair<PerkId, int>& perk : perks)
+	{
+		if(perk.first == id)
+		{
+			++perk.second;
+			return;
+		}
+	}
+	perks.push_back({ id, 1 });
 }
