@@ -37,10 +37,11 @@ struct Player : Unit
 	Vec3 GetShootPos();
 	void GetAvailablePerks(vector<std::pair<PerkId, int>>& available_perks);
 	int GetPerkLevel(PerkId id);
+	float GetRunSpeed();
 
 	Level* level;
 	Action action;
-	int action_state, food;
+	int action_state, food, maxfood;
 	uint medkits, food_cans, ammo, current_ammo;
 	SceneNode* weapon, *hair;
 	GroundItem* item_before;

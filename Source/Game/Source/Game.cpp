@@ -407,23 +407,7 @@ void Game::UpdatePlayer(float dt)
 		if(player->node->mesh_inst->GetEndResult(1))
 		{
 			int medic_level = player->GetPerkLevel(PerkId::Medic);
-			float gain;
-			switch(medic_level)
-			{
-			case 0:
-				gain = 0.5f;
-				break;
-			case 1:
-				gain = 0.66f;
-				break;
-			case 2:
-				gain = 0.83f;
-				break;
-			case 3:
-			default:
-				gain = 1.f;
-				break;
-			}
+			float gain = 0.5f + 0.1f * medic_level;
 			player->hp = min(player->hp + int(gain * player->maxhp), player->maxhp);
 			--player->medkits;
 			player->action = A_NONE;
@@ -436,7 +420,8 @@ void Game::UpdatePlayer(float dt)
 		{
 			player->action_state = 1;
 			sound_mgr->PlaySound3d(sound_eat, player->GetSoundPos(), 2.f);
-			player->food = min(player->food + 25, 100);
+			float gain = 0.25f;
+			player->food = min(int(player->food + gain * player->maxfood), player->maxfood);
 			--player->food_cans;
 		}
 		if(player->node->mesh_inst->GetEndResult(1))
@@ -503,7 +488,17 @@ void Game::UpdatePlayer(float dt)
 				Vec3 hitpoint;
 				Unit* target;
 				if(CheckForHit(*player, *hitbox, bone, target, hitpoint))
-					HitUnit(*target, player->melee_weapon->RandomValue(), hitpoint);
+				{
+					float damage_mod = 1.f;
+					int strong_level = player->GetPerkLevel(PerkId::Strong);
+					damage_mod += 0.2f * strong_level;
+					if(target->is_zombie)
+					{
+						int necrology_level = player->GetPerkLevel(PerkId::Necrology);
+						damage_mod += 0.1f * necrology_level;
+					}
+					HitUnit(*target, int(damage_mod * player->melee_weapon->RandomValue()), hitpoint);
+				}
 				player->action_state = 1;
 			}
 		}
@@ -517,7 +512,7 @@ void Game::UpdatePlayer(float dt)
 		{
 			sound_mgr->PlaySound3d(sound_reload, player->GetSoundPos(), 2.f);
 			player->action_state = 1;
-	}
+		}
 		if(player->node->mesh_inst->GetEndResult(1))
 		{
 			uint ammo = min(player->ammo, 10u - player->current_ammo);
@@ -575,7 +570,15 @@ void Game::UpdatePlayer(float dt)
 						if(target)
 						{
 							// hit unit
-							HitUnit(*target, player->ranged_weapon->RandomValue(), hitpoint);
+							float damage_mod = 1.f;
+							int firearms_level = player->GetPerkLevel(PerkId::Firearms);
+							damage_mod += 0.2f * firearms_level;
+							if(target->is_zombie)
+							{
+								int necrology_level = player->GetPerkLevel(PerkId::Necrology);
+								damage_mod += 0.1f * necrology_level;
+							}
+							HitUnit(*target, int(damage_mod * player->ranged_weapon->RandomValue()), hitpoint);
 						}
 						else
 						{
@@ -733,7 +736,7 @@ void Game::UpdatePlayer(float dt)
 		dir += player->node->rot.y - PI / 2;
 		bool run = can_run && !back && !input->Down(Key::Shift);
 
-		const float speed = run ? Player::run_speed : Player::walk_speed;
+		const float speed = run ? player->GetRunSpeed() : Player::walk_speed;
 		if(CheckMove(*player, Vec3(cos(dir), 0, sin(dir)) * (speed * dt)))
 			player->node->pos.y = city_generator->GetY(player->node->pos);
 		if(back)
@@ -1163,7 +1166,7 @@ void Game::HitUnit(Unit& unit, int dmg, const Vec3& hitpoint)
 	else
 	{
 		if(unit.last_damage <= 0.f && Rand() % 3 == 0)
-		sound_mgr->PlaySound3d(unit.is_zombie ? sound_zombie_hurt : sound_player_hurt, unit.GetSoundPos(), 2.f);
+			sound_mgr->PlaySound3d(unit.is_zombie ? sound_zombie_hurt : sound_player_hurt, unit.GetSoundPos(), 2.f);
 
 		if(unit.is_zombie)
 		{

@@ -19,5 +19,5 @@ struct Perk
 
 	static Perk perks[];
 	static const uint n_perks;
-	static const int max_level = 3;
+	static const int max_level = 5;
 };

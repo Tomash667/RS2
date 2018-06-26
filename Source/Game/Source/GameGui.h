@@ -22,6 +22,7 @@ private:
 	GameState* game_state;
 	Options* options;
 	Inventory* inventory;
+	StatsPanel* stats_panel;
 	Panel* panel_fps;
 	Label* label_fps, *label_medkits, *label_ammo;
 	Sprite* sprite_crosshair, *sprite_food;

@@ -13,6 +13,7 @@
 #include <Font.h>
 #include "GameState.h"
 #include "Options.h"
+#include "StatsPanel.h"
 
 
 enum DIR
@@ -62,13 +63,14 @@ DIR AngleToDir(float angle)
 }
 
 
-GameGui::GameGui() : sprite_crosshair(nullptr)
+GameGui::GameGui() : sprite_crosshair(nullptr), stats_panel(nullptr)
 {
 }
 
 GameGui::~GameGui()
 {
 	delete sprite_crosshair;
+	delete stats_panel;
 }
 
 void GameGui::Init(Engine* engine, GameState* game_state, Options* options)
@@ -151,6 +153,9 @@ void GameGui::Init(Engine* engine, GameState* game_state, Options* options)
 	// inventory
 	inventory = new Inventory(res_mgr, game_state);
 	Add(inventory);
+
+	// stats panel
+	stats_panel = new StatsPanel(res_mgr);
 
 	tex_background = res_mgr->GetTexture("gui/background.png");
 	res_mgr->AddFontFromFile("fonts/pertili.ttf");
@@ -305,10 +310,25 @@ void GameGui::Update(float dt)
 	if(player->hp > 0)
 	{
 		if(input->Pressed(Key::I))
+		{
+			if(stats_panel->visible)
+				gui->CloseDialog();
 			inventory->Show(!inventory->visible);
+		}
+		else if(input->Pressed(Key::K))
+		{
+			if(inventory->visible)
+				inventory->Show(false);
+			stats_panel->Show(player);
+		}
 	}
-	else if(inventory->visible)
-		inventory->Show(false);
+	else
+	{
+		if(inventory->visible)
+			inventory->Show(false);
+		if(stats_panel->visible)
+			gui->CloseDialog();
+	}
 
 	if(inventory->visible)
 		inventory->Update(dt);

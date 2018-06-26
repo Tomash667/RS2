@@ -13,7 +13,7 @@ const float Player::rot_speed = 4.f;
 const float Player::hunger_timestep = 10.f;
 
 Player::Player(Level* level) : Unit(false), level(level), medkits(0), food_cans(0), action(A_NONE), item_before(nullptr), rot_buf(0), last_rot(0), food(80),
-hungry_timer(hunger_timestep), ranged_weapon(nullptr), ammo(0), current_ammo(0), use_melee(true), idle_timer_max(Random(2.5f, 4.f)), aim(0)
+maxfood(100), hungry_timer(hunger_timestep), ranged_weapon(nullptr), ammo(0), current_ammo(0), use_melee(true), idle_timer_max(Random(2.5f, 4.f)), aim(0)
 {
 	melee_weapon = Item::Get("baseball_bat");
 	idle_timer = idle_timer_max;
@@ -66,13 +66,14 @@ void Player::Reload()
 
 FoodLevel Player::GetFoodLevel()
 {
-	if(food >= 90)
+	float ratio = float(food) / maxfood;
+	if(ratio >= 0.9f)
 		return FL_FULL;
-	else if(food >= 33)
+	else if(ratio >= 0.33f)
 		return FL_NORMAL;
-	else if(food >= 15)
+	else if(ratio >= 0.15f)
 		return FL_HUNGRY;
-	else if(food >= 0)
+	else if(ratio >= 0)
 		return FL_VERY_HUGRY;
 	else
 		return FL_STARVING;
@@ -106,6 +107,7 @@ void Player::Save(FileWriter& f)
 		f << shot_delay;
 		f << aim;
 		f << food;
+		f << maxfood;
 		f << hungry_timer;
 	}
 	else
@@ -141,6 +143,7 @@ void Player::Load(FileReader& f)
 		f >> shot_delay;
 		f >> aim;
 		f >> food;
+		f >> maxfood;
 		f >> hungry_timer;
 	}
 	else
@@ -194,8 +197,15 @@ void Player::AddPerk(PerkId id)
 {
 	if(id == PerkId::Tough)
 	{
-		hp += 20;
+		float ratio = GetHpp();
 		maxhp += 20;
+		hp = ratio * maxhp;
+	}
+	else if(id == PerkId::LightEater)
+	{
+		float ratio = float(food) / maxfood;
+		maxfood += 20;
+		food = ratio * maxfood;
 	}
 
 	for(std::pair<PerkId, int>& perk : perks)
@@ -217,4 +227,10 @@ int Player::GetPerkLevel(PerkId id)
 			return perk.second;
 	}
 	return 0;
+}
+
+float Player::GetRunSpeed()
+{
+	int level = GetPerkLevel(PerkId::Agile);
+	return run_speed + 0.5f * level;
 }

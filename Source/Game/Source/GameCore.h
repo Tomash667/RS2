@@ -12,6 +12,7 @@ class Level;
 class Options;
 class Pathfinding;
 class PickPerkDialog;
+class StatsPanel;
 
 struct Collider;
 struct GroundItem;

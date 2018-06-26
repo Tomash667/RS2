@@ -17,6 +17,8 @@ Shift - walk
 E - pickup items
 H - use medkit
 R - reload
+I - inventory
+K - stats panel
 1 - switch to melee weapon
 2 - switch to ranged weapon
 U - lock/unlock cursor
