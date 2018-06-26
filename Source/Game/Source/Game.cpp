@@ -278,7 +278,7 @@ void Game::UpdateGame(float dt)
 	if(game_state.IsPaused())
 		return;
 
-	allow_mouse = !game_gui->IsInventoryOpen();
+	allow_mouse = !game_gui->IsMouseRequired();
 
 	UpdatePlayer(dt);
 	UpdateZombies(dt);
@@ -305,7 +305,7 @@ void Game::UpdatePlayer(float dt)
 
 	// FIXME
 	if(input->Pressed(Key::P))
-		pick_perk->Show(player);
+		pick_perk->Show(player); // TODO: close K when showing, check if player is alive!
 
 	player->last_damage -= dt;
 	if((player->hungry_timer -= dt) <= 0.f)

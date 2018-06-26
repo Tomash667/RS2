@@ -245,7 +245,7 @@ struct TextBox : Control
 		Texture* background;
 		Int2 corners, pad;
 		Font* font;
-		Color font_color;
+		Color font_color, color;
 		int flags;
 	};
 

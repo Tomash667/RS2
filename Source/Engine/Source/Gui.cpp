@@ -71,8 +71,11 @@ void Gui::Update(float dt)
 	{
 		mouse_focus = false;
 		Container::Update(dt);
-		dialog->mouse_focus = true;
-		dialog->Update(dt);
+		if(HaveDialog())
+		{
+			dialog->mouse_focus = true;
+			dialog->Update(dt);
+		}
 	}
 
 	if(focused && input->PressedOnce(Key::LeftButton))

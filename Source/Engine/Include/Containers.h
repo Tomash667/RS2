@@ -76,9 +76,10 @@ void TakeRandomElements(vector<T>& v, uint count)
 		RandomShuffle(v);
 	else
 	{
+		uint total = v.size();
 		for(uint i = 0; i < count; ++i)
 		{
-			uint index = Rand() % (count - i) + i;
+			uint index = Rand() % (total - i) + i;
 			std::iter_swap(v.begin() + i, v.begin() + index);
 		}
 		v.erase(v.begin() + count, v.end());

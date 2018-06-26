@@ -449,7 +449,7 @@ void ListBox::Update(float dt)
 //-----------------------------------------------------------------------------
 void TextBox::Draw()
 {
-	gui->DrawSpriteGrid(layout.background, Color::White, layout.corners.y, layout.corners.x, global_pos, size);
+	gui->DrawSpriteGrid(layout.background, layout.color, layout.corners.y, layout.corners.x, global_pos, size);
 	Rect rect = Rect::Create(global_pos + layout.pad, size - layout.pad * 2);
 	gui->DrawText(text, layout.font, layout.font_color, layout.flags, rect, &rect);
 }

@@ -199,13 +199,13 @@ void Player::AddPerk(PerkId id)
 	{
 		float ratio = GetHpp();
 		maxhp += 20;
-		hp = ratio * maxhp;
+		hp = int(ratio * maxhp);
 	}
 	else if(id == PerkId::LightEater)
 	{
 		float ratio = float(food) / maxfood;
 		maxfood += 20;
-		food = ratio * maxfood;
+		food = int(ratio * maxfood);
 	}
 
 	for(std::pair<PerkId, int>& perk : perks)

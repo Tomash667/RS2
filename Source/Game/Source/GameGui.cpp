@@ -259,8 +259,14 @@ void GameGui::Update(float dt)
 		if(panel_size > panel_fps->size)
 			panel_fps->size = Int2::Max(panel_size, panel_fps->size);
 	}
+	bool have_dialog = false;
 	if(!mouse_focus)
-		return;
+	{
+		if(stats_panel->visible)
+			have_dialog = true;
+		else
+			return;
+	}
 
 	// hp bar
 	hp_bar->progress = player->GetHpp();
@@ -317,9 +323,14 @@ void GameGui::Update(float dt)
 		}
 		else if(input->Pressed(Key::K))
 		{
-			if(inventory->visible)
-				inventory->Show(false);
-			stats_panel->Show(player);
+			if(stats_panel->visible)
+				gui->CloseDialog();
+			else
+			{
+				if(inventory->visible)
+					inventory->Show(false);
+				stats_panel->Show(player);
+			}
 		}
 	}
 	else
@@ -330,23 +341,26 @@ void GameGui::Update(float dt)
 			gui->CloseDialog();
 	}
 
-	if(inventory->visible)
-		inventory->Update(dt);
-	else if(game_state->IsPaused())
+	if(!have_dialog)
 	{
-		if(input->Pressed(Key::Enter))
-			game_state->SetChangeState(GameState::SAVE_AND_EXIT);
+		if(inventory->visible)
+			inventory->Update(dt);
+		else if(game_state->IsPaused())
+		{
+			if(input->Pressed(Key::Enter))
+				game_state->SetChangeState(GameState::SAVE_AND_EXIT);
+			else if(input->Pressed(Key::Escape))
+				game_state->SetPaused(false);
+			else if(input->Pressed(Key::O))
+				options->Show();
+		}
 		else if(input->Pressed(Key::Escape))
-			game_state->SetPaused(false);
-		else if(input->Pressed(Key::O))
-			options->Show();
-	}
-	else if(input->Pressed(Key::Escape))
-	{
-		if(death_timer == 0.f)
-			game_state->SetPaused(true);
-		else if(death_timer > 2.f)
-			game_state->SetChangeState(GameState::EXIT_TO_MENU);
+		{
+			if(death_timer == 0.f)
+				game_state->SetPaused(true);
+			else if(death_timer > 2.f)
+				game_state->SetChangeState(GameState::EXIT_TO_MENU);
+		}
 	}
 }
 
@@ -356,9 +370,9 @@ void GameGui::Event(GuiEvent event)
 		PositionControls();
 }
 
-bool GameGui::IsInventoryOpen()
+bool GameGui::IsMouseRequired()
 {
-	return inventory->visible;
+	return inventory->visible || stats_panel->visible;
 }
 
 void GameGui::DrawCrosshair(int size, int dist, int length)

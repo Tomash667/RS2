@@ -143,6 +143,7 @@ void MainMenu::InitLayout(ResourceManager* res_mgr)
 	TextBox::default_layout.font_color = Color(0, 255, 33);
 	TextBox::default_layout.pad = Int2(4, 1);
 	TextBox::default_layout.flags = Font::VCenter;
+	TextBox::default_layout.color = Color::White;
 
 	DialogBox::default_layout.background = res_mgr->GetTexture("gui/panel.png");
 	DialogBox::default_layout.corners = Int2(6, 32);

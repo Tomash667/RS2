@@ -15,5 +15,6 @@ private:
 
 	Player* player;
 	TextBox* textbox_stats, *textbox_perks;
+	TextBox::Layout textbox_layout;
 	float timer;
 };

@@ -12,7 +12,7 @@ public:
 	void Update(float dt) override;
 	void Event(GuiEvent event) override;
 
-	bool IsInventoryOpen();
+	bool IsMouseRequired();
 
 private:
 	void PositionControls();
