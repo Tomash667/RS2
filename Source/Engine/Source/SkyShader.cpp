@@ -306,9 +306,9 @@ void SkyShader::DrawSkydome(const Matrix& mat_combined)
 
 	C(device_context->Map(ps_buffer_dome, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource));
 	PixelShaderDomeGlobals& ps_g = *(PixelShaderDomeGlobals*)resource.pData;
-	ps_g.horizon_color = Vec4(1, 0, 0, 1);
-	ps_g.zenith_color = Vec4(0, 1, 0, 1);
-	ps_g.stars_visibility = 0.f;
+	ps_g.horizon_color = sky->horizon_color;
+	ps_g.zenith_color = sky->zenith_color;
+	ps_g.stars_visibility = sky->stars_visibility;
 	device_context->Unmap(ps_buffer_dome, 0);
 	// TODO: values, texture
 

@@ -1238,8 +1238,19 @@ void Game::OnDebugDraw(DebugDrawer* debug)
 
 void Game::UpdateWorld(float dt)
 {
+	if(input->Down(Key::N9))
+	{
+		sky->clouds_threshold -= dt;
+		Info("%g", sky->clouds_threshold);
+	}
+	else if(input->Down(Key::N0))
+	{
+		sky->clouds_threshold += dt;
+		Info("%g", sky->clouds_threshold);
+	}
+
 	world_tick += dt;
-	if(world_tick < 10.f)
+	//if(world_tick < 10.f) FIXME
 		return;
 
 	world_tick -= 10.f;

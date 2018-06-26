@@ -126,13 +126,13 @@ float4 clouds_ps(clouds_vs_output In) : SV_TARGET
 	cloudSamples.y = texture0.Sample(sampler0, In.noiseTex1).r;
 	cloudSamples.z = texture0.Sample(sampler0, In.noiseTex2).r;
 	cloudSamples.w = texture0.Sample(sampler0, In.noiseTex3).r;
-	float cloudSample = dot(cloudSamples, float4(1.0/1.0, 1.0/2.0, 1.0/4.0, 1.0/8.0)); //?
+	float cloudSample = dot(cloudSamples, float4(1.0/1.0, 1.0/2.0, 1.0/4.0, 1.0/8.0));
 	
-	//float f_1 = 1 - exp( Sharpness * (Threshold-1) );
+	//float f_1 = 1 - exp( sharpness * (threshold-1) );
 	float f_1 = 1;
 	cloudSample = saturate(1 - exp(sharpness*threshold - sharpness*cloudSample)) / f_1;
 
-	float4 texel = lerp(color1, color2, 0 /*cloudSample*/);
+	float4 texel = lerp(color1, color2, cloudSample);
 	texel.a = cloudSample * In.latitude;
 	//return In.latitude;
 	return texel;

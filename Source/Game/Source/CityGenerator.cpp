@@ -782,6 +782,7 @@ void CityGenerator::SpawnItem(Building* building, Item* item)
 
 void CityGenerator::SpawnZombies()
 {
+	return; // FIXME
 	Vec2 player_pos = player_start_pos.XZ();
 	for(int i = 0; i < 25; ++i)
 	{
