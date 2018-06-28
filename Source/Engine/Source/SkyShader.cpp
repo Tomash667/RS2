@@ -270,25 +270,18 @@ void SkyShader::Draw(Sky* sky, const Matrix& mat_combined)
 	assert(sky);
 	this->sky = sky;
 
-	device_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	// FIXME: sampler jest mo¿e ten sam
 
-	// TODO: move common things here
 	DrawSkydome(mat_combined);
-	// celestials require WARP tex?
-	DrawClouds(mat_combined);
-
-	/*params.SetAlphaBlendEnable(true);
-	params.SetBlendOp(D3DBLENDOP_ADD);
-
-	DrawCelestialObjects(camera, mat);
-
-	if(clouds.threshold < 0.99f)
-		DrawClouds(camera, mat);*/
+	DrawCelestialObjects(mat_combined);
+	if(sky->clouds_threshold < 1.2f)
+		DrawClouds(mat_combined);
 }
 
 void SkyShader::DrawSkydome(const Matrix& mat_combined)
 {
 	render->SetCulling(false);
+	render->SetAlphaBlend(Render::BLEND_NO);
 	render->SetDepthState(Render::DEPTH_NO);
 
 	device_context->IASetInputLayout(layout_dome);
@@ -297,6 +290,8 @@ void SkyShader::DrawSkydome(const Matrix& mat_combined)
 	device_context->PSSetShader(pixel_shader_dome, nullptr, 0);
 	device_context->PSSetConstantBuffers(0, 1, &ps_buffer_dome);
 	device_context->PSSetSamplers(0, 1, &sampler);
+	ID3D11ShaderResourceView* tex[1] = { sky->tex_stars ? sky->tex_stars->tex : nullptr };
+	device_context->PSSetShaderResources(0, 1, tex);
 
 	D3D11_MAPPED_SUBRESOURCE resource;
 	C(device_context->Map(vs_buffer_dome, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource));
@@ -310,7 +305,6 @@ void SkyShader::DrawSkydome(const Matrix& mat_combined)
 	ps_g.zenith_color = sky->zenith_color;
 	ps_g.stars_visibility = sky->stars_visibility;
 	device_context->Unmap(ps_buffer_dome, 0);
-	// TODO: values, texture
 
 	uint stride = sizeof(SkydomeVertex),
 		offset = 0;
@@ -319,74 +313,63 @@ void SkyShader::DrawSkydome(const Matrix& mat_combined)
 	device_context->DrawIndexed(SKYDOME_INDEX_COUNT, 0, 0);
 }
 
-/*if(!(sun.enabled || moon.enabled))
-	{
-		// nothing to draw
+void SkyShader::DrawCelestialObjects(const Matrix& mat_combined)
+{
+	if(!sky->sun.enabled && !sky->moon.enabled)
 		return;
-	}
 
-	FrameParams& params = Render.GetFrameParams();
-	uint passes;
+	device_context->IASetInputLayout(layout_celestial);
+	device_context->VSSetShader(vertex_shader_celestial, nullptr, 0);
+	device_context->VSSetConstantBuffers(0, 1, &vs_buffer_clouds); // !!!!!!!!!!!!!!!
+	device_context->PSSetShader(pixel_shader_celestial, nullptr, 0);
+	device_context->PSSetConstantBuffers(0, 1, &ps_buffer_clouds); // !!!!!!!!!!!!!!!!!
+	device_context->PSSetSamplers(0, 1, &sampler);
+	ID3D11ShaderResourceView* tex[1] = { sky->tex_clouds_noise ? sky->tex_clouds_noise->tex : nullptr }; // !!!!!!!!!!!!
+	device_context->PSSetShaderResources(0, 1, tex);
 
-	params.SetFVF(SimpleVertex::fvf);
-	params.SetSrcBlend(D3DBLEND_SRCALPHA);
-	params.SetDestBlend(D3DBLEND_INVSRCALPHA);
+	// mat_combined
 
-	params.SetTextureStageColorOp(0, D3DTOP_MODULATE);
-	params.SetTextureStageColorArg1(0, D3DTA_TEXTURE);
-	params.SetTextureStageColorArg2(0, D3DTA_TFACTOR);
-	params.SetTextureStageAlphaOp(0, D3DTOP_MODULATE);
-	params.SetTextureStageAlphaArg1(0, D3DTA_TEXTURE);
-	params.SetTextureStageAlphaArg2(0, D3DTA_TFACTOR);
+	// texture stage
+	// color = tex.texel * factor
+	render->SetAlphaBlend(Render::BLEND_NORMAL);
 
-	V( e->SetTechnique(e->GetTechniqueByName("Celestial")) );
-	V( e->SetMatrix(hMatCombined, &matCombined) );
-	
-	V( e->Begin(&passes, D3DFX_DONTSAVE) );
-	V( e->BeginPass(0) );
-
-	// sun
-	if(sun.enabled && sun.tex)
+	// draw sun
+	if(sky->sun.enabled)
 	{
-		params.SetTextureFactor(sun.color_horizon.ToUint());
+		/*params.SetTextureFactor(sun.color_horizon.ToUint());
 		V( e->SetTexture(hTex, sun.tex->tex) );
 		V( e->CommitChanges() );
 
 		sun.EnsureVertices();
-		V( params.device->DrawPrimitiveUP(D3DPT_TRIANGLEFAN, 2, sun.v, sizeof(SimpleVertex)) );
+		V( params.device->DrawPrimitiveUP(D3DPT_TRIANGLEFAN, 2, sun.v, sizeof(SimpleVertex)) );*/
 	}
 
-	// moon
-	if(moon.enabled && moon.tex)
+	// draw moon
+	if(sky->moon.enabled)
 	{
-		params.SetTextureFactor(moon.color_horizon.ToUint());
+		/*params.SetTextureFactor(moon.color_horizon.ToUint());
 		V( e->SetTexture(hTex, moon.tex->tex) );
 		V( e->CommitChanges() );
 
 		moon.EnsureVertices();
-		V( params.device->DrawPrimitiveUP(D3DPT_TRIANGLEFAN, 2, moon.v, sizeof(SimpleVertex)) );
+		V( params.device->DrawPrimitiveUP(D3DPT_TRIANGLEFAN, 2, moon.v, sizeof(SimpleVertex)) );*/
 	}
 
-	// sun glow
-if(sun.enabled && tSunGlow)
-{
-	params.SetDestBlend(D3DBLEND_ONE);
-	sun.EnsureGlowVertices();
+	// draw sun glow
+	if(sky->sun.enabled && sky->tex_sun_glow)
+	{
+		render->SetAlphaBlend(Render::BLEND_DEST_ONE);
+		/*sun.EnsureGlowVertices();
 
-	float intensity = powf(sun.dir.y, HEIGHT_FACTOR_EXP) * sun.glow;
+		float intensity = powf(sun.dir.y, HEIGHT_FACTOR_EXP) * sun.glow;
 
-	params.SetTextureFactor(0x00FFFFFF | ((uint)(intensity * 255.0f) << 24));
-	V(e->SetTexture(hTex, tSunGlow->tex));
-	V(e->CommitChanges());
+		params.SetTextureFactor(0x00FFFFFF | ((uint)(intensity * 255.0f) << 24));
+		V(e->SetTexture(hTex, tSunGlow->tex));
+		V(e->CommitChanges());
 
-	V(params.device->DrawPrimitiveUP(D3DPT_TRIANGLEFAN, 2, sun.gv, sizeof(SimpleVertex)));
+		V(params.device->DrawPrimitiveUP(D3DPT_TRIANGLEFAN, 2, sun.gv, sizeof(SimpleVertex)));*/
+	}
 }
-
-V(e->EndPass());
-V(e->End());
-
-// restore default texture stage params
-params.RestoreTextureStage(0); */
 
 void SkyShader::DrawClouds(const Matrix& mat_combined)
 {
@@ -402,6 +385,8 @@ void SkyShader::DrawClouds(const Matrix& mat_combined)
 		octave_movement *= 0.7f;
 	}
 
+	render->SetAlphaBlend(Render::BLEND_NORMAL);
+
 	device_context->IASetInputLayout(layout_clouds);
 	device_context->VSSetShader(vertex_shader_clouds, nullptr, 0);
 	device_context->VSSetConstantBuffers(0, 1, &vs_buffer_clouds);
@@ -411,13 +396,11 @@ void SkyShader::DrawClouds(const Matrix& mat_combined)
 	ID3D11ShaderResourceView* tex[1] = { sky->tex_clouds_noise ? sky->tex_clouds_noise->tex : nullptr };
 	device_context->PSSetShaderResources(0, 1, tex);
 
+	// FIXME
 	//Color4f_Pair colors;
 	//clouds.colors.Get(&colors, math::Frac(time));
 	//colors.first *= clouds.color_weather_factors.first;
 	//colors.second *= clouds.color_weather_factors.second;
-
-	//params.SetSrcBlend(D3DBLEND_SRCALPHA);
-	//params.SetDestBlend(D3DBLEND_INVSRCALPHA);
 
 	D3D11_MAPPED_SUBRESOURCE resource;
 	C(device_context->Map(vs_buffer_clouds, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource));

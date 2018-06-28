@@ -1,6 +1,7 @@
 Rouge Survival Changelog
 ======================================================
 v0.2 (2018-07-??:
++ day & night system, clouds
 + options (resolution, fullscreen, vsync, volume)
 
 v0.1 (2018-06-17):

@@ -156,7 +156,6 @@ void MeshShader::InitInternal()
 
 void MeshShader::Prepare(const Vec3& fog_color, const Vec3& fog_params, const Vec3& light_dir, const Vec3& light_color, const Vec3& ambient_color)
 {
-	device_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	device_context->PSSetShader(pixel_shader, nullptr, 0);
 	ID3D11Buffer* buffers[] = { ps_buffer, ps_buffer_object };
 	device_context->PSSetConstantBuffers(0, 2, buffers);

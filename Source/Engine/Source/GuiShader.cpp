@@ -104,12 +104,11 @@ void GuiShader::Init()
 
 void GuiShader::Prepare()
 {
-	render->SetAlphaBlend(true);
+	render->SetAlphaBlend(Render::BLEND_NORMAL);
 	render->SetDepthState(Render::DEPTH_NO);
 	render->SetCulling(true);
 
 	device_context->IASetInputLayout(shader.layout);
-	device_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	device_context->VSSetShader(shader.vertex_shader, nullptr, 0);
 	device_context->VSSetConstantBuffers(0, 1, &shader.vs_buffer);
 	device_context->PSSetShader(shader.pixel_shader, nullptr, 0);

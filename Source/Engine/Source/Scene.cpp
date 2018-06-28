@@ -105,7 +105,7 @@ void Scene::DrawSkybox()
 
 void Scene::DrawNodes()
 {
-	render->SetAlphaBlend(false);
+	render->SetAlphaBlend(Render::BLEND_NO);
 	render->SetDepthState(Render::DEPTH_YES);
 	render->SetCulling(true);
 	mesh_shader->Prepare(fog_color, fog_params, light_dir, light_color, ambient_color);
@@ -114,7 +114,7 @@ void Scene::DrawNodes()
 
 	if(!visible_alpha_nodes.empty())
 	{
-		render->SetAlphaBlend(true);
+		render->SetAlphaBlend(Render::BLEND_NORMAL);
 		render->SetDepthState(Render::DEPTH_READONLY);
 		DrawNodes(visible_alpha_nodes, nullptr);
 	}

@@ -2,6 +2,12 @@
 
 struct Sky
 {
+	struct CelestialObject
+	{
+		Texture* texture;
+		bool enabled;
+	};
+
 	Sky();
 	void Update(float dt);
 
@@ -13,6 +19,7 @@ struct Sky
 
 	float GetTime() const { return time; }*/
 
+	CelestialObject sun, moon;
 	Vec4 clouds_color[2], // 0-borders, 1-center
 		horizon_color,
 		zenith_color;
@@ -23,5 +30,7 @@ struct Sky
 		clouds_sharpness, // how sharp are clouds edges (0-15)
 		clouds_threshold, // how many clouds (0-100%, 0.6-50%, 1-almost none, 1.2-none)
 		stars_visibility;
-	Texture* tex_clouds_noise;
+	Texture* tex_clouds_noise,
+		*tex_stars,
+		*tex_sun_glow;
 };
