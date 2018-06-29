@@ -71,9 +71,14 @@ celestial_vs_output celestial_vs(celestial_vs_input In)
 
 //==============================================================================
 // CELESTIAL OBJECT PS
+cbuffer celestial_ps_globals
+{
+	float4 celestial_color;
+}
+
 float4 celestial_ps(celestial_vs_output In) : SV_TARGET
 {
-	return texture0.Sample(sampler0, In.tex);
+	return texture0.Sample(sampler0, In.tex) * celestial_color;
 }
 
 //==============================================================================

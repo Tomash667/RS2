@@ -47,6 +47,11 @@ struct PixelShaderDomeGlobals
 	Vec3 _pad;
 };
 
+struct PixelShaderCelestialGlobals
+{
+	Vec4 celestial_color;
+};
+
 struct PixelShaderCloudGlobals
 {
 	Vec4 color1;
@@ -58,8 +63,9 @@ struct PixelShaderCloudGlobals
 
 SkyShader::SkyShader(Render* render) : render(render), device_context(nullptr), vertex_shader_dome(nullptr), vertex_shader_celestial(nullptr),
 vertex_shader_clouds(nullptr), pixel_shader_dome(nullptr), pixel_shader_celestial(nullptr), pixel_shader_clouds(nullptr), layout_dome(nullptr),
-layout_celestial(nullptr), layout_clouds(nullptr), vertex_buffer(nullptr), index_buffer(nullptr), vs_buffer_dome(nullptr), vs_buffer_clouds(nullptr),
-ps_buffer_dome(nullptr), ps_buffer_clouds(nullptr), sampler(nullptr)
+layout_celestial(nullptr), layout_clouds(nullptr), vertex_buffer(nullptr), vertex_buffer_celestial(nullptr), index_buffer(nullptr),
+index_buffer_celestial(nullptr), vs_buffer_dome(nullptr), vs_buffer_clouds(nullptr), ps_buffer_dome(nullptr), ps_buffer_celestial(nullptr),
+ps_buffer_clouds(nullptr), sampler(nullptr)
 {
 }
 
@@ -75,10 +81,13 @@ SkyShader::~SkyShader()
 	SafeRelease(layout_celestial);
 	SafeRelease(layout_clouds);
 	SafeRelease(vertex_buffer);
+	SafeRelease(vertex_buffer_celestial);
 	SafeRelease(index_buffer);
+	SafeRelease(index_buffer_celestial);
 	SafeRelease(vs_buffer_dome);
 	SafeRelease(vs_buffer_clouds);
 	SafeRelease(ps_buffer_dome);
+	SafeRelease(ps_buffer_celestial);
 	SafeRelease(ps_buffer_clouds);
 	SafeRelease(sampler);
 }
@@ -173,6 +182,7 @@ void SkyShader::InitInternal()
 	vs_buffer_dome = render->CreateConstantBuffer(sizeof(VertexShaderDomeGlobals));
 	vs_buffer_clouds = render->CreateConstantBuffer(sizeof(VertexShaderCloudGlobals));
 	ps_buffer_dome = render->CreateConstantBuffer(sizeof(PixelShaderDomeGlobals));
+	ps_buffer_celestial = render->CreateConstantBuffer(sizeof(PixelShaderCelestialGlobals));
 	ps_buffer_clouds = render->CreateConstantBuffer(sizeof(PixelShaderCloudGlobals));
 
 	// create texture sampler
@@ -273,7 +283,7 @@ void SkyShader::Draw(Sky* sky, const Matrix& mat_combined)
 	// FIXME: sampler jest mo¿e ten sam
 
 	DrawSkydome(mat_combined);
-	DrawCelestialObjects(mat_combined);
+	DrawCelestialObjects();
 	if(sky->clouds_threshold < 1.2f)
 		DrawClouds(mat_combined);
 }
@@ -313,19 +323,20 @@ void SkyShader::DrawSkydome(const Matrix& mat_combined)
 	device_context->DrawIndexed(SKYDOME_INDEX_COUNT, 0, 0);
 }
 
-void SkyShader::DrawCelestialObjects(const Matrix& mat_combined)
+void SkyShader::DrawCelestialObjects()
 {
 	if(!sky->sun.enabled && !sky->moon.enabled)
 		return;
 
+	ID3D11ShaderResourceView* tex[1];
+
+	// uses same vs globals, don't set here
 	device_context->IASetInputLayout(layout_celestial);
 	device_context->VSSetShader(vertex_shader_celestial, nullptr, 0);
-	device_context->VSSetConstantBuffers(0, 1, &vs_buffer_clouds); // !!!!!!!!!!!!!!!
+	device_context->VSSetConstantBuffers(0, 1, &vs_buffer_clouds);
 	device_context->PSSetShader(pixel_shader_celestial, nullptr, 0);
-	device_context->PSSetConstantBuffers(0, 1, &ps_buffer_clouds); // !!!!!!!!!!!!!!!!!
+	device_context->PSSetConstantBuffers(0, 1, &ps_buffer_celestial);
 	device_context->PSSetSamplers(0, 1, &sampler);
-	ID3D11ShaderResourceView* tex[1] = { sky->tex_clouds_noise ? sky->tex_clouds_noise->tex : nullptr }; // !!!!!!!!!!!!
-	device_context->PSSetShaderResources(0, 1, tex);
 
 	// mat_combined
 
@@ -336,10 +347,16 @@ void SkyShader::DrawCelestialObjects(const Matrix& mat_combined)
 	// draw sun
 	if(sky->sun.enabled)
 	{
-		/*params.SetTextureFactor(sun.color_horizon.ToUint());
-		V( e->SetTexture(hTex, sun.tex->tex) );
-		V( e->CommitChanges() );
+		tex[0] = sky->sun.texture ? sky->sun.texture->tex : nullptr;
+		device_context->PSSetShaderResources(0, 1, tex);
 
+		D3D11_MAPPED_SUBRESOURCE resource;
+		C(device_context->Map(ps_buffer_celestial, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource));
+		PixelShaderCelestialGlobals& ps_g = *(PixelShaderCelestialGlobals*)resource.pData;
+		ps_g.celestial_color = sky->sun.color;
+		device_context->Unmap(ps_buffer_celestial, 0);
+
+		/*
 		sun.EnsureVertices();
 		V( params.device->DrawPrimitiveUP(D3DPT_TRIANGLEFAN, 2, sun.v, sizeof(SimpleVertex)) );*/
 	}
@@ -347,10 +364,18 @@ void SkyShader::DrawCelestialObjects(const Matrix& mat_combined)
 	// draw moon
 	if(sky->moon.enabled)
 	{
-		/*params.SetTextureFactor(moon.color_horizon.ToUint());
-		V( e->SetTexture(hTex, moon.tex->tex) );
-		V( e->CommitChanges() );
+		tex[0] = sky->moon.texture ? sky->moon.texture->tex : nullptr;
+		device_context->PSSetShaderResources(0, 1, tex);
 
+		D3D11_MAPPED_SUBRESOURCE resource;
+		C(device_context->Map(ps_buffer_celestial, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource));
+		PixelShaderCelestialGlobals& ps_g = *(PixelShaderCelestialGlobals*)resource.pData;
+		ps_g.celestial_color = sky->moon.color;
+		device_context->Unmap(ps_buffer_celestial, 0);
+
+		device_context->Draw
+
+		/*
 		moon.EnsureVertices();
 		V( params.device->DrawPrimitiveUP(D3DPT_TRIANGLEFAN, 2, moon.v, sizeof(SimpleVertex)) );*/
 	}
@@ -359,14 +384,19 @@ void SkyShader::DrawCelestialObjects(const Matrix& mat_combined)
 	if(sky->sun.enabled && sky->tex_sun_glow)
 	{
 		render->SetAlphaBlend(Render::BLEND_DEST_ONE);
+
+		tex[0] = sky->tex_sun_glow->tex;
+		device_context->PSSetShaderResources(0, 1, tex);
+
+		float intensity = powf(sky->sun.dir.y, HEIGHT_FACTOR_EXP) * sky->sun.glow;
+
+		D3D11_MAPPED_SUBRESOURCE resource;
+		C(device_context->Map(ps_buffer_celestial, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource));
+		PixelShaderCelestialGlobals& ps_g = *(PixelShaderCelestialGlobals*)resource.pData;
+		ps_g.celestial_color = Color(255, 255, 255, int(intensity * 255.f));
+		device_context->Unmap(ps_buffer_celestial, 0);
+
 		/*sun.EnsureGlowVertices();
-
-		float intensity = powf(sun.dir.y, HEIGHT_FACTOR_EXP) * sun.glow;
-
-		params.SetTextureFactor(0x00FFFFFF | ((uint)(intensity * 255.0f) << 24));
-		V(e->SetTexture(hTex, tSunGlow->tex));
-		V(e->CommitChanges());
-
 		V(params.device->DrawPrimitiveUP(D3DPT_TRIANGLEFAN, 2, sun.gv, sizeof(SimpleVertex)));*/
 	}
 }

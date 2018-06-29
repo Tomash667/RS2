@@ -5,6 +5,9 @@ struct Sky
 	struct CelestialObject
 	{
 		Texture* texture;
+		Vec4 color;
+		Vec3 dir;
+		float glow;
 		bool enabled;
 	};
 
