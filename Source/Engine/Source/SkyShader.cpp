@@ -373,7 +373,7 @@ void SkyShader::DrawCelestialObjects()
 		ps_g.celestial_color = sky->moon.color;
 		device_context->Unmap(ps_buffer_celestial, 0);
 
-		device_context->Draw
+		//device_context->Draw
 
 		/*
 		moon.EnsureVertices();

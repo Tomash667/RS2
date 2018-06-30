@@ -157,6 +157,36 @@ void Game::InitGame()
 	// sky
 	sky = new Sky;
 	sky->tex_clouds_noise = res_mgr->GetTexture("skybox/noise.png");
+	sky->tex_stars = res_mgr->GetTexture("skybox/stars.jpg");
+	//sky->stars_visibility = 1.f;
+	sky->horizon_color = Vec4(0, 0, 0, 1);
+	sky->zenith_color = Vec4(0, 0, 0, 1);
+	sky->clouds_threshold = 2.f;
+	// 0 - 5 ciemno
+	sky->sky_colors.Add(0.f / 24, ColorPair(Vec4(8.f / 255, 8.f / 255, 22.f / 255, 1.f), Vec4(8.f / 255, 8.f / 255, 22.f / 255, 1.f)));
+	sky->sky_colors.Add(5.f / 24, ColorPair(Vec4(8.f / 255, 8.f / 255, 22.f / 255, 1.f), Vec4(8.f / 255, 8.f / 255, 22.f / 255, 1.f)));
+	// 5 - 7 wschód
+	sky->sky_colors.Add(5.5f / 24, ColorPair(Vec4(80.f / 255, 83.f / 255, 160.f / 255, 1.f), Vec4(8.f / 255, 8.f / 255, 22.f / 255, 1.f)));
+	sky->sky_colors.Add(6.f / 24, ColorPair(Vec4(217.f / 255, 196.f / 255, 169.f / 255, 1.f), Vec4(46.f / 255, 57.f / 255, 74.f / 255, 1.f)));
+	sky->sky_colors.Add(7.f / 24, ColorPair(Vec4(194.f / 255, 179.f / 255, 161.f / 255, 1.f), Vec4(48.f / 255, 51.f / 255, 74.f / 255, 1.f)));
+	// 7 - 9 rozjaœnianie
+
+	// 9 - 19 jasno
+	sky->sky_colors.Add(9.f / 24, ColorPair(Vec4(116.f / 255, 138.f / 255, 168.f / 255, 1.f), Vec4(47.f / 255, 77.f / 255, 128.f / 255, 1.f)));
+	sky->sky_colors.Add(19.f / 24, ColorPair(Vec4(116.f / 255, 138.f / 255, 168.f / 255, 1.f), Vec4(47.f / 255, 77.f / 255, 128.f / 255, 1.f)));
+
+
+	sky->sky_colors.Add(11.f / 24, ColorPair(Vec4(117.f / 255, 124.f / 255, 142.f / 255, 1.f), Vec4(32.f / 255, 48.f / 255, 85.f / 255, 1.f)));
+	sky->sky_colors.Add(13.f / 24, ColorPair(Vec4(116.f / 255, 138.f / 255, 168.f / 255, 1.f), Vec4(47.f / 255, 77.f / 255, 128.f / 255, 1.f)));
+	sky->sky_colors.Add(18.f / 24, ColorPair(Vec4(150.f / 255, 179.f / 255, 214.f / 255, 1.f), Vec4(42.f / 255, 59.f / 255, 109.f / 255, 1.f)));
+	sky->sky_colors.Add(21.f / 24, ColorPair(Vec4(194.f / 255, 179.f / 255, 161.f / 255, 1.f), Vec4(48.f / 255, 51.f / 255, 74.f / 255, 1.f)));
+	sky->sky_colors.Add(21.5f / 24, ColorPair(Vec4(217.f / 255, 196.f / 255, 169.f / 255, 1.f), Vec4(46.f / 255, 57.f / 255, 74.f / 255, 1.f)));
+	sky->sky_colors.Add(22.f / 24, ColorPair(Vec4(80.f / 255, 83.f / 255, 160.f / 255, 1.f), Vec4(8.f / 255, 8.f / 255, 22.f / 255, 1.f)));
+	// 19 - 21 œciemnianie
+	// 21 - 23 zachód
+	// 23 - 24 ciemno
+	sky->sky_colors.Add(23.f / 24, ColorPair(Vec4(8.f / 255, 8.f / 255, 22.f / 255, 1.f), Vec4(8.f / 255, 8.f / 255, 22.f / 255, 1.f)));
+	sky->sky_colors.Add(24.f / 24, ColorPair(Vec4(8.f / 255, 8.f / 255, 22.f / 255, 1.f), Vec4(8.f / 255, 8.f / 255, 22.f / 255, 1.f)));
 	scene->SetSky(sky);
 
 	//scene->SetDebugDrawHandler(delegate<void(DebugDrawer*)>(this, &Game::OnDebugDraw));
@@ -287,7 +317,10 @@ void Game::UpdateGame(float dt)
 	level->Update(dt);
 	UpdateWorld(dt);
 	//sky->SetTime(Clip(sky->GetTime() + dt / 5, 1.f));
-	sky->time = Clip(sky->time + dt / 5, 1.f); // FIXME
+	game_state.hour += dt;
+	if(game_state.hour >= 24.f)
+		game_state.hour -= 24.f;
+	sky->time = game_state.hour / 24;
 	sky->Update(dt);
 
 	scene->Update(dt);
@@ -499,7 +532,7 @@ void Game::UpdatePlayer(float dt)
 		{
 			sound_mgr->PlaySound3d(sound_reload, player->GetSoundPos(), 2.f);
 			player->action_state = 1;
-	}
+		}
 		if(player->node->mesh_inst->GetEndResult(1))
 		{
 			uint ammo = min(player->ammo, 10u - player->current_ammo);
@@ -1145,7 +1178,7 @@ void Game::HitUnit(Unit& unit, int dmg, const Vec3& hitpoint)
 	else
 	{
 		if(unit.last_damage <= 0.f && Rand() % 3 == 0)
-		sound_mgr->PlaySound3d(unit.is_zombie ? sound_zombie_hurt : sound_player_hurt, unit.GetSoundPos(), 2.f);
+			sound_mgr->PlaySound3d(unit.is_zombie ? sound_zombie_hurt : sound_player_hurt, unit.GetSoundPos(), 2.f);
 
 		if(unit.is_zombie)
 		{
@@ -1251,7 +1284,7 @@ void Game::UpdateWorld(float dt)
 
 	world_tick += dt;
 	//if(world_tick < 10.f) FIXME
-		return;
+	return;
 
 	world_tick -= 10.f;
 
