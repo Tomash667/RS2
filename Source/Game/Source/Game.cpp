@@ -157,36 +157,11 @@ void Game::InitGame()
 	// sky
 	sky = new Sky;
 	sky->tex_clouds_noise = res_mgr->GetTexture("skybox/noise.png");
-	sky->tex_stars = res_mgr->GetTexture("skybox/stars.jpg");
-	//sky->stars_visibility = 1.f;
-	sky->horizon_color = Vec4(0, 0, 0, 1);
-	sky->zenith_color = Vec4(0, 0, 0, 1);
-	sky->clouds_threshold = 2.f;
-	// 0 - 5 ciemno
-	sky->sky_colors.Add(0.f / 24, ColorPair(Vec4(8.f / 255, 8.f / 255, 22.f / 255, 1.f), Vec4(8.f / 255, 8.f / 255, 22.f / 255, 1.f)));
-	sky->sky_colors.Add(5.f / 24, ColorPair(Vec4(8.f / 255, 8.f / 255, 22.f / 255, 1.f), Vec4(8.f / 255, 8.f / 255, 22.f / 255, 1.f)));
-	// 5 - 7 wschód
-	sky->sky_colors.Add(5.5f / 24, ColorPair(Vec4(80.f / 255, 83.f / 255, 160.f / 255, 1.f), Vec4(8.f / 255, 8.f / 255, 22.f / 255, 1.f)));
-	sky->sky_colors.Add(6.f / 24, ColorPair(Vec4(217.f / 255, 196.f / 255, 169.f / 255, 1.f), Vec4(46.f / 255, 57.f / 255, 74.f / 255, 1.f)));
-	sky->sky_colors.Add(7.f / 24, ColorPair(Vec4(194.f / 255, 179.f / 255, 161.f / 255, 1.f), Vec4(48.f / 255, 51.f / 255, 74.f / 255, 1.f)));
-	// 7 - 9 rozjaœnianie
-
-	// 9 - 19 jasno
-	sky->sky_colors.Add(9.f / 24, ColorPair(Vec4(116.f / 255, 138.f / 255, 168.f / 255, 1.f), Vec4(47.f / 255, 77.f / 255, 128.f / 255, 1.f)));
-	sky->sky_colors.Add(19.f / 24, ColorPair(Vec4(116.f / 255, 138.f / 255, 168.f / 255, 1.f), Vec4(47.f / 255, 77.f / 255, 128.f / 255, 1.f)));
-
-
-	sky->sky_colors.Add(11.f / 24, ColorPair(Vec4(117.f / 255, 124.f / 255, 142.f / 255, 1.f), Vec4(32.f / 255, 48.f / 255, 85.f / 255, 1.f)));
-	sky->sky_colors.Add(13.f / 24, ColorPair(Vec4(116.f / 255, 138.f / 255, 168.f / 255, 1.f), Vec4(47.f / 255, 77.f / 255, 128.f / 255, 1.f)));
-	sky->sky_colors.Add(18.f / 24, ColorPair(Vec4(150.f / 255, 179.f / 255, 214.f / 255, 1.f), Vec4(42.f / 255, 59.f / 255, 109.f / 255, 1.f)));
-	sky->sky_colors.Add(21.f / 24, ColorPair(Vec4(194.f / 255, 179.f / 255, 161.f / 255, 1.f), Vec4(48.f / 255, 51.f / 255, 74.f / 255, 1.f)));
-	sky->sky_colors.Add(21.5f / 24, ColorPair(Vec4(217.f / 255, 196.f / 255, 169.f / 255, 1.f), Vec4(46.f / 255, 57.f / 255, 74.f / 255, 1.f)));
-	sky->sky_colors.Add(22.f / 24, ColorPair(Vec4(80.f / 255, 83.f / 255, 160.f / 255, 1.f), Vec4(8.f / 255, 8.f / 255, 22.f / 255, 1.f)));
-	// 19 - 21 œciemnianie
-	// 21 - 23 zachód
-	// 23 - 24 ciemno
-	sky->sky_colors.Add(23.f / 24, ColorPair(Vec4(8.f / 255, 8.f / 255, 22.f / 255, 1.f), Vec4(8.f / 255, 8.f / 255, 22.f / 255, 1.f)));
-	sky->sky_colors.Add(24.f / 24, ColorPair(Vec4(8.f / 255, 8.f / 255, 22.f / 255, 1.f), Vec4(8.f / 255, 8.f / 255, 22.f / 255, 1.f)));
+	sky->tex_stars = res_mgr->GetTexture("skybox/stars.png");
+	sky->sun.texture = res_mgr->GetTexture("skybox/sun.png");
+	sky->sun.enabled = true;
+	sky->moon.texture = res_mgr->GetTexture("skybox/moon.png");
+	sky->moon.enabled = true;
 	scene->SetSky(sky);
 
 	//scene->SetDebugDrawHandler(delegate<void(DebugDrawer*)>(this, &Game::OnDebugDraw));
@@ -248,6 +223,7 @@ void Game::StartGame(bool load)
 		city_generator->Generate();
 		camera->reset = true;
 		world_tick = 0.f;
+		game_state.hour = 6.f; // FIXME
 	}
 	game_state.SetPaused(false);
 	in_game = true;

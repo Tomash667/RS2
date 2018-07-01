@@ -13,7 +13,6 @@ const uint SKYDOME_STACKS = 32;
 const uint SKYDOME_VERTEX_COUNT = SKYDOME_SLICES * (SKYDOME_STACKS + 1);
 const uint SKYDOME_TRIANGLE_COUNT = SKYDOME_SLICES * SKYDOME_STACKS * 2;
 const uint SKYDOME_INDEX_COUNT = SKYDOME_TRIANGLE_COUNT * 3;
-const float SKYDOME_RADIUS = 10.0f;
 const float HEIGHT_FACTOR_EXP = 0.7f;
 const float STARS_TEX_SIZE = 2.0f;
 const float SKY_TEX_STRETCH_FACTOR = 0.4f;
@@ -99,7 +98,8 @@ void SkyShader::Init()
 	try
 	{
 		InitInternal();
-		CreateMesh();
+		CreateDomeMesh();
+		CreateCelestialMesh();
 	}
 	catch(cstring err)
 	{
@@ -206,7 +206,7 @@ void SkyShader::InitInternal()
 		throw Format("Failed to create sampler state (%u).", result);
 }
 
-void SkyShader::CreateMesh()
+void SkyShader::CreateDomeMesh()
 {
 	// fill vertices
 	vector<SkydomeVertex> vertices;
@@ -221,12 +221,12 @@ void SkyShader::CreateMesh()
 	{
 		for(longitude = 0, longitude_f = 0.0f; longitude < SKYDOME_SLICES; longitude++, longitude_f += longitude_step)
 		{
-			math::SphericalToCartesian(v->pos, longitude_f, latitude_f, SKYDOME_RADIUS);
-			float latitude_factor = Max(0.0f, v->pos.y) / SKYDOME_RADIUS;
+			math::SphericalToCartesian(v->pos, longitude_f, latitude_f, Sky::SKYDOME_RADIUS);
+			float latitude_factor = Max(0.0f, v->pos.y) / Sky::SKYDOME_RADIUS;
 			latitude_factor = powf(latitude_factor, HEIGHT_FACTOR_EXP);
 			v->latitude = latitude_factor;
 			float tex_factor = latitude_factor * (1.0f - SKY_TEX_STRETCH_FACTOR) + SKY_TEX_STRETCH_FACTOR;
-			v->tex = Vec2(v->pos.x, v->pos.z) / SKYDOME_RADIUS * STARS_TEX_SIZE / tex_factor;
+			v->tex = Vec2(v->pos.x, v->pos.z) / Sky::SKYDOME_RADIUS * STARS_TEX_SIZE / tex_factor;
 			v++;
 		}
 	}
@@ -275,12 +275,40 @@ void SkyShader::CreateMesh()
 		throw Format("Failed to create index buffer (%u).", result);
 }
 
+void SkyShader::CreateCelestialMesh()
+{
+	// create vertex buffer
+	D3D11_BUFFER_DESC desc;
+	desc.Usage = D3D11_USAGE_DYNAMIC;
+	desc.ByteWidth = 4 * sizeof(SimpleVertex);
+	desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	desc.MiscFlags = 0;
+	desc.StructureByteStride = 0;
+
+	HRESULT result = render->GetDevice()->CreateBuffer(&desc, nullptr, &vertex_buffer_celestial);
+	if(FAILED(result))
+		throw Format("Failed to create celestial vertex buffer (%u).", result);
+
+	// create index buffer
+	desc.ByteWidth = 6 * sizeof(word);
+	desc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	desc.Usage = D3D11_USAGE_DEFAULT;
+	desc.CPUAccessFlags = 0;
+
+	word indices[] = { 0, 1, 2, 2, 1, 3 };
+	D3D11_SUBRESOURCE_DATA subresource;
+	subresource.pSysMem = indices;
+
+	result = render->GetDevice()->CreateBuffer(&desc, &subresource, &index_buffer_celestial);
+	if(FAILED(result))
+		throw Format("Failed to create celestial index buffer (%u).", result);
+}
+
 void SkyShader::Draw(Sky* sky, const Matrix& mat_combined)
 {
 	assert(sky);
 	this->sky = sky;
-
-	// FIXME: sampler jest mo¿e ten sam
 
 	DrawSkydome(mat_combined);
 	DrawCelestialObjects();
@@ -294,7 +322,12 @@ void SkyShader::DrawSkydome(const Matrix& mat_combined)
 	render->SetAlphaBlend(Render::BLEND_NO);
 	render->SetDepthState(Render::DEPTH_NO);
 
+	uint stride = sizeof(SkydomeVertex),
+		offset = 0;
+
 	device_context->IASetInputLayout(layout_dome);
+	device_context->IASetVertexBuffers(0, 1, &vertex_buffer, &stride, &offset);
+	device_context->IASetIndexBuffer(index_buffer, DXGI_FORMAT_R16_UINT, 0);
 	device_context->VSSetShader(vertex_shader_dome, nullptr, 0);
 	device_context->VSSetConstantBuffers(0, 1, &vs_buffer_dome);
 	device_context->PSSetShader(pixel_shader_dome, nullptr, 0);
@@ -316,10 +349,6 @@ void SkyShader::DrawSkydome(const Matrix& mat_combined)
 	ps_g.stars_visibility = sky->stars_visibility;
 	device_context->Unmap(ps_buffer_dome, 0);
 
-	uint stride = sizeof(SkydomeVertex),
-		offset = 0;
-	device_context->IASetVertexBuffers(0, 1, &vertex_buffer, &stride, &offset);
-	device_context->IASetIndexBuffer(index_buffer, DXGI_FORMAT_R16_UINT, 0);
 	device_context->DrawIndexed(SKYDOME_INDEX_COUNT, 0, 0);
 }
 
@@ -329,19 +358,19 @@ void SkyShader::DrawCelestialObjects()
 		return;
 
 	ID3D11ShaderResourceView* tex[1];
+	SimpleVertex v[4];
+	uint stride = sizeof(SimpleVertex),
+		offset = 0;
 
 	// uses same vs globals, don't set here
 	device_context->IASetInputLayout(layout_celestial);
+	device_context->IASetVertexBuffers(0, 1, &vertex_buffer_celestial, &stride, &offset);
+	device_context->IASetIndexBuffer(index_buffer_celestial, DXGI_FORMAT_R16_UINT, 0);
 	device_context->VSSetShader(vertex_shader_celestial, nullptr, 0);
-	device_context->VSSetConstantBuffers(0, 1, &vs_buffer_clouds);
 	device_context->PSSetShader(pixel_shader_celestial, nullptr, 0);
 	device_context->PSSetConstantBuffers(0, 1, &ps_buffer_celestial);
 	device_context->PSSetSamplers(0, 1, &sampler);
 
-	// mat_combined
-
-	// texture stage
-	// color = tex.texel * factor
 	render->SetAlphaBlend(Render::BLEND_NORMAL);
 
 	// draw sun
@@ -356,9 +385,13 @@ void SkyShader::DrawCelestialObjects()
 		ps_g.celestial_color = sky->sun.color;
 		device_context->Unmap(ps_buffer_celestial, 0);
 
-		/*
-		sun.EnsureVertices();
-		V( params.device->DrawPrimitiveUP(D3DPT_TRIANGLEFAN, 2, sun.v, sizeof(SimpleVertex)) );*/
+		sky->sun.GetVertices(v);
+		D3D11_MAPPED_SUBRESOURCE subresource;
+		C(device_context->Map(vertex_buffer_celestial, 0, D3D11_MAP_WRITE_DISCARD, 0, &subresource));
+		memcpy(subresource.pData, v, sizeof(v));
+		device_context->Unmap(vertex_buffer_celestial, 0);
+
+		device_context->DrawIndexed(6, 0, 0);
 	}
 
 	// draw moon
@@ -373,31 +406,13 @@ void SkyShader::DrawCelestialObjects()
 		ps_g.celestial_color = sky->moon.color;
 		device_context->Unmap(ps_buffer_celestial, 0);
 
-		//device_context->Draw
+		sky->moon.GetVertices(v);
+		D3D11_MAPPED_SUBRESOURCE subresource;
+		C(device_context->Map(vertex_buffer_celestial, 0, D3D11_MAP_WRITE_DISCARD, 0, &subresource));
+		memcpy(subresource.pData, v, sizeof(v));
+		device_context->Unmap(vertex_buffer_celestial, 0);
 
-		/*
-		moon.EnsureVertices();
-		V( params.device->DrawPrimitiveUP(D3DPT_TRIANGLEFAN, 2, moon.v, sizeof(SimpleVertex)) );*/
-	}
-
-	// draw sun glow
-	if(sky->sun.enabled && sky->tex_sun_glow)
-	{
-		render->SetAlphaBlend(Render::BLEND_DEST_ONE);
-
-		tex[0] = sky->tex_sun_glow->tex;
-		device_context->PSSetShaderResources(0, 1, tex);
-
-		float intensity = powf(sky->sun.dir.y, HEIGHT_FACTOR_EXP) * sky->sun.glow;
-
-		D3D11_MAPPED_SUBRESOURCE resource;
-		C(device_context->Map(ps_buffer_celestial, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource));
-		PixelShaderCelestialGlobals& ps_g = *(PixelShaderCelestialGlobals*)resource.pData;
-		ps_g.celestial_color = Color(255, 255, 255, int(intensity * 255.f));
-		device_context->Unmap(ps_buffer_celestial, 0);
-
-		/*sun.EnsureGlowVertices();
-		V(params.device->DrawPrimitiveUP(D3DPT_TRIANGLEFAN, 2, sun.gv, sizeof(SimpleVertex)));*/
+		device_context->DrawIndexed(6, 0, 0);
 	}
 }
 

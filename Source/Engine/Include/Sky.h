@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Vertex.h"
+
 template<typename T>
 struct RoundInterpolator
 {
@@ -58,10 +60,13 @@ struct Sky
 {
 	struct CelestialObject
 	{
+		void Update(float time);
+		void GetVertices(SimpleVertex(&v)[4]) const;
+
 		Texture* texture;
 		Vec4 color;
-		Vec3 dir;
-		float glow;
+		Vec3 dir, orbit_normal;
+		float size, period, phase;
 		bool enabled;
 	};
 
@@ -83,7 +88,7 @@ struct Sky
 		zenith_color;
 	Vec2 clouds_offset,
 		wind_vec;
-	float time,
+	float time, time_period,
 		clouds_scale_inv, // clouds scaling (1-big clouds, 2-medium, 4-small, 8-very small etc)
 		clouds_sharpness, // how sharp are clouds edges (0-15)
 		clouds_threshold, // how many clouds (0-100%, 0.6-50%, 1-almost none, 1.2-none)
@@ -91,4 +96,6 @@ struct Sky
 	Texture* tex_clouds_noise,
 		*tex_stars,
 		*tex_sun_glow;
+
+	static const float SKYDOME_RADIUS;
 };

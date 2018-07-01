@@ -12,7 +12,8 @@ public:
 
 private:
 	void InitInternal();
-	void CreateMesh();
+	void CreateDomeMesh();
+	void CreateCelestialMesh();
 	void DrawSkydome(const Matrix& mat_combined);
 	void DrawCelestialObjects();
 	void DrawClouds(const Matrix& mat_combined);

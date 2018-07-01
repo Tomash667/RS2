@@ -1163,6 +1163,7 @@ struct Matrix : XMFLOAT4X4
 	static Matrix CreateBillboard(const Vec3& object, const Vec3& cameraPosition, const Vec3& cameraUp, const Vec3* cameraForward = nullptr);
 	static Matrix CreateConstrainedBillboard(const Vec3& object, const Vec3& cameraPosition, const Vec3& rotateAxis,
 		const Vec3* cameraForward = nullptr, const Vec3* objectForward = nullptr);
+	static Matrix CreateFromAxes(const Vec3& axisX, const Vec3& axisY, const Vec3& axisZ);
 	static Matrix CreateFromAxisAngle(const Vec3& axis, float angle);
 	static Matrix CreateLookAt(const Vec3& position, const Vec3& target, const Vec3& up = Vec3(0, 1, 0));
 	static Matrix CreateOrthographic(float width, float height, float zNearPlane, float zFarPlane);
