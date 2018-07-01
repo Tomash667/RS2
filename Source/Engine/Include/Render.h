@@ -7,7 +7,16 @@ public:
 	{
 		DEPTH_YES,
 		DEPTH_READONLY,
-		DEPTH_NO
+		DEPTH_NO,
+		DEPTH_MAX
+	};
+
+	enum BlendState
+	{
+		BLEND_NO,
+		BLEND_NORMAL,
+		BLEND_DEST_ONE,
+		BLEND_MAX
 	};
 
 	struct DisplayMode
@@ -29,7 +38,7 @@ public:
 	void OnChangeResolution(const Int2& wnd_size);
 
 	void SetClearColor(const Vec4& clear_color) { this->clear_color = clear_color; }
-	void SetAlphaBlend(bool enabled);
+	void SetAlphaBlend(BlendState state);
 	void SetDepthState(DepthState state);
 	void SetCulling(bool enabled);
 	void SetVsync(bool vsync) { this->vsync = vsync; }
@@ -46,9 +55,9 @@ private:
 	void CreateRenderTarget();
 	void CreateDepthStencilView();
 	void SetViewport();
-	void CreateDepthStencilState();
-	void CreateRasterState();
-	void CreateBlendState();
+	void CreateDepthStencilStates();
+	void CreateRasterStates();
+	void CreateBlendStates();
 
 	IDXGIFactory* factory;
 	IDXGIAdapter* adapter;
@@ -57,13 +66,14 @@ private:
 	ID3D11DeviceContext* device_context;
 	ID3D11RenderTargetView* render_target;
 	ID3D11DepthStencilView* depth_stencil_view;
-	ID3D11DepthStencilState* depth_state, *no_depth_state, *readonly_depth_state;
+	ID3D11DepthStencilState* depth_state[DEPTH_MAX];
 	ID3D11RasterizerState* raster_state, *no_cull_raster_state;
-	ID3D11BlendState* blend_state, *no_blend_state;
+	ID3D11BlendState* blend_state[BLEND_MAX];
 	Vec4 clear_color;
 	Int2 wnd_size;
-	bool vsync, alpha_blend, culling;
+	bool vsync, culling;
 	DepthState current_depth_state;
+	BlendState current_blend_state;
 	cstring vs_target_version, ps_target_version;
 	vector<Int2> resolutions;
 };

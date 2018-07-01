@@ -42,6 +42,7 @@ private:
 	Input* input;
 	ResourceManager* res_mgr;
 	SoundManager* sound_mgr;
+	Sky* sky;
 	Config* config;
 	GameState game_state;
 	ThirdPersonCamera* camera;
@@ -52,7 +53,6 @@ private:
 	unique_ptr<CityGenerator> city_generator;
 	unique_ptr<Pathfinding> pathfinding;
 	vector<std::pair<Vec3, float>> alert_pos;
-	float world_tick;
 	bool in_game, allow_mouse, quickstart;
 
 	// resources

@@ -20,12 +20,6 @@ public:
 	Texture* GetEmptyTexture() { return empty_texture; }
 
 private:
-	struct ShaderGlobals
-	{
-		Vec2 size;
-		Vec2 _pad;
-	};
-
 	Render* render;
 	ID3D11DeviceContext* device_context;
 	Shader shader;

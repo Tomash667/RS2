@@ -24,6 +24,7 @@ public:
 	void SetLightDir(const Vec3& light_dir) { this->light_dir = light_dir; }
 	void SetLightColor(const Vec3& light_color) { this->light_color = light_color; }
 	void SetSkybox(Mesh* mesh) { skybox = mesh; }
+	void SetSky(Sky* sky) { this->sky = sky; }
 
 	const Vec3& GetAmbientColor() { return ambient_color; }
 	Camera* GetCamera() { return camera.get(); }
@@ -32,6 +33,7 @@ public:
 	const Vec3& GetLightDir() { return light_dir; }
 	const Vec3& GetLightColor() { return light_color; }
 	Mesh* GetSkybox() { return skybox; }
+	Sky* GetSky() { return sky; }
 	const Matrix& GetViewProjectionMatrix() { return mat_view_proj; }
 	QuadTree* GetQuadTree() { return quad_tree.get(); }
 
@@ -48,6 +50,7 @@ private:
 	unique_ptr<MeshShader> mesh_shader;
 	unique_ptr<ParticleShader> particle_shader;
 	unique_ptr<SkyboxShader> skybox_shader;
+	unique_ptr<SkyShader> sky_shader;
 	unique_ptr<DebugDrawer> debug_drawer;
 	unique_ptr<Camera> camera;
 	vector<SceneNode*> nodes, visible_nodes, visible_alpha_nodes;
@@ -59,6 +62,7 @@ private:
 	vector<ScenePart*> parts;
 	vector<MeshInstance*> mesh_inst_pool;
 	Mesh* skybox;
+	Sky* sky;
 	delegate<void(DebugDrawer*)> debug_draw_handler;
 	bool debug_draw_enabled;
 };

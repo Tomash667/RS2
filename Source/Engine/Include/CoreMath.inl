@@ -3247,6 +3247,16 @@ inline Matrix Matrix::CreateConstrainedBillboard(const Vec3& object, const Vec3&
 	return R;
 }
 
+inline Matrix Matrix::CreateFromAxes(const Vec3& axisX, const Vec3& axisY, const Vec3& axisZ)
+{
+	return Matrix(
+		axisX.x, axisX.y, axisX.z, 0.0f,
+		axisY.x, axisY.y, axisY.z, 0.0f,
+		axisZ.x, axisZ.y, axisZ.z, 0.0f,
+		0.0f, 0.0f, 0.0f, 1.0f
+	);
+}
+
 inline Matrix Matrix::CreateFromAxisAngle(const Vec3& axis, float angle)
 {
 	Matrix R;

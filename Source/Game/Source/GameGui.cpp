@@ -251,9 +251,14 @@ void GameGui::Update(float dt)
 		panel_fps->visible = !panel_fps->visible;
 	if(panel_fps->visible)
 	{
-		label_fps->text = Format("Fps: %g\nPos: %g; %g; %g\nRot: %g %s", FLT10(engine->GetFps()),
+#ifdef _DEBUG
+		label_fps->text = Format("Fps: %g\nPos: %g; %g; %g\nRot: %g %s\nTime: %02d:%02d", FLT10(engine->GetFps()),
 			FLT10(player->node->pos.x), FLT10(player->node->pos.y), FLT10(player->node->pos.z),
-			FLT10(player->node->rot.y), dir_name[AngleToDir(player->node->rot.y)]);
+			FLT10(player->node->rot.y), dir_name[AngleToDir(player->node->rot.y)],
+			(int)floor(game_state->hour), int((game_state->hour - floor(game_state->hour)) * 60));
+#else
+		label_fps->text = Format("Fps: %g", FLT10(engine->GetFps()));
+#endif
 		label_fps->size = label_fps->CalculateSize();
 		Int2 panel_size = label_fps->size + Int2(2 * panel_fps->layout.corners.x, 2 * panel_fps->layout.corners.x);
 		if(panel_size > panel_fps->size)

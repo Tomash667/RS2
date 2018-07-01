@@ -329,7 +329,8 @@ void Config::ParseCommandLine(cstring cmd_line)
 					Warn("Command line var '%s' type mismatch (%s and %s), ignoring value.",
 						var->name, var_type_name[var->type], var_type_name[v.second]);
 			}
-			t.Next();
+			if(!t.Next())
+				return;
 		}
 		catch(Tokenizer::Exception& e)
 		{

@@ -10,9 +10,8 @@ const Int2 MIN_RESOLUTION = Int2(1024, 768);
 const DXGI_FORMAT DISPLAY_FORMAT = DXGI_FORMAT_R8G8B8A8_UNORM;
 
 Render::Render() : factory(nullptr), adapter(nullptr), swap_chain(nullptr), device(nullptr), device_context(nullptr), render_target(nullptr),
-depth_stencil_view(nullptr), depth_state(nullptr), no_depth_state(nullptr), readonly_depth_state(nullptr), raster_state(nullptr),
-no_cull_raster_state(nullptr), blend_state(nullptr), no_blend_state(nullptr), clear_color(Color::Black), vsync(true), current_depth_state(DEPTH_YES),
-alpha_blend(false), culling(true)
+depth_stencil_view(nullptr), depth_state(), raster_state(nullptr), no_cull_raster_state(nullptr), blend_state(), clear_color(Color::Black), vsync(true),
+current_depth_state(DEPTH_YES), current_blend_state(BLEND_NO), culling(true)
 {
 #ifdef _DEBUG
 	vsync = false;
@@ -21,13 +20,12 @@ alpha_blend(false), culling(true)
 
 Render::~Render()
 {
-	SafeRelease(blend_state);
-	SafeRelease(no_blend_state);
+	for(int i = 0; i < DEPTH_MAX; ++i)
+		SafeRelease(depth_state[i]);
+	for(int i = 0; i < BLEND_MAX; ++i)
+		SafeRelease(blend_state[i]);
 	SafeRelease(raster_state);
 	SafeRelease(no_cull_raster_state);
-	SafeRelease(depth_state);
-	SafeRelease(no_depth_state);
-	SafeRelease(readonly_depth_state);
 	SafeRelease(depth_stencil_view);
 	SafeRelease(render_target);
 	SafeRelease(swap_chain);
@@ -90,9 +88,11 @@ void Render::Init(const Int2& wnd_size, void* wnd_handle)
 	CreateDeviceAndSwapChain(wnd_handle);
 	CreateSizeDependentResources();
 	SetViewport();
-	CreateRasterState();
-	CreateBlendState();
-	CreateDepthStencilState();
+	CreateRasterStates();
+	CreateBlendStates();
+	CreateDepthStencilStates();
+
+	device_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
 cstring GetFeatureLevelString(D3D_FEATURE_LEVEL level)
@@ -238,7 +238,7 @@ void Render::SetViewport()
 	device_context->RSSetViewports(1, &viewport);
 }
 
-void Render::CreateDepthStencilState()
+void Render::CreateDepthStencilStates()
 {
 	// create depth stencil state
 	D3D11_DEPTH_STENCIL_DESC desc = {};
@@ -257,24 +257,24 @@ void Render::CreateDepthStencilState()
 
 	desc.BackFace = desc.FrontFace;
 
-	C(device->CreateDepthStencilState(&desc, &depth_state));
-	device_context->OMSetDepthStencilState(depth_state, 1);
+	C(device->CreateDepthStencilState(&desc, &depth_state[DEPTH_YES]));
+	device_context->OMSetDepthStencilState(depth_state[DEPTH_YES], 1);
 
 	//==================================================================
 	// create depth stencil state with disabled depth test
 	desc.DepthEnable = false;
 	desc.DepthFunc = D3D11_COMPARISON_ALWAYS;
-	C(device->CreateDepthStencilState(&desc, &no_depth_state));
+	C(device->CreateDepthStencilState(&desc, &depth_state[DEPTH_NO]));
 
 	//==================================================================
 	// create readonly depth stencil state
 	desc.DepthEnable = true;
 	desc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
 	desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-	C(device->CreateDepthStencilState(&desc, &readonly_depth_state));
+	C(device->CreateDepthStencilState(&desc, &depth_state[DEPTH_READONLY]));
 }
 
-void Render::CreateRasterState()
+void Render::CreateRasterStates()
 {
 	// create default raster state
 	D3D11_RASTERIZER_DESC desc;
@@ -299,10 +299,10 @@ void Render::CreateRasterState()
 	C(device->CreateRasterizerState(&desc, &no_cull_raster_state));
 }
 
-void Render::CreateBlendState()
+void Render::CreateBlendStates()
 {
 	// get disabled blend state
-	device_context->OMGetBlendState(&no_blend_state, nullptr, nullptr);
+	device_context->OMGetBlendState(&blend_state[BLEND_NO], nullptr, nullptr);
 
 	// create enabled blend state
 	D3D11_BLEND_DESC b_desc = { 0 };
@@ -315,7 +315,14 @@ void Render::CreateBlendState()
 	b_desc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
 	b_desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 
-	HRESULT result = device->CreateBlendState(&b_desc, &blend_state);
+	HRESULT result = device->CreateBlendState(&b_desc, &blend_state[BLEND_NORMAL]);
+	if(FAILED(result))
+		throw Format("Failed to create blend state (%u).", result);
+
+	// create blend state with desc one
+	b_desc.RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
+
+	result = device->CreateBlendState(&b_desc, &blend_state[BLEND_DEST_ONE]);
 	if(FAILED(result))
 		throw Format("Failed to create blend state (%u).", result);
 }
@@ -425,36 +432,22 @@ ID3D11Buffer* Render::CreateConstantBuffer(uint size)
 	return buffer;
 }
 
-void Render::SetAlphaBlend(bool enabled)
+void Render::SetAlphaBlend(BlendState state)
 {
-	if(enabled != alpha_blend)
-	{
-		alpha_blend = enabled;
-		device_context->OMSetBlendState(enabled ? blend_state : no_blend_state, nullptr, 0xFFFFFFFF);
-	}
+	assert(state >= 0 && state < BLEND_MAX);
+	if(state == current_blend_state)
+		return;
+	current_blend_state = state;
+	device_context->OMSetBlendState(blend_state[state], nullptr, 0xFFFFFFFF);
 }
 
 void Render::SetDepthState(DepthState state)
 {
-	if(state != current_depth_state)
-	{
-		current_depth_state = state;
-		ID3D11DepthStencilState* depth_stencil_state;
-		switch(current_depth_state)
-		{
-		case DEPTH_YES:
-		default:
-			depth_stencil_state = depth_state;
-			break;
-		case DEPTH_READONLY:
-			depth_stencil_state = readonly_depth_state;
-			break;
-		case DEPTH_NO:
-			depth_stencil_state = no_depth_state;
-			break;
-		}
-		device_context->OMSetDepthStencilState(depth_stencil_state, 0);
-	}
+	assert(state >= 0 && state < DEPTH_MAX);
+	if(state == current_depth_state)
+		return;
+	current_depth_state = state;
+	device_context->OMSetDepthStencilState(depth_state[state], 0);
 }
 
 void Render::SetCulling(bool enabled)

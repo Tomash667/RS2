@@ -10,6 +10,8 @@
 #include "QuadTree.h"
 #include "ScenePart.h"
 #include "SkyboxShader.h"
+#include "SkyShader.h"
+#include "Sky.h"
 #include "DebugDrawer.h"
 
 
@@ -27,8 +29,8 @@ struct ScenePartFactory : QuadTree::Factory
 } scene_part_factory;
 
 
-Scene::Scene() : fog_color(Color::White), fog_params(1000, 2000, 1000), skybox(nullptr), light_dir(0, 1, 0), light_color(1, 1, 1), ambient_color(1, 1, 1),
-debug_draw_enabled(false)
+Scene::Scene() : fog_color(Color::White), fog_params(1000, 2000, 1000), skybox(nullptr), sky(nullptr), light_dir(0, 1, 0), light_color(1, 1, 1),
+ambient_color(1, 1, 1), debug_draw_enabled(false)
 {
 	camera.reset(new Camera);
 }
@@ -38,6 +40,7 @@ Scene::~Scene()
 	DeleteElements(nodes);
 	ParticleEmitter::Free(pes);
 	DeleteElements(mesh_inst_pool);
+	delete sky;
 }
 
 void Scene::Init(Render* render, ResourceManager* res_mgr)
@@ -53,6 +56,9 @@ void Scene::Init(Render* render, ResourceManager* res_mgr)
 
 	skybox_shader.reset(new SkyboxShader(render));
 	skybox_shader->Init();
+
+	sky_shader.reset(new SkyShader(render));
+	sky_shader->Init();
 
 	debug_drawer.reset(new DebugDrawer(render, res_mgr));
 	debug_drawer->Init();
@@ -86,15 +92,20 @@ void Scene::Draw()
 
 void Scene::DrawSkybox()
 {
-	if(!skybox)
+	if(!skybox && !sky)
 		return;
 
-	skybox_shader->Draw(skybox, camera->from, mat_view_proj);
+	Matrix mat_combined = Matrix::Translation(camera->from) * mat_view_proj;
+
+	if(skybox)
+		skybox_shader->Draw(skybox, mat_combined);
+	if(sky)
+		sky_shader->Draw(sky, mat_combined);
 }
 
 void Scene::DrawNodes()
 {
-	render->SetAlphaBlend(false);
+	render->SetAlphaBlend(Render::BLEND_NO);
 	render->SetDepthState(Render::DEPTH_YES);
 	render->SetCulling(true);
 	mesh_shader->Prepare(fog_color, fog_params, light_dir, light_color, ambient_color);
@@ -103,7 +114,7 @@ void Scene::DrawNodes()
 
 	if(!visible_alpha_nodes.empty())
 	{
-		render->SetAlphaBlend(true);
+		render->SetAlphaBlend(Render::BLEND_NORMAL);
 		render->SetDepthState(Render::DEPTH_READONLY);
 		DrawNodes(visible_alpha_nodes, nullptr);
 	}
