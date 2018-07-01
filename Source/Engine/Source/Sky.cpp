@@ -1,10 +1,11 @@
 #include "EngineCore.h"
 #include "Sky.h"
+#include "Scene.h"
 
 const float Sky::SKYDOME_RADIUS = 10.f;
 
-Sky::Sky() : time(0), time_period(0), clouds_offset(0, 0), wind_vec(-0.25, 0.12f), clouds_scale_inv(1.f), tex_clouds_noise(nullptr), clouds_sharpness(5.f),
-clouds_threshold(0.7f), clouds_color{ Vec4(1,1,1,1), Vec4(1,1,1,1) }, stars_visibility(0.f), tex_sun_glow(nullptr)
+Sky::Sky(Scene* scene) : scene(scene), time(0), time_period(0), prev_time(0.f), clouds_offset(0, 0), wind_vec(-0.25, 0.12f), clouds_scale_inv(1.f),
+tex_clouds_noise(nullptr), clouds_sharpness(5.f), clouds_threshold(0.7f), clouds_color{ Vec4(1,1,1,1), Vec4(1,1,1,1) }, stars_visibility(0.f)
 {
 	// default sky colors
 	// 0-5 dark, 5-8 lighting, 8-17 light, 17-19 darkening, 19-24 dark
@@ -35,47 +36,82 @@ clouds_threshold(0.7f), clouds_color{ Vec4(1,1,1,1), Vec4(1,1,1,1) }, stars_visi
 void Sky::Update(float dt)
 {
 	clouds_offset += wind_vec * dt;
-	time += dt / 10;
-	if(time >= 1.f)
-		time -= 1.f;
-	time_period += dt / 10;
-	if(time_period >= 4.f)
-		time_period -= 4.f;
+
+	float dif;
+	if(time > prev_time)
+		dif = time - prev_time;
+	else
+		dif = time + (1.f - prev_time);
+	prev_time = time;
+	time_period += dif;
+	if(time_period >= 3.f)
+		time_period -= 3.f;
 
 	ColorPair colors = sky_colors.Get(time);
 	horizon_color = colors[0];
 	zenith_color = colors[1];
 
+	float ambient, fog_near, fog_far;
 	if(time < 5.f / 24 || time >= 19.f / 24)
 	{
 		stars_visibility = 1.f;
 		clouds_color[0] = Vec4(0.1f, 0.1f, 0.1f, 1);
+		ambient = 0.1f;
+		fog_near = 4.f;
+		fog_far = 12.f;
 	}
 	else if(time < 6.f / 24)
 	{
 		float t = 1.f - (time - 5.f / 24) * 24;
 		stars_visibility = t;
 		clouds_color[0] = Vec4::Lerp(Vec4(1, 1, 1, 1), Vec4(0.1f, 0.1f, 0.1f, 1), t);
+		ambient = Lerp(0.6f, 0.1f, t);
+		fog_near = Lerp(10.f, 4.f, t);
+		fog_far = Lerp(50.f, 12.f, t);
 	}
 	else if(time > 18.f / 24)
 	{
 		float t = (time - 18.f / 24) * 24;
 		stars_visibility = t;
 		clouds_color[0] = Vec4::Lerp(Vec4(1, 1, 1, 1), Vec4(0.1f, 0.1f, 0.1f, 1), t);
+		ambient = Lerp(0.6f, 0.1f, t);
+		fog_near = Lerp(10.f, 4.f, t);
+		fog_far = Lerp(50.f, 12.f, t);
 	}
 	else
 	{
 		stars_visibility = 0.f;
 		clouds_color[0] = Vec4(1, 1, 1, 1);
+		ambient = 0.6f;
+		fog_near = 10.f;
+		fog_far = 50.f;
 	}
+
 	clouds_color[1] = clouds_color[0];
+	scene->SetAmbientColor(Vec3(ambient, ambient, ambient));
+	scene->SetFogColor(Vec3(ambient - 0.1f, ambient - 0.1f, ambient - 0.1f));
+	scene->SetFogParams(fog_near, fog_far);
 
 	if(sun.enabled)
+	{
 		sun.Update(time);
+		if(stars_visibility < 0.5f)
+		{
+			scene->SetLightDir(sun.dir);
+			float a = 1.f - stars_visibility;
+			scene->SetLightColor(Vec3(a, a, a));
+		}
+	}
 	if(moon.enabled)
 	{
-		moon.dir = Vec3(sin(time_period / 4 * PI * 2), 0.3f + sin(time * PI) / 4, cos(time_period / 4 * PI * 2));
+		moon.dir = Vec3(sin((time_period / 3) * PI * 2), 0.5f + sin(time_period * PI * 2) * 0.2f, cos((time_period / 3) * PI * 2));
 		moon.color.w = stars_visibility;
+		if(stars_visibility > 0.5f)
+		{
+			scene->SetLightDir(moon.dir);
+			float a = stars_visibility / 5;
+			scene->SetLightColor(Vec3(a, a, a));
+		}
 	}
 }
 

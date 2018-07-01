@@ -146,16 +146,9 @@ void Game::InitGame()
 	game_state.config = config;
 
 	pathfinding.reset(new Pathfinding);
-
-	// fog
-	engine->GetRender()->SetClearColor(Color(200, 200, 200));
-	scene->SetFogColor(Color(200, 200, 200));
-	scene->SetFogParams(5.f, 20.f);
-	scene->SetAmbientColor(Vec3(0.6f, 0.6f, 0.6f));
-	scene->SetLightDir(Vec3(10, 10, 10).Normalize());
-
+	
 	// sky
-	sky = new Sky;
+	sky = new Sky(scene);
 	sky->tex_clouds_noise = res_mgr->GetTexture("skybox/noise.png");
 	sky->tex_stars = res_mgr->GetTexture("skybox/stars.png");
 	sky->sun.texture = res_mgr->GetTexture("skybox/sun.png");
@@ -173,8 +166,6 @@ void Game::InitGame()
 #endif
 
 	LoadResources();
-
-	//scene->SetSkybox(res_mgr->GetMesh("skybox/skybox.qmsh"));
 
 	city_generator.reset(new CityGenerator);
 	city_generator->Init(scene, level.get(), pathfinding.get(), res_mgr, level_size, 3);
@@ -223,7 +214,10 @@ void Game::StartGame(bool load)
 		city_generator->Generate();
 		camera->reset = true;
 		world_tick = 0.f;
-		game_state.hour = 6.f; // FIXME
+		game_state.hour = 16.50f; // 16:30
+		sky->time = game_state.hour / 24;
+		sky->prev_time = sky->time;
+		sky->time_period = sky->time;
 	}
 	game_state.SetPaused(false);
 	in_game = true;
@@ -292,8 +286,12 @@ void Game::UpdateGame(float dt)
 	camera->Update(dt, allow_mouse);
 	level->Update(dt);
 	UpdateWorld(dt);
-	//sky->SetTime(Clip(sky->GetTime() + dt / 5, 1.f));
-	game_state.hour += dt;
+
+	game_state.hour += dt / 60;
+#ifdef _DEBUG
+	if(input->Down(Key::Shift))
+		game_state.hour += dt * 2;
+#endif
 	if(game_state.hour >= 24.f)
 		game_state.hour -= 24.f;
 	sky->time = game_state.hour / 24;
@@ -1349,6 +1347,10 @@ void Game::Save(FileWriter& f)
 	f << sign;
 	f << VERSION;
 
+	// game state
+	f << game_state.hour;
+	f << sky->time_period;
+
 	// level
 	level->Save(f);
 	city_generator->Save(f);
@@ -1408,6 +1410,12 @@ void Game::Load(FileReader& f)
 	version &= 0xFFFFFF;
 	if(version != VERSION)
 		throw Format("Invalid save version %s.", VersionToString(version));
+
+	// game state
+	f >> game_state.hour;
+	sky->time = game_state.hour / 24;
+	sky->prev_time = sky->time;
+	f >> sky->time_period;
 
 	// level
 	level->Load(f);

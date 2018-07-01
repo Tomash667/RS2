@@ -139,6 +139,5 @@ float4 clouds_ps(clouds_vs_output In) : SV_TARGET
 
 	float4 texel = lerp(color1, color2, cloudSample);
 	texel.a = cloudSample * In.latitude;
-	//return In.latitude;
 	return texel;
 }
