@@ -103,7 +103,7 @@ Options::Options(GameState* game_state) : game_state(game_state)
 	bt->size = Int2(100, 30);
 	bt->SetPos(Int2((size.x - bt->size.x) / 2, size.y - bt->size.y - 30));
 	Add(bt);
-	
+
 	visible = false;
 }
 
@@ -151,7 +151,6 @@ void Options::Update(float dt)
 		volume = (int)scroll_volume->GetValue();
 		sound_mgr->SetSoundVolume(volume);
 		lab_volume->text = Format("Volume (%d):", volume);
-		
 	}
 
 	last_sound_test -= dt;

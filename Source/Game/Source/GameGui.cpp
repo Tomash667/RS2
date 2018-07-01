@@ -13,6 +13,7 @@
 #include <Font.h>
 #include "GameState.h"
 #include "Options.h"
+#include "StatsPanel.h"
 
 
 enum DIR
@@ -62,13 +63,14 @@ DIR AngleToDir(float angle)
 }
 
 
-GameGui::GameGui() : sprite_crosshair(nullptr)
+GameGui::GameGui() : sprite_crosshair(nullptr), stats_panel(nullptr)
 {
 }
 
 GameGui::~GameGui()
 {
 	delete sprite_crosshair;
+	delete stats_panel;
 }
 
 void GameGui::Init(Engine* engine, GameState* game_state, Options* options)
@@ -152,6 +154,9 @@ void GameGui::Init(Engine* engine, GameState* game_state, Options* options)
 	inventory = new Inventory(res_mgr, game_state);
 	Add(inventory);
 
+	// stats panel
+	stats_panel = new StatsPanel(res_mgr);
+
 	tex_background = res_mgr->GetTexture("gui/background.png");
 	res_mgr->AddFontFromFile("fonts/pertili.ttf");
 	font_big = res_mgr->GetFont("Perpetua Titling MT", 40);
@@ -214,11 +219,14 @@ void GameGui::Draw()
 	else if(game_state->IsPaused())
 	{
 		// paused
-		gui->DrawSprite(nullptr, Int2::Zero, gui->GetWindowSize(), Color(50, 50, 50, 150));
-		gui->DrawTextOutline("GAME PAUSED", font_big, Color(0, 255, 33), Color::Black, Font::Center | Font::VCenter,
-			Rect::Create(Int2::Zero, gui->GetWindowSize()));
-		gui->DrawTextOutline("Esc to continue, Enter to save & quit, O for options", nullptr, Color(0, 255, 33), Color::Black, Font::Center | Font::VCenter,
-			Rect::Create(Int2(0, 100), gui->GetWindowSize()));
+		if(!gui->HaveDialog())
+		{
+			gui->DrawSprite(nullptr, Int2::Zero, gui->GetWindowSize(), Color(50, 50, 50, 150));
+			gui->DrawTextOutline("GAME PAUSED", font_big, Color(0, 255, 33), Color::Black, Font::Center | Font::VCenter,
+				Rect::Create(Int2::Zero, gui->GetWindowSize()));
+			gui->DrawTextOutline("Esc to continue, Enter to save & quit, O for options", nullptr, Color(0, 255, 33), Color::Black, Font::Center | Font::VCenter,
+				Rect::Create(Int2(0, 100), gui->GetWindowSize()));
+		}
 	}
 	else
 	{
@@ -256,8 +264,14 @@ void GameGui::Update(float dt)
 		if(panel_size > panel_fps->size)
 			panel_fps->size = Int2::Max(panel_size, panel_fps->size);
 	}
+	bool have_dialog = false;
 	if(!mouse_focus)
-		return;
+	{
+		if(stats_panel->visible)
+			have_dialog = true;
+		else
+			return;
+	}
 
 	// hp bar
 	hp_bar->progress = player->GetHpp();
@@ -307,28 +321,51 @@ void GameGui::Update(float dt)
 	if(player->hp > 0)
 	{
 		if(input->Pressed(Key::I))
+		{
+			if(stats_panel->visible)
+				gui->CloseDialog();
 			inventory->Show(!inventory->visible);
+		}
+		else if(input->Pressed(Key::K))
+		{
+			if(stats_panel->visible)
+				gui->CloseDialog();
+			else
+			{
+				if(inventory->visible)
+					inventory->Show(false);
+				stats_panel->Show(player);
+			}
+		}
 	}
-	else if(inventory->visible)
-		inventory->Show(false);
+	else
+	{
+		if(inventory->visible)
+			inventory->Show(false);
+		if(stats_panel->visible)
+			gui->CloseDialog();
+	}
 
-	if(inventory->visible)
-		inventory->Update(dt);
-	else if(game_state->IsPaused())
+	if(!have_dialog)
 	{
-		if(input->Pressed(Key::Enter))
-			game_state->SetChangeState(GameState::SAVE_AND_EXIT);
+		if(inventory->visible)
+			inventory->Update(dt);
+		else if(game_state->IsPaused())
+		{
+			if(input->Pressed(Key::Enter))
+				game_state->SetChangeState(GameState::SAVE_AND_EXIT);
+			else if(input->Pressed(Key::Escape))
+				game_state->SetPaused(false);
+			else if(input->Pressed(Key::O))
+				options->Show();
+		}
 		else if(input->Pressed(Key::Escape))
-			game_state->SetPaused(false);
-		else if(input->Pressed(Key::O))
-			options->Show();
-	}
-	else if(input->Pressed(Key::Escape))
-	{
-		if(death_timer == 0.f)
-			game_state->SetPaused(true);
-		else if(death_timer > 2.f)
-			game_state->SetChangeState(GameState::EXIT_TO_MENU);
+		{
+			if(death_timer == 0.f)
+				game_state->SetPaused(true);
+			else if(death_timer > 2.f)
+				game_state->SetChangeState(GameState::EXIT_TO_MENU);
+		}
 	}
 }
 
@@ -338,9 +375,9 @@ void GameGui::Event(GuiEvent event)
 		PositionControls();
 }
 
-bool GameGui::IsInventoryOpen()
+bool GameGui::IsMouseRequired()
 {
-	return inventory->visible;
+	return inventory->visible || stats_panel->visible;
 }
 
 void GameGui::DrawCrosshair(int size, int dist, int length)

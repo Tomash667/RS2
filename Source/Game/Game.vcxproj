@@ -178,7 +178,10 @@
     <ClInclude Include="Source\MainMenu.h" />
     <ClInclude Include="Source\Options.h" />
     <ClInclude Include="Source\Pathfinding.h" />
+    <ClInclude Include="Source\Perk.h" />
+    <ClInclude Include="Source\PickPerkDialog.h" />
     <ClInclude Include="Source\Player.h" />
+    <ClInclude Include="Source\StatsPanel.h" />
     <ClInclude Include="Source\ThirdPersonCamera.h" />
     <ClInclude Include="Source\Tree.h" />
     <ClInclude Include="Source\Unit.h" />
@@ -197,7 +200,10 @@
     <ClCompile Include="Source\MainMenu.cpp" />
     <ClCompile Include="Source\Options.cpp" />
     <ClCompile Include="Source\Pathfinding.cpp" />
+    <ClCompile Include="Source\Perk.cpp" />
+    <ClCompile Include="Source\PickPerkDialog.cpp" />
     <ClCompile Include="Source\Player.cpp" />
+    <ClCompile Include="Source\StatsPanel.cpp" />
     <ClCompile Include="Source\ThirdPersonCamera.cpp" />
     <ClCompile Include="Source\Tree.cpp" />
     <ClCompile Include="Source\Unit.cpp" />

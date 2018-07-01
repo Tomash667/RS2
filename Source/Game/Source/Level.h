@@ -59,7 +59,7 @@ private:
 
 	ResourceManager* res_mgr;
 	GameState* game_state;
-	Mesh* mesh_zombie, *mesh_blood_pool, *mesh_zombie_blood_pool;
+	Mesh* mesh_human, *mesh_zombie, *mesh_hair, *mesh_clothes, *mesh_blood_pool, *mesh_zombie_blood_pool;
 	vector<vector<Collider>> colliders;
 	vector<Collider> barriers;
 	vector<SceneNode*> active_bloods;

@@ -1,8 +1,10 @@
 Rouge Survival Changelog
 ======================================================
 v0.2 (2018-07-??:
++ survive night to gain perk (Firearms, Light eater, Medic, Necrology, Strong, Tough)
 + day & night system, clouds
 + options (resolution, fullscreen, vsync, volume)
++ player stats panel
 - fixed zombie memory leaks
 
 v0.1 (2018-06-17):

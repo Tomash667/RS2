@@ -71,8 +71,11 @@ void Gui::Update(float dt)
 	{
 		mouse_focus = false;
 		Container::Update(dt);
-		dialog->mouse_focus = true;
-		dialog->Update(dt);
+		if(HaveDialog())
+		{
+			dialog->mouse_focus = true;
+			dialog->Update(dt);
+		}
 	}
 
 	if(focused && input->PressedOnce(Key::LeftButton))
@@ -422,7 +425,8 @@ void Gui::SetWindowSize(const Int2& wnd_size)
 
 void Gui::ShowMessageBox(Cstring text)
 {
-	assert(!dialog); // max 1 dialog at once currently
+	if(HaveDialog())
+		CloseDialog();
 
 	DialogBox* dialog = new DialogBox;
 	dialog->text = text;
@@ -446,7 +450,8 @@ void Gui::ShowMessageBox(Cstring text)
 
 void Gui::ShowDialog(Control* control)
 {
-	assert(!dialog); // max 1 dialog at once currently
+	if(HaveDialog())
+		CloseDialog();
 
 	control->SetPos(Int2((wnd_size.x - control->size.x) / 2, (wnd_size.y - control->size.y) / 2));
 	control->visible = true;

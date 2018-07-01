@@ -5,6 +5,7 @@
 #include <MeshInstance.h>
 #include "Level.h"
 #include <Scene.h>
+#include "Perk.h"
 
 const float Player::walk_speed = 2.5f;
 const float Player::run_speed = 7.f;
@@ -12,7 +13,8 @@ const float Player::rot_speed = 4.f;
 const float Player::hunger_timestep = 10.f;
 
 Player::Player(Level* level) : Unit(false), level(level), medkits(0), food_cans(0), action(A_NONE), item_before(nullptr), rot_buf(0), last_rot(0), food(80),
-hungry_timer(hunger_timestep), ranged_weapon(nullptr), ammo(0), current_ammo(0), use_melee(true), idle_timer_max(Random(2.5f, 4.f)), aim(0)
+maxfood(100), hungry_timer(hunger_timestep), ranged_weapon(nullptr), ammo(0), current_ammo(0), use_melee(true), idle_timer_max(Random(2.5f, 4.f)), aim(0),
+last_survived_day(0)
 {
 	melee_weapon = Item::Get("baseball_bat");
 	idle_timer = idle_timer_max;
@@ -20,7 +22,7 @@ hungry_timer(hunger_timestep), ranged_weapon(nullptr), ammo(0), current_ammo(0),
 
 void Player::UseMedkit()
 {
-	if(action == A_NONE && hp != 100 && medkits != 0)
+	if(action == A_NONE && hp != maxhp && medkits != 0)
 	{
 		action = A_USE_MEDKIT;
 		action_state = 0;
@@ -65,13 +67,14 @@ void Player::Reload()
 
 FoodLevel Player::GetFoodLevel()
 {
-	if(food >= 90)
+	float ratio = float(food) / maxfood;
+	if(ratio >= 0.9f)
 		return FL_FULL;
-	else if(food >= 33)
+	else if(ratio >= 0.33f)
 		return FL_NORMAL;
-	else if(food >= 15)
+	else if(ratio >= 0.15f)
 		return FL_HUNGRY;
-	else if(food >= 0)
+	else if(ratio >= 0)
 		return FL_VERY_HUGRY;
 	else
 		return FL_STARVING;
@@ -105,7 +108,9 @@ void Player::Save(FileWriter& f)
 		f << shot_delay;
 		f << aim;
 		f << food;
+		f << maxfood;
 		f << hungry_timer;
+		f << last_survived_day;
 	}
 	else
 	{
@@ -121,6 +126,8 @@ void Player::Save(FileWriter& f)
 	f << ammo;
 	f << current_ammo;
 	f << use_melee;
+
+	f << perks;
 }
 
 void Player::Load(FileReader& f)
@@ -138,7 +145,9 @@ void Player::Load(FileReader& f)
 		f >> shot_delay;
 		f >> aim;
 		f >> food;
+		f >> maxfood;
 		f >> hungry_timer;
+		f >> last_survived_day;
 	}
 	else
 	{
@@ -155,6 +164,8 @@ void Player::Load(FileReader& f)
 	f >> current_ammo;
 	f >> use_melee;
 
+	f >> perks;
+
 	item_before = nullptr;
 	if(!use_melee)
 	{
@@ -162,4 +173,74 @@ void Player::Load(FileReader& f)
 		weapon->SetParentPoint(node->mesh->GetPoint("pistol"));
 		level->scene->RecycleMeshInstance(weapon);
 	}
+}
+
+void Player::GetAvailablePerks(vector<std::pair<PerkId, int>>& available_perks)
+{
+	available_perks.clear();
+	for(int i = 0; i < (int)PerkId::Max; ++i)
+	{
+		bool found = false;
+		for(std::pair<PerkId, int>& perk : perks)
+		{
+			if(perk.first == (PerkId)i)
+			{
+				if(perk.second != Perk::max_level)
+					available_perks.push_back({ perk.first, perk.second + 1 });
+				found = true;
+				break;
+			}
+		}
+		if(!found)
+			available_perks.push_back({ (PerkId)i, 1 });
+	}
+}
+
+void Player::AddPerk(PerkId id)
+{
+	if(id == PerkId::Tough)
+	{
+		float ratio = GetHpp();
+		maxhp += 20;
+		hp = int(ratio * maxhp);
+	}
+	else if(id == PerkId::LightEater)
+	{
+		float ratio = float(food) / maxfood;
+		maxfood += 20;
+		food = int(ratio * maxfood);
+	}
+
+	for(std::pair<PerkId, int>& perk : perks)
+	{
+		if(perk.first == id)
+		{
+			++perk.second;
+			return;
+		}
+	}
+	perks.push_back({ id, 1 });
+}
+
+int Player::GetPerkLevel(PerkId id)
+{
+	for(std::pair<PerkId, int>& perk : perks)
+	{
+		if(perk.first == id)
+			return perk.second;
+	}
+	return 0;
+}
+
+float Player::GetRunSpeed()
+{
+	int level = GetPerkLevel(PerkId::Agile);
+	return run_speed + 0.5f * level;
+}
+
+void Player::UpdateAim(float mod)
+{
+	int level = GetPerkLevel(PerkId::Firearms);
+	mod *= 1.f - 0.2f * level;
+	aim += mod;
 }

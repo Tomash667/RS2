@@ -31,18 +31,24 @@ struct Player : Unit
 	void Reload();
 	void Save(FileWriter& f);
 	void Load(FileReader& f);
+	void AddPerk(PerkId id);
+	void UpdateAim(float mod);
 
 	FoodLevel GetFoodLevel();
 	Vec3 GetShootPos();
+	void GetAvailablePerks(vector<std::pair<PerkId, int>>& available_perks);
+	int GetPerkLevel(PerkId id);
+	float GetRunSpeed();
 
 	Level* level;
 	Action action;
-	int action_state, food;
+	int action_state, food, maxfood, last_survived_day;
 	uint medkits, food_cans, ammo, current_ammo;
 	SceneNode* weapon, *hair;
 	GroundItem* item_before;
 	float rot_buf, last_rot, hungry_timer, shot_delay, idle_timer, idle_timer_max, aim;
 	Item* melee_weapon, *ranged_weapon;
+	vector<std::pair<PerkId, int>> perks;
 	bool use_melee, death_starved;
 
 	static const float walk_speed;
