@@ -32,6 +32,7 @@ struct Player : Unit
 	void Save(FileWriter& f);
 	void Load(FileReader& f);
 	void AddPerk(PerkId id);
+	void UpdateAim(float mod);
 
 	FoodLevel GetFoodLevel();
 	Vec3 GetShootPos();
@@ -41,7 +42,7 @@ struct Player : Unit
 
 	Level* level;
 	Action action;
-	int action_state, food, maxfood;
+	int action_state, food, maxfood, last_survived_day;
 	uint medkits, food_cans, ammo, current_ammo;
 	SceneNode* weapon, *hair;
 	GroundItem* item_before;

@@ -218,6 +218,7 @@ void Game::StartGame(bool load)
 		Info("Starting new game.");
 		city_generator->Generate();
 		camera->reset = true;
+		game_state.day = 0;
 		game_state.last_hour = 16;
 		game_state.hour = 16.50f; // 16:30
 		sky->time = game_state.hour / 24;
@@ -306,7 +307,10 @@ void Game::UpdateGame(float dt)
 		game_state.hour += dt * 2;
 #endif
 	if(game_state.hour >= 24.f)
+	{
 		game_state.hour -= 24.f;
+		++game_state.day;
+	}
 	sky->time = game_state.hour / 24;
 	sky->Update(dt);
 
@@ -327,9 +331,16 @@ void Game::UpdatePlayer(float dt)
 		return;
 	}
 
-	// FIXME
+	// show gick perk dialog when survived night
+	if(game_state.day != player->last_survived_day && game_state.hour >= 7.f)
+	{
+		pick_perk->Show(player);
+		player->last_survived_day = game_state.day;
+	}
+#ifdef _DEBUG
 	if(input->Pressed(Key::P))
-		pick_perk->Show(player); // TODO: close K when showing, check if player is alive!
+		pick_perk->Show(player);
+#endif
 
 	player->last_damage -= dt;
 	if((player->hungry_timer -= dt) <= 0.f)
@@ -635,7 +646,7 @@ void Game::UpdatePlayer(float dt)
 					player->weapon->mesh_inst->Play("shoot", PLAY_NO_BLEND | PLAY_ONCE, 0);
 
 					player->shot_delay = 0.1f;
-					player->aim += 10.f;
+					player->UpdateAim(10.f);
 					--player->current_ammo;
 				}
 			}
@@ -666,7 +677,7 @@ void Game::UpdatePlayer(float dt)
 		if(allow_mouse)
 		{
 			Int2 dif = input->GetMouseDif();
-			player->aim += float(max(abs(dif.x), abs(dif.y))) / 50;
+			player->UpdateAim(float(max(abs(dif.x), abs(dif.y))) / 50);
 		}
 		if(player->rot_buf != 0)
 		{
@@ -771,7 +782,7 @@ void Game::UpdatePlayer(float dt)
 	}
 
 	float d = 1.0f - exp(log(0.5f) * 5.f *dt);
-	player->aim += (expected_aim - player->aim) * d;
+	player->UpdateAim((expected_aim - player->aim) * d);
 
 	if(player->action == A_NONE && animation == ANI_STAND)
 	{
@@ -1384,6 +1395,7 @@ void Game::Save(FileWriter& f)
 	f << VERSION;
 
 	// game state
+	f << game_state.day;
 	f << game_state.hour;
 	f << game_state.last_hour;
 	f << sky->time_period;
@@ -1448,6 +1460,7 @@ void Game::Load(FileReader& f)
 		throw Format("Invalid save version %s.", VersionToString(version));
 
 	// game state
+	f >> game_state.day;
 	f >> game_state.hour;
 	f >> game_state.last_hour;
 	sky->time = game_state.hour / 24;
