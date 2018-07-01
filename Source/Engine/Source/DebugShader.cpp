@@ -46,11 +46,10 @@ void DebugShader::Prepare(const Matrix& mat_view_proj)
 
 	this->mat_view_proj = mat_view_proj;
 
-	render->SetAlphaBlend(true);
+	render->SetAlphaBlend(Render::BLEND_NORMAL);
 	render->SetDepthState(Render::DEPTH_READONLY);
 	render->SetCulling(false);
 
-	device_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	device_context->IASetInputLayout(shader.layout);
 	device_context->VSSetShader(shader.vertex_shader, nullptr, 0);
 	device_context->VSSetConstantBuffers(0, 1, &shader.vs_buffer);

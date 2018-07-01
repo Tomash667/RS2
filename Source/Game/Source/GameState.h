@@ -34,6 +34,8 @@ public:
 	Config* config;
 	Level* level;
 	Player* player;
+	float hour;
+	int last_hour;
 
 private:
 	ChangeState change_state;

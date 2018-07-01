@@ -1163,6 +1163,7 @@ struct Matrix : XMFLOAT4X4
 	static Matrix CreateBillboard(const Vec3& object, const Vec3& cameraPosition, const Vec3& cameraUp, const Vec3* cameraForward = nullptr);
 	static Matrix CreateConstrainedBillboard(const Vec3& object, const Vec3& cameraPosition, const Vec3& rotateAxis,
 		const Vec3* cameraForward = nullptr, const Vec3* objectForward = nullptr);
+	static Matrix CreateFromAxes(const Vec3& axisX, const Vec3& axisY, const Vec3& axisZ);
 	static Matrix CreateFromAxisAngle(const Vec3& axis, float angle);
 	static Matrix CreateLookAt(const Vec3& position, const Vec3& target, const Vec3& up = Vec3(0, 1, 0));
 	static Matrix CreateOrthographic(float width, float height, float zNearPlane, float zFarPlane);
@@ -1398,6 +1399,14 @@ bool CircleToRectangle(float circlex, float circley, float radius, float rectx, 
 bool RectangleToRectangle(const Box2d& box1, const Box2d& box2);
 bool RayToBox(const Vec3& ray_pos, const Vec3& ray_dir, const Box& box, float* out_t);
 bool RayToCylinder(const Vec3& sa, const Vec3& sb, const Vec3& p, const Vec3& q, float r, float& t);
+
+//-----------------------------------------------------------------------------
+// More math functions
+//-----------------------------------------------------------------------------
+namespace math
+{
+	void SphericalToCartesian(Vec3& out, float yaw, float pitch, float r);
+}
 
 //-----------------------------------------------------------------------------
 #include "CoreMath.inl"

@@ -171,6 +171,7 @@
     <ClInclude Include="Include\Scene.h" />
     <ClInclude Include="Include\SceneNode.h" />
     <ClInclude Include="Include\ScenePart.h" />
+    <ClInclude Include="Include\Sky.h" />
     <ClInclude Include="Include\Sound.h" />
     <ClInclude Include="Include\SoundManager.h" />
     <ClInclude Include="Include\Text.h" />
@@ -188,6 +189,7 @@
     <ClInclude Include="Source\QmshLoader.h" />
     <ClInclude Include="Source\Shader.h" />
     <ClInclude Include="Source\SkyboxShader.h" />
+    <ClInclude Include="Source\SkyShader.h" />
     <ClInclude Include="Source\SoundLoader.h" />
     <ClInclude Include="Source\TextureLoader.h" />
     <ClInclude Include="Source\WICTextureLoader.h" />
@@ -224,7 +226,9 @@
     <ClCompile Include="Source\SceneNode.cpp" />
     <ClCompile Include="Source\ScenePart.cpp" />
     <ClCompile Include="Source\Shader.cpp" />
+    <ClCompile Include="Source\Sky.cpp" />
     <ClCompile Include="Source\SkyboxShader.cpp" />
+    <ClCompile Include="Source\SkyShader.cpp" />
     <ClCompile Include="Source\Sound.cpp" />
     <ClCompile Include="Source\SoundLoader.cpp" />
     <ClCompile Include="Source\SoundManager.cpp" />

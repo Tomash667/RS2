@@ -8,7 +8,7 @@ public:
 	SkyboxShader(Render* render);
 	~SkyboxShader();
 	void Init();
-	void Draw(Mesh* mesh, const Vec3& center, const Matrix& mat_view_proj);
+	void Draw(Mesh* mesh, const Matrix& mat_combined);
 	
 private:
 	Render* render;

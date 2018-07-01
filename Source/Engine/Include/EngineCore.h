@@ -21,6 +21,7 @@ struct ParticleEmitter;
 struct SceneNode;
 struct ScenePart;
 struct Shader;
+struct Sky;
 
 // resources
 struct Font;
@@ -53,6 +54,7 @@ class MeshShader;
 class ParticleShader;
 class QmshLoader;
 class SkyboxShader;
+class SkyShader;
 class SoundLoader;
 class TextureLoader;
 

@@ -26,6 +26,7 @@
 #include "Pathfinding.h"
 #include <Gui.h>
 #include <Config.h>
+#include <Sky.h>
 
 
 const int level_size = 32;
@@ -146,12 +147,15 @@ void Game::InitGame()
 
 	pathfinding.reset(new Pathfinding);
 
-	// fog
-	engine->GetRender()->SetClearColor(Color(200, 200, 200));
-	scene->SetFogColor(Color(200, 200, 200));
-	scene->SetFogParams(5.f, 20.f);
-	scene->SetAmbientColor(Vec3(0.6f, 0.6f, 0.6f));
-	scene->SetLightDir(Vec3(10, 10, 10).Normalize());
+	// sky
+	sky = new Sky(scene);
+	sky->tex_clouds_noise = res_mgr->GetTexture("sky/noise.png");
+	sky->tex_stars = res_mgr->GetTexture("sky/stars.png");
+	sky->sun.texture = res_mgr->GetTexture("sky/sun.png");
+	sky->sun.enabled = true;
+	sky->moon.texture = res_mgr->GetTexture("sky/moon.png");
+	sky->moon.enabled = true;
+	scene->SetSky(sky);
 
 	//scene->SetDebugDrawHandler(delegate<void(DebugDrawer*)>(this, &Game::OnDebugDraw));
 	//scene->SetDebugDrawEnabled(true);
@@ -162,8 +166,6 @@ void Game::InitGame()
 #endif
 
 	LoadResources();
-
-	scene->SetSkybox(res_mgr->GetMesh("skybox/skybox.qmsh"));
 
 	city_generator.reset(new CityGenerator);
 	city_generator->Init(scene, level.get(), pathfinding.get(), res_mgr, level_size, 3);
@@ -211,7 +213,11 @@ void Game::StartGame(bool load)
 		Info("Starting new game.");
 		city_generator->Generate();
 		camera->reset = true;
-		world_tick = 0.f;
+		game_state.last_hour = 16;
+		game_state.hour = 16.50f; // 16:30
+		sky->time = game_state.hour / 24;
+		sky->prev_time = sky->time;
+		sky->time_period = sky->time;
 	}
 	game_state.SetPaused(false);
 	in_game = true;
@@ -280,6 +286,24 @@ void Game::UpdateGame(float dt)
 	camera->Update(dt, allow_mouse);
 	level->Update(dt);
 	UpdateWorld(dt);
+
+#ifdef _DEBUG
+	if(input->Pressed(Key::N0))
+	{
+		SceneNode* node = level->player->node;
+		level->SpawnZombie(node->pos + Vec3(cos(node->rot.y) * 10, 0, sin(node->rot.y) * 10));
+	}
+#endif
+
+	game_state.hour += dt / 60;
+#ifdef _DEBUG
+	if(input->Down(Key::Shift))
+		game_state.hour += dt * 2;
+#endif
+	if(game_state.hour >= 24.f)
+		game_state.hour -= 24.f;
+	sky->time = game_state.hour / 24;
+	sky->Update(dt);
 
 	scene->Update(dt);
 }
@@ -490,7 +514,7 @@ void Game::UpdatePlayer(float dt)
 		{
 			sound_mgr->PlaySound3d(sound_reload, player->GetSoundPos(), 2.f);
 			player->action_state = 1;
-	}
+		}
 		if(player->node->mesh_inst->GetEndResult(1))
 		{
 			uint ammo = min(player->ammo, 10u - player->current_ammo);
@@ -1136,7 +1160,7 @@ void Game::HitUnit(Unit& unit, int dmg, const Vec3& hitpoint)
 	else
 	{
 		if(unit.last_damage <= 0.f && Rand() % 3 == 0)
-		sound_mgr->PlaySound3d(unit.is_zombie ? sound_zombie_hurt : sound_player_hurt, unit.GetSoundPos(), 2.f);
+			sound_mgr->PlaySound3d(unit.is_zombie ? sound_zombie_hurt : sound_player_hurt, unit.GetSoundPos(), 2.f);
 
 		if(unit.is_zombie)
 		{
@@ -1229,11 +1253,11 @@ void Game::OnDebugDraw(DebugDrawer* debug)
 
 void Game::UpdateWorld(float dt)
 {
-	world_tick += dt;
-	if(world_tick < 10.f)
+	int hour = (int)game_state.hour;
+	if(hour == game_state.last_hour)
 		return;
 
-	world_tick -= 10.f;
+	game_state.last_hour = hour;
 
 	// remove zombie corpses
 	LoopRemove(level->zombies, [this](Zombie* zombie)
@@ -1247,6 +1271,7 @@ void Game::UpdateWorld(float dt)
 				if(zombie->death_timer >= 15)
 				{
 					scene->Remove(zombie->node);
+					delete zombie;
 					return true;
 				}
 			}
@@ -1273,7 +1298,15 @@ void Game::UpdateWorld(float dt)
 	// spawn new zombies
 	if(level->alive_zombies < 25)
 	{
-		if(Rand() % max(1, ((int)level->alive_zombies - 15)) == 0)
+		int chance;
+		if(game_state.hour <= 5.f || game_state.hour >= 19.f)
+			chance = 1;
+		else if(game_state.hour <= 8.f || game_state.hour >= 17.f)
+			chance = 2;
+		else
+			chance = 4;
+
+		if(Rand() % chance == 0 && Rand() % max(1, ((int)level->alive_zombies - 15)) == 0)
 		{
 			Vec2 player_pos = level->player->node->pos.XZ();
 			for(int tries = 0; tries < 5; ++tries)
@@ -1320,10 +1353,14 @@ void Game::Save(FileWriter& f)
 	f << sign;
 	f << VERSION;
 
+	// game state
+	f << game_state.hour;
+	f << game_state.last_hour;
+	f << sky->time_period;
+
 	// level
 	level->Save(f);
 	city_generator->Save(f);
-	f << world_tick;
 	f << alert_pos;
 
 	// camera
@@ -1380,10 +1417,16 @@ void Game::Load(FileReader& f)
 	if(version != VERSION)
 		throw Format("Invalid save version %s.", VersionToString(version));
 
+	// game state
+	f >> game_state.hour;
+	f >> game_state.last_hour;
+	sky->time = game_state.hour / 24;
+	sky->prev_time = sky->time;
+	f >> sky->time_period;
+
 	// level
 	level->Load(f);
 	city_generator->Load(f);
-	f >> world_tick;
 	f >> alert_pos;
 
 	// camera
