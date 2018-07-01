@@ -52,7 +52,6 @@ private:
 	unique_ptr<CityGenerator> city_generator;
 	unique_ptr<Pathfinding> pathfinding;
 	vector<std::pair<Vec3, float>> alert_pos;
-	float world_tick;
 	bool in_game, allow_mouse, quickstart;
 
 	// resources

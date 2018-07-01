@@ -441,12 +441,6 @@ void SkyShader::DrawClouds(const Matrix& mat_combined)
 	ID3D11ShaderResourceView* tex[1] = { sky->tex_clouds_noise ? sky->tex_clouds_noise->tex : nullptr };
 	device_context->PSSetShaderResources(0, 1, tex);
 
-	// FIXME
-	//Color4f_Pair colors;
-	//clouds.colors.Get(&colors, math::Frac(time));
-	//colors.first *= clouds.color_weather_factors.first;
-	//colors.second *= clouds.color_weather_factors.second;
-
 	D3D11_MAPPED_SUBRESOURCE resource;
 	C(device_context->Map(vs_buffer_clouds, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource));
 	VertexShaderCloudGlobals& vs_g = *(VertexShaderCloudGlobals*)resource.pData;
