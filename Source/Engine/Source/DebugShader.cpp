@@ -49,6 +49,7 @@ void DebugShader::Prepare(const Matrix& mat_view_proj)
 	render->SetAlphaBlend(Render::BLEND_NORMAL);
 	render->SetDepthState(Render::DEPTH_READONLY);
 	render->SetCulling(false);
+	render->SetWireframe(false);
 
 	device_context->IASetInputLayout(shader.layout);
 	device_context->VSSetShader(shader.vertex_shader, nullptr, 0);
@@ -66,6 +67,11 @@ void DebugShader::SetColor(Color color)
 	Vec4& c = *(Vec4*)resource.pData;
 	c = color;
 	device_context->Unmap(shader.ps_buffer, 0);
+}
+
+void DebugShader::SetWireframe(bool wireframe)
+{
+	render->SetWireframe(wireframe);
 }
 
 Vec3* DebugShader::Lock()

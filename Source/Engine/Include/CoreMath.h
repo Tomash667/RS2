@@ -995,21 +995,21 @@ struct Box2d
 		return Vec2(v1.x, v2.y);
 	}
 
-	Vec3 LeftTop3() const
+	Vec3 LeftTop3(float y = 0.f) const
 	{
-		return Vec3(v1.x, v1.y, 0);
+		return Vec3(v1.x, v1.y, y);
 	}
-	Vec3 RightTop3() const
+	Vec3 RightTop3(float y = 0.f) const
 	{
-		return Vec3(v2.x, v1.y, 0);
+		return Vec3(v2.x, v1.y, y);
 	}
-	Vec3 LeftBottom3() const
+	Vec3 LeftBottom3(float y = 0.f) const
 	{
-		return Vec3(v1.x, v2.y, 0);
+		return Vec3(v1.x, v2.y, y);
 	}
-	Vec3 RightBottom3() const
+	Vec3 RightBottom3(float y = 0.f) const
 	{
-		return Vec3(v2.x, v2.y, 0);
+		return Vec3(v2.x, v2.y, y);
 	}
 
 	Box2d LeftBottomPart() const

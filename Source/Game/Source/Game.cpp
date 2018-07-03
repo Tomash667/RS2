@@ -29,6 +29,7 @@
 #include <Sky.h>
 #include "PickPerkDialog.h"
 #include "Perk.h"
+#include "Navmesh.h"
 
 
 const int level_size = 32;
@@ -149,6 +150,7 @@ void Game::InitGame()
 	game_state.config = config;
 
 	pathfinding.reset(new Pathfinding);
+	navmesh.reset(new Navmesh);
 
 	// sky
 	sky = new Sky(scene);
@@ -171,7 +173,7 @@ void Game::InitGame()
 	LoadResources();
 
 	city_generator.reset(new CityGenerator);
-	city_generator->Init(scene, level.get(), pathfinding.get(), res_mgr, level_size, 3);
+	city_generator->Init(scene, level.get(), pathfinding.get(), res_mgr, level_size, 3, navmesh.get());
 
 	main_menu = new MainMenu;
 	main_menu->Init(res_mgr, &game_state);

@@ -10,6 +10,7 @@
 #include "Pathfinding.h"
 #include "Tree.h"
 #include <MeshBuilder.h>
+#include "Navmesh.h"
 
 const float CityGenerator::tile_size = 5.f;
 const float CityGenerator::floor_y = 0.05f;
@@ -20,13 +21,14 @@ CityGenerator::~CityGenerator()
 	DeleteElements(buildings);
 }
 
-void CityGenerator::Init(Scene* scene, Level* level, Pathfinding* pathfinding, ResourceManager* res_mgr, uint size, uint splits)
+void CityGenerator::Init(Scene* scene, Level* level, Pathfinding* pathfinding, ResourceManager* res_mgr, uint size, uint splits, Navmesh* navmesh)
 {
 	this->res_mgr = res_mgr;
 	this->scene = scene;
 	this->level = level;
 	this->pathfinding = pathfinding;
 	this->size = size;
+	this->navmesh = navmesh;
 
 	scene->InitQuadTree(tile_size * size, splits);
 	map.resize(size * size);
@@ -841,4 +843,11 @@ void CityGenerator::Load(FileReader& f)
 	CreateScene();
 	level->SpawnBarriers();
 	pathfinding->GenerateBlockedGrid(size, tile_size, buildings);
+}
+
+void CityGenerator::BuildNavmesh()
+{
+	navmesh->Reset();
+	for(Building* b : buildings)
+		navmesh->StartRegion(Box2d(b->box, Unit::radius));
 }

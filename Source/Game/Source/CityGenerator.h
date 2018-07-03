@@ -15,7 +15,7 @@ class CityGenerator
 {
 public:
 	~CityGenerator();
-	void Init(Scene* scene, Level* level, Pathfinding* pathfinding, ResourceManager* res_mgr, uint size, uint splits);
+	void Init(Scene* scene, Level* level, Pathfinding* pathfinding, ResourceManager* res_mgr, uint size, uint splits, Navmesh* navmesh);
 	void Reset();
 	void Generate();
 	void DrawMap();
@@ -33,6 +33,7 @@ private:
 	void FillBuildings();
 	void BuildBuildingsMesh();
 	void CreateScene();
+	void BuildNavmesh();
 	void SpawnItems();
 	void SpawnItem(Building* building, Item* item);
 	void SpawnZombies();
@@ -41,6 +42,7 @@ private:
 	ResourceManager* res_mgr;
 	Scene* scene;
 	Pathfinding* pathfinding;
+	Navmesh* navmesh;
 	Level* level;
 	vector<Tile> map;
 	uint size;

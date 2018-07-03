@@ -52,6 +52,7 @@ private:
 	unique_ptr<Level> level;
 	unique_ptr<CityGenerator> city_generator;
 	unique_ptr<Pathfinding> pathfinding;
+	unique_ptr<Navmesh> navmesh;
 	vector<std::pair<Vec3, float>> alert_pos;
 	bool in_game, allow_mouse, quickstart;
 

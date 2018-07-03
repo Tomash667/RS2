@@ -96,6 +96,9 @@
     <ClInclude Include="Source\Perk.h">
       <Filter>Header Files\Stats</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Navmesh.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Main.cpp">
@@ -154,6 +157,9 @@
     </ClCompile>
     <ClCompile Include="Source\Perk.cpp">
       <Filter>Source Files\Stats</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Navmesh.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

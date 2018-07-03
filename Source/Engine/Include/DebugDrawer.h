@@ -9,10 +9,12 @@ public:
 	void Draw(const Matrix& mat_view, const Matrix& mat_view_proj, const Vec3& cam_pos, delegate<void(DebugDrawer*)> handler);
 	void DrawLine(const Vec3& from, const Vec3& to, float width);
 	void DrawQuad(const Vec3 pos[4]);
+	void DrawQuad(const Box2d& box, float y);
 	void DrawCube(const Box& box);
 	void DrawSphere(const Vec3& pos, float radius);
 
 	void SetColor(Color color);
+	void SetWireframe(bool wireframe);
 
 	Color GetColor() { return color; }
 

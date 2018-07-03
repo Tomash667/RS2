@@ -10,6 +10,7 @@ public:
 	void Init();
 	void Prepare(const Matrix& mat_view_proj);
 	void SetColor(Color color);
+	void SetWireframe(bool wireframe);
 	Vec3* Lock();
 	void Draw(uint vertex_count);
 	void Draw(Mesh* mesh, const Matrix& mat_world);

@@ -27,6 +27,7 @@ void DebugDrawer::Draw(const Matrix& mat_view, const Matrix& mat_view_proj, cons
 	this->cam_pos = cam_pos;
 	shader->Prepare(mat_view_proj);
 	handler(this);
+	shader->SetWireframe(false);
 }
 
 // https://www.gamedev.net/forums/topic/617595-solved-thick-constant-width-lines-using-quads/
@@ -66,6 +67,20 @@ void DebugDrawer::DrawQuad(const Vec3 pos[4])
 	shader->Draw(6);
 }
 
+void DebugDrawer::DrawQuad(const Box2d& box, float y)
+{
+	Vec3* v = shader->Lock();
+
+	v[0] = box.LeftTop3(y);
+	v[1] = box.RightTop3(y);
+	v[2] = box.LeftBottom3(y);
+	v[3] = v[2];
+	v[4] = v[1];
+	v[5] = box.RightBottom3(y);
+
+	shader->Draw(6);
+}
+
 void DebugDrawer::DrawCube(const Box& box)
 {
 	shader->Draw(mesh_cube, Matrix::Scale(box.Size() / 2) * Matrix::Translation(box.Midpoint()));
@@ -83,4 +98,9 @@ void DebugDrawer::SetColor(Color color)
 		this->color = color;
 		shader->SetColor(color);
 	}
+}
+
+void DebugDrawer::SetWireframe(bool wireframe)
+{
+	shader->SetWireframe(wireframe);
 }

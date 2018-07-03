@@ -9,9 +9,11 @@
 const Int2 MIN_RESOLUTION = Int2(1024, 768);
 const DXGI_FORMAT DISPLAY_FORMAT = DXGI_FORMAT_R8G8B8A8_UNORM;
 
+
+
 Render::Render() : factory(nullptr), adapter(nullptr), swap_chain(nullptr), device(nullptr), device_context(nullptr), render_target(nullptr),
-depth_stencil_view(nullptr), depth_state(), raster_state(nullptr), no_cull_raster_state(nullptr), blend_state(), clear_color(Color::Black), vsync(true),
-current_depth_state(DEPTH_YES), current_blend_state(BLEND_NO), culling(true)
+depth_stencil_view(nullptr), depth_state(), raster_state(), blend_state(), clear_color(Color::Black), vsync(true), current_depth_state(DEPTH_YES),
+current_blend_state(BLEND_NO), culling(true), wireframe(false), current_raster_state(0)
 {
 #ifdef _DEBUG
 	vsync = false;
@@ -24,8 +26,8 @@ Render::~Render()
 		SafeRelease(depth_state[i]);
 	for(int i = 0; i < BLEND_MAX; ++i)
 		SafeRelease(blend_state[i]);
-	SafeRelease(raster_state);
-	SafeRelease(no_cull_raster_state);
+	for(int i = 0; i < RASTER_MAX; ++i)
+		SafeRelease(raster_state[i]);
 	SafeRelease(depth_stencil_view);
 	SafeRelease(render_target);
 	SafeRelease(swap_chain);
@@ -276,27 +278,23 @@ void Render::CreateDepthStencilStates()
 
 void Render::CreateRasterStates()
 {
-	// create default raster state
 	D3D11_RASTERIZER_DESC desc;
 	desc.AntialiasedLineEnable = false;
-	desc.CullMode = D3D11_CULL_BACK;
 	desc.DepthBias = 0;
 	desc.DepthBiasClamp = 0.0f;
 	desc.DepthClipEnable = true;
-	desc.FillMode = D3D11_FILL_SOLID;
 	desc.FrontCounterClockwise = false;
 	desc.MultisampleEnable = false;
 	desc.ScissorEnable = false;
 	desc.SlopeScaledDepthBias = 0.0f;
 
-	C(device->CreateRasterizerState(&desc, &raster_state));
+	for(int i = 0; i < RASTER_MAX; ++i)
+	{
+		desc.CullMode = IS_SET(i, RASTER_NO_CULLING) ? D3D11_CULL_BACK : D3D11_CULL_NONE;
+		desc.FillMode = IS_SET(i, RASTER_WIREFRAME) ? D3D11_FILL_WIREFRAME : D3D11_FILL_SOLID;
 
-	device_context->RSSetState(raster_state);
-
-	// create raster state with disabled culling
-	desc.CullMode = D3D11_CULL_NONE;
-
-	C(device->CreateRasterizerState(&desc, &no_cull_raster_state));
+		C(device->CreateRasterizerState(&desc, &raster_state[i]));
+	}
 }
 
 void Render::CreateBlendStates()
@@ -455,8 +453,27 @@ void Render::SetCulling(bool enabled)
 	if(culling != enabled)
 	{
 		culling = enabled;
-		device_context->RSSetState(enabled ? raster_state : no_cull_raster_state);
+		UpdateRasterState();
 	}
+}
+
+void Render::SetWireframe(bool enabled)
+{
+	if(wireframe != enabled)
+	{
+		wireframe = enabled;
+		UpdateRasterState();
+	}
+}
+
+void Render::UpdateRasterState()
+{
+	current_raster_state = 0;
+	if(!culling)
+		current_raster_state |= RASTER_NO_CULLING;
+	if(wireframe)
+		current_raster_state |= RASTER_WIREFRAME;
+	device_context->RSSetState(raster_state[current_raster_state]);
 }
 
 void Render::OnChangeResolution(const Int2& wnd_size)
