@@ -71,12 +71,12 @@ void DebugDrawer::DrawQuad(const Box2d& box, float y)
 {
 	Vec3* v = shader->Lock();
 
-	v[0] = box.LeftTop3(y);
-	v[1] = box.RightTop3(y);
-	v[2] = box.LeftBottom3(y);
+	v[0] = box.LeftTop().XZ(y);
+	v[1] = box.RightTop().XZ(y);
+	v[2] = box.LeftBottom().XZ(y);
 	v[3] = v[2];
 	v[4] = v[1];
-	v[5] = box.RightBottom3(y);
+	v[5] = box.RightBottom().XZ(y);
 
 	shader->Draw(6);
 }

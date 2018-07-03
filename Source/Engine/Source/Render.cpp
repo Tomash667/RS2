@@ -290,7 +290,7 @@ void Render::CreateRasterStates()
 
 	for(int i = 0; i < RASTER_MAX; ++i)
 	{
-		desc.CullMode = IS_SET(i, RASTER_NO_CULLING) ? D3D11_CULL_BACK : D3D11_CULL_NONE;
+		desc.CullMode = IS_SET(i, RASTER_NO_CULLING) ? D3D11_CULL_NONE : D3D11_CULL_BACK;
 		desc.FillMode = IS_SET(i, RASTER_WIREFRAME) ? D3D11_FILL_WIREFRAME : D3D11_FILL_SOLID;
 
 		C(device->CreateRasterizerState(&desc, &raster_state[i]));

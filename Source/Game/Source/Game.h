@@ -28,7 +28,7 @@ private:
 	void ZombieAlert(Zombie* zombie, bool first = true);
 	void SearchForTarget(Zombie* zombie);
 	bool CanSee(Unit& unit, const Vec3& pos);
-	void OnDebugDraw(DebugDrawer* debug);
+	void OnDebugDraw(DebugDrawer* debug_drawer);
 	void UpdateWorld(float dt);
 	void SaveAndExit();
 	void Save(FileWriter& f);

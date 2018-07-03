@@ -15,6 +15,7 @@
 const float CityGenerator::tile_size = 5.f;
 const float CityGenerator::floor_y = 0.05f;
 const float CityGenerator::wall_width = 0.2f;
+const float ts = CityGenerator::tile_size / 2;
 
 CityGenerator::~CityGenerator()
 {
@@ -65,11 +66,12 @@ void CityGenerator::Generate()
 	GenerateMap();
 	FillBuildings();
 	BuildBuildingsMesh();
+	BuildNavmesh();
 	CreateScene();
 	level->SpawnBarriers();
 	level->SpawnPlayer(player_start_pos);
 	SpawnItems();
-	SpawnZombies();
+	//SpawnZombies(); FIXME
 	pathfinding->GenerateBlockedGrid(size, tile_size, buildings);
 }
 
@@ -457,7 +459,6 @@ void CityGenerator::BuildBuildingsMesh()
 		builder.Clear();
 		Vec3 offset = Vec3(-tile_size * building->size.x / 2, 0, -tile_size * building->size.y / 2);
 		Vec2 col_offset = Vec2(building->pos.x * tile_size, building->pos.y * tile_size);
-		const float ts = tile_size / 2;
 		const float ts2 = ts / 2;
 		const float wall_width2 = wall_width / 2;
 		const float jamb_size2 = 0.25f / 2;
@@ -759,7 +760,6 @@ void CityGenerator::SpawnItems()
 
 void CityGenerator::SpawnItem(Building* building, Item* item)
 {
-	const float ts = tile_size / 2;
 	Building::Room& room = building->rooms[Rand() % building->rooms.size()];
 	while(true)
 	{
@@ -848,6 +848,16 @@ void CityGenerator::Load(FileReader& f)
 void CityGenerator::BuildNavmesh()
 {
 	navmesh->Reset();
-	for(Building* b : buildings)
-		navmesh->StartRegion(Box2d(b->box, Unit::radius));
+	for(Building* building : buildings)
+	{
+		Box2d building_box = Box2d(building->box, Unit::radius + wall_width);
+		for(Building::Room& room : building->rooms)
+		{
+			Box2d box(building->pos.x * tile_size + room.pos.x * ts, building->pos.y * tile_size + room.pos.y * ts);
+			box.v2.x += ts * room.size.x;
+			box.v2.y += ts * room.size.y;
+			box.AddMargin((Unit::radius + wall_width) / 2);
+			navmesh->StartRegion(box.Intersect(building_box));
+		}
+	}
 }

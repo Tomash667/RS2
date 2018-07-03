@@ -946,12 +946,19 @@ struct Box2d
 	}
 
 	// Methods
+	void AddMargin(float margin)
+	{
+		v1.x += margin;
+		v1.y += margin;
+		v2.x -= margin;
+		v2.y -= margin;
+	}
 	Vec2 GetRandomPoint() const;
 	Vec2 GetRandomPoint(float offset) const;
+	Box2d Intersect(const Box2d& b) const;
 	bool IsInside(const Vec2& v) const;
 	bool IsInside(const Vec3& v) const;
 	bool IsInside(const Int2& p) const;
-	//bool IsFullyInside(const Vec2& v, float r) const;
 	bool IsValid() const;
 	Vec2 Midpoint() const;
 	Vec2 Size() const;
@@ -994,24 +1001,7 @@ struct Box2d
 	{
 		return Vec2(v1.x, v2.y);
 	}
-
-	Vec3 LeftTop3(float y = 0.f) const
-	{
-		return Vec3(v1.x, v1.y, y);
-	}
-	Vec3 RightTop3(float y = 0.f) const
-	{
-		return Vec3(v2.x, v1.y, y);
-	}
-	Vec3 LeftBottom3(float y = 0.f) const
-	{
-		return Vec3(v1.x, v2.y, y);
-	}
-	Vec3 RightBottom3(float y = 0.f) const
-	{
-		return Vec3(v2.x, v2.y, y);
-	}
-
+	
 	Box2d LeftBottomPart() const
 	{
 		return Box2d(Left(), MidY(), MidX(), Bottom());
@@ -1048,6 +1038,10 @@ struct Box2d
 	float Bottom() const { return v2.y; }
 	float MidX() const { return (v2.x - v1.x) / 2 + v1.x; }
 	float MidY() const { return (v2.y - v1.y) / 2 + v1.y; }
+
+	// Static functions
+	static bool Intersect(const Box2d& a, const Box2d& b, Box2d& result);
+	static Box2d Intersect(const Box2d& a, const Box2d& b);
 
 	// Constants
 	static const Box2d Zero;

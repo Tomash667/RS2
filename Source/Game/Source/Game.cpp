@@ -162,8 +162,9 @@ void Game::InitGame()
 	sky->moon.enabled = true;
 	scene->SetSky(sky);
 
-	//scene->SetDebugDrawHandler(delegate<void(DebugDrawer*)>(this, &Game::OnDebugDraw));
-	//scene->SetDebugDrawEnabled(true);
+	// FIXME
+	scene->SetDebugDrawHandler(delegate<void(DebugDrawer*)>(this, &Game::OnDebugDraw));
+	scene->SetDebugDrawEnabled(true);
 
 	camera = new ThirdPersonCamera(scene->GetCamera(), level.get(), input);
 #ifdef _DEBUG
@@ -1283,7 +1284,7 @@ bool Game::CanSee(Unit& unit, const Vec3& pos)
 	return !level->RayTest(from, ray, t, Level::COLLIDE_COLLIDERS | Level::COLLIDE_IGNORE_NO_BLOCK_VIEW, nullptr, nullptr);
 }
 
-void Game::OnDebugDraw(DebugDrawer* debug)
+void Game::OnDebugDraw(DebugDrawer* debug_drawer)
 {
 	/*for(Zombie* zombie : level->zombies)
 	{
@@ -1291,7 +1292,9 @@ void Game::OnDebugDraw(DebugDrawer* debug)
 			pathfinding->DrawPath(debug, zombie->node->pos, zombie->target_pos, zombie->path);
 	}*/
 
-	pathfinding->DrawBlocked(debug, level->player->node->pos);
+	//pathfinding->DrawBlocked(debug, level->player->node->pos);
+
+	navmesh->Draw(debug_drawer);
 }
 
 void Game::UpdateWorld(float dt)
@@ -1337,6 +1340,9 @@ void Game::UpdateWorld(float dt)
 		}
 		return false;
 	});
+
+	// FIXME
+	return;
 
 	// spawn new zombies
 	if(level->alive_zombies < 25)

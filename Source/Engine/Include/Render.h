@@ -23,7 +23,7 @@ public:
 	{
 		RASTER_NO_CULLING = 1 << 0,
 		RASTER_WIREFRAME = 1 << 1,
-		RASTER_MAX = (1 << 2) - 1
+		RASTER_MAX = 1 << 2
 	};
 
 	struct DisplayMode

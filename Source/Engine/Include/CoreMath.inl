@@ -2343,7 +2343,7 @@ inline Box2d::Box2d(float x, float y) : v1(x, y), v2(x, y)
 {
 }
 
-inline Box2d::Box2d(const Box2d& box, float margin) : v1(box.v1.x - margin, box.v1.y - margin), v2(box.v2.x + margin, box.v2.y + margin)
+inline Box2d::Box2d(const Box2d& box, float margin) : v1(box.v1.x + margin, box.v1.y + margin), v2(box.v2.x - margin, box.v2.y - margin)
 {
 }
 
@@ -2455,6 +2455,11 @@ inline Vec2 Box2d::GetRandomPoint(float offset) const
 	return Vec2(::Random(v1.x + offset, v2.x - offset), ::Random(v1.y + offset, v2.y - offset));
 }
 
+inline Box2d Box2d::Intersect(const Box2d& b) const
+{
+	return Intersect(*this, b);
+}
+
 inline bool Box2d::IsInside(const Vec2& v) const
 {
 	return v.x >= v1.x && v.y >= v1.y && v.x <= v2.x && v.y <= v2.y;
@@ -2495,6 +2500,29 @@ inline float Box2d::SizeY() const
 inline Vec2 Box2d::Size() const
 {
 	return Vec2(SizeX(), SizeY());
+}
+
+inline bool Box2d::Intersect(const Box2d& a, const Box2d& b, Box2d& result)
+{
+	float x = max(a.Left(), b.Left());
+	float x2 = min(a.Right(), b.Right());
+	float y = max(a.Top(), b.Top());
+	float y2 = min(a.Bottom(), b.Bottom());
+	if(x2 >= x && y2 >= y)
+	{
+		result = Box2d(x, y, x2, y2);
+		return true;
+	}
+	else
+		return false;
+}
+
+inline Box2d Box2d::Intersect(const Box2d& a, const Box2d& b)
+{
+	Box2d result;
+	if(!Intersect(a, b, result))
+		result = Box2d::Zero;
+	return result;
 }
 
 //*************************************************************************************************
