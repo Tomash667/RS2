@@ -25,6 +25,9 @@
     <Filter Include="Source Files\Stats">
       <UniqueIdentifier>{d43b783d-b93f-429d-99d8-8558e6715d68}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\External">
+      <UniqueIdentifier>{5bc31f08-487f-4303-8018-250d6b959ccb}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Game.h">
@@ -160,6 +163,24 @@
     </ClCompile>
     <ClCompile Include="Source\Navmesh.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\Clipper\clipper.cpp">
+      <Filter>Source Files\External</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\poly2tri\common\shapes.cc">
+      <Filter>Source Files\External</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\poly2tri\sweep\advancing_front.cc">
+      <Filter>Source Files\External</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\poly2tri\sweep\cdt.cc">
+      <Filter>Source Files\External</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\poly2tri\sweep\sweep.cc">
+      <Filter>Source Files\External</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\poly2tri\sweep\sweep_context.cc">
+      <Filter>Source Files\External</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

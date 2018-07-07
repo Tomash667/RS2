@@ -5,3 +5,4 @@ Visual Leak Detector 2.5.0
 
 Game:
 Clipper 6.4.2
+poly2tri (Latest commit 88de490  on 2 May 2013)

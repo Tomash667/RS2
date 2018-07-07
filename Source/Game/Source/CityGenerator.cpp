@@ -853,11 +853,22 @@ void CityGenerator::BuildNavmesh()
 		Box2d building_box = Box2d(building->box, Unit::radius + wall_width);
 		for(Building::Room& room : building->rooms)
 		{
+			Rect room_rect = room.GetRect();
 			Box2d box(building->pos.x * tile_size + room.pos.x * ts, building->pos.y * tile_size + room.pos.y * ts);
 			box.v2.x += ts * room.size.x;
 			box.v2.y += ts * room.size.y;
 			box.AddMargin((Unit::radius + wall_width) / 2);
 			navmesh->StartRegion(box.Intersect(building_box));
+			for(const Int2& pt : building->tables)
+			{
+				if(room_rect.IsInside(pt))
+				{
+					Box2d collider = Box2d::Create(building->box.v1 + Vec2(ts * pt.x, ts * pt.y), Vec2(ts, ts));
+					collider.AddMargin(-Unit::radius);
+					navmesh->AddCollier(collider);
+				}
+			}
+			navmesh->EndRegion();
 		}
 	}
 }

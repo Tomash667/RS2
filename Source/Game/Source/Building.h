@@ -25,6 +25,7 @@ struct Building
 	struct Room
 	{
 		bool IsConnected(uint index) const;
+		Rect GetRect() const { return Rect::Create(pos, Int2(size.x - 1, size.y - 1)); }
 
 		Int2 pos, size;
 		int outside;

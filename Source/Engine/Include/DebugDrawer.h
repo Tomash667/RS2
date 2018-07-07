@@ -8,6 +8,7 @@ public:
 	void Init();
 	void Draw(const Matrix& mat_view, const Matrix& mat_view_proj, const Vec3& cam_pos, delegate<void(DebugDrawer*)> handler);
 	void DrawLine(const Vec3& from, const Vec3& to, float width);
+	void DrawTriangle(const Vec2(&pts)[3], float y);
 	void DrawQuad(const Vec3 pos[4]);
 	void DrawQuad(const Box2d& box, float y);
 	void DrawCube(const Box& box);

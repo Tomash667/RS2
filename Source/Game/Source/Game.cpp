@@ -140,7 +140,7 @@ void Game::InitGame()
 	Info("Initializing game.");
 	in_game = false;
 
-	Srand();
+	Srand(0); // FIXME
 	engine->GetWindow()->SetCursorLock(true);
 
 	level.reset(new Level);

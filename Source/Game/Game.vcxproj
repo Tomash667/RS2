@@ -95,7 +95,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)Engine\Include;$(SolutionDir)External\Visual Leak Detector\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Engine\Include;$(SolutionDir)External\Visual Leak Detector\include;$(SolutionDir)External\Clipper;$(SolutionDir)External\poly2tri;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(SolutionDir)Engine\Lib;$(SolutionDir)External\FMod\lib;$(SolutionDir)External\Visual Leak Detector\lib\Win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -131,7 +131,7 @@
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalIncludeDirectories>$(SolutionDir)Engine\Include;$(SolutionDir)External\Visual Leak Detector\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Engine\Include;$(SolutionDir)External\Visual Leak Detector\include;$(SolutionDir)External\Clipper;$(SolutionDir)External\poly2tri;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -190,6 +190,12 @@
     <ClInclude Include="Source\Zombie.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\External\Clipper\clipper.cpp" />
+    <ClCompile Include="..\External\poly2tri\common\shapes.cc" />
+    <ClCompile Include="..\External\poly2tri\sweep\advancing_front.cc" />
+    <ClCompile Include="..\External\poly2tri\sweep\cdt.cc" />
+    <ClCompile Include="..\External\poly2tri\sweep\sweep.cc" />
+    <ClCompile Include="..\External\poly2tri\sweep\sweep_context.cc" />
     <ClCompile Include="Source\Building.cpp" />
     <ClCompile Include="Source\CityGenerator.cpp" />
     <ClCompile Include="Source\Game.cpp" />

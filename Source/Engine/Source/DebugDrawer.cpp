@@ -53,6 +53,16 @@ void DebugDrawer::DrawLine(const Vec3& from, const Vec3& to, float width)
 	shader->Draw(6);
 }
 
+void DebugDrawer::DrawTriangle(const Vec2(&pts)[3], float y)
+{
+	Vec3* v = shader->Lock();
+
+	for(int i = 0; i < 3; ++i)
+		v[i] = pts[i].XZ(y);
+
+	shader->Draw(3);
+}
+
 void DebugDrawer::DrawQuad(const Vec3 pos[4])
 {
 	Vec3* v = shader->Lock();
