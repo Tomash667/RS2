@@ -151,6 +151,7 @@ void Game::InitGame()
 
 	pathfinding.reset(new Pathfinding);
 	navmesh.reset(new Navmesh);
+	navmesh->input = input;
 
 	// sky
 	sky = new Sky(scene);

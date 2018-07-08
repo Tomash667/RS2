@@ -851,11 +851,15 @@ void CityGenerator::BuildNavmesh()
 	navmesh->Reset();
 	vector<Vec2> outline;
 
+	int index = -1; // FIXME
+
 	for(Building* building : buildings)
 	{
 		Box2d building_box = Box2d(building->box, Unit::radius + wall_width);
 		for(Building::Room& room : building->rooms)
 		{
+			++index;
+
 			// get region
 			Rect room_rect = room.GetRect();
 			Box2d box(building->pos.x * tile_size + room.pos.x * ts, building->pos.y * tile_size + room.pos.y * ts);
@@ -871,47 +875,43 @@ void CityGenerator::BuildNavmesh()
 			outline.push_back(inner_box.LeftTop());
 			for(int x = room.pos.x; x < room.pos.x + room.size.x; ++x)
 			{
-				if(building->IsDoor(Int2(x, 0), DIR_TOP))
+				if(building->IsDoor(Int2(x, room.pos.y), DIR_TOP))
 				{
-					outline.push_back(Vec2(box.v1.x + ts * x + margin, inner_box.v1.y));
-					outline.push_back(Vec2(box.v1.x + ts * (x + 1) - margin, inner_box.v1.y));
+					outline.push_back(Vec2(building->box.v1.x + ts * x + margin, inner_box.v1.y));
+					outline.push_back(Vec2(building->box.v1.x + ts * (x + 1) - margin, inner_box.v1.y));
 				}
 			}
 			outline.push_back(inner_box.RightTop());
 			for(int y = room.pos.y; y < room.pos.y + room.size.y; ++y)
 			{
-				if(building->IsDoor(Int2(room.size.x - 1, y), DIR_RIGHT))
+				if(building->IsDoor(Int2(room.pos.x + room.size.x - 1, y), DIR_RIGHT))
 				{
-					outline.push_back(Vec2(inner_box.v2.x, box.v1.y + ts * y + margin));
-					outline.push_back(Vec2(inner_box.v2.x, box.v1.y + ts * (y + 1) - margin));
+					outline.push_back(Vec2(inner_box.v2.x, building->box.v1.y + ts * y + margin));
+					outline.push_back(Vec2(inner_box.v2.x, building->box.v1.y + ts * (y + 1) - margin));
 				}
 			}
 			outline.push_back(inner_box.RightBottom());
 			for(int x = room.pos.x + room.size.x - 1; x >= room.pos.x; --x)
 			{
-				if(building->IsDoor(Int2(x, room.size.y - 1), DIR_BOTTOM))
+				if(building->IsDoor(Int2(x, room.pos.y + room.size.y - 1), DIR_BOTTOM))
 				{
-					outline.push_back(Vec2(box.v1.x + ts * (x + 1) - margin, inner_box.v2.y));
-					outline.push_back(Vec2(box.v1.x + ts * x + margin, inner_box.v2.y));
+					outline.push_back(Vec2(building->box.v1.x + ts * (x + 1) - margin, inner_box.v2.y));
+					outline.push_back(Vec2(building->box.v1.x + ts * x + margin, inner_box.v2.y));
 				}
 			}
 			outline.push_back(inner_box.LeftBottom());
 			for(int y = room.pos.y + room.size.y - 1; y >= room.pos.y; --y)
 			{
-				if(building->IsDoor(Int2(0, y), DIR_LEFT))
+				if(building->IsDoor(Int2(room.pos.x, y), DIR_LEFT))
 				{
-					outline.push_back(Vec2(inner_box.v1.x, box.v1.y + ts * (y + 1) - margin));
-					outline.push_back(Vec2(inner_box.v1.x, box.v1.y + ts * y + margin));
+					outline.push_back(Vec2(inner_box.v1.x, building->box.v1.y + ts * (y + 1) - margin));
+					outline.push_back(Vec2(inner_box.v1.x, building->box.v1.y + ts * y + margin));
 				}
 			}
-			outline.clear();
-			outline.push_back(inner_box.LeftTop());
-			outline.push_back(inner_box.RightTop());
-			outline.push_back(inner_box.RightBottom());
-			outline.push_back(inner_box.LeftBottom());
-			//assert(outline.size() == 4 + 2 * (room.connected2.size() + CountBits(room.outside_used)));
+			assert(outline.size() == 4 + 2 * (room.connected2.size() + CountBits(room.outside_used)));
 
 			navmesh->StartRegion(outline);
+			bool empty = true;
 			for(const Int2& pt : building->tables)
 			{
 				if(room_rect.IsInside(pt))
@@ -919,8 +919,11 @@ void CityGenerator::BuildNavmesh()
 					Box2d collider = Box2d::Create(building->box.v1 + Vec2(ts * pt.x, ts * pt.y), Vec2(ts, ts));
 					collider.AddMargin(-Unit::radius);
 					navmesh->AddCollier(collider);
+					empty = false;
 				}
 			}
+			if(empty)
+				navmesh->AddPoint(inner_box.Midpoint());
 			navmesh->EndRegion();
 		}
 	}

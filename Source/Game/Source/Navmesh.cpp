@@ -3,6 +3,8 @@
 #include <DebugDrawer.h>
 #include <clipper.hpp>
 #include <poly2tri.h>
+// FIXME
+#include <Input.h>
 
 using namespace ClipperLib;
 
@@ -28,10 +30,6 @@ p2t::Point* ToPoint(const Vec2& p)
 
 void Navmesh::EndRegion()
 {
-	colliders.clear();
-	outlines.push_back(*outline);
-	return;
-
 	if(colliders.empty())
 	{
 		vector<p2t::Point*> polyline;
@@ -82,6 +80,13 @@ void Navmesh::Triangulate(vector<p2t::Point*>* polyline, vector<p2t::Point*>* ho
 	p2t::CDT cdt(*polyline);
 	if(hole)
 		cdt.AddHole(*hole);
+	vector<p2t::Point*> added_points;
+	for(Vec2& pt : points)
+	{
+		p2t::Point* p = ToPoint(pt);
+		cdt.AddPoint(p);
+		added_points.push_back(p);
+	}
 	cdt.Triangulate();
 	vector<p2t::Triangle*> result_triangles = cdt.GetTriangles();
 
@@ -101,6 +106,8 @@ void Navmesh::Triangulate(vector<p2t::Point*>* polyline, vector<p2t::Point*>* ho
 	DeleteElements(*polyline);
 	if(hole)
 		DeleteElements(*hole);
+	DeleteElements(added_points);
+	points.clear();
 }
 
 float my_dt;
@@ -108,29 +115,41 @@ float my_dt;
 void Navmesh::Draw(DebugDrawer* debug_drawer)
 {
 	const float y = 0.2f;
-	/*debug_drawer->SetColor(Color(0, 128, 255, 128));
+	debug_drawer->SetColor(Color(0, 128, 255, 128));
 	for(Triangle& tri : triangles)
 		debug_drawer->DrawTriangle(tri.pos, y);
-	debug_drawer->SetWireframe(true);*/
+	debug_drawer->SetWireframe(true);
 	debug_drawer->SetColor(Color(0, 0, 255, 255));
-	//for(Triangle& tri : triangles)
-	//	debug_drawer->DrawTriangle(tri.pos, y);
+	for(Triangle& tri : triangles)
+		debug_drawer->DrawTriangle(tri.pos, y);
 
-	my_dt += dt;
-	static int c = 0;
-	if(my_dt >= 1.f)
-	{
-		//Info("tick");
-		my_dt -= 1.f;
-		++c;
-		if(c == 3)
-			c = 0;
-	}
-	for(uint i = 0; i < outlines.size(); ++i)
-	{
-		//if(i%3 == c)
-			debug_drawer->DrawPath(outlines[i], y, true);
-	}
+	//my_dt += dt;
+	//static int c = 13;
+	//if(my_dt >= 1.f)
+	//{
+	//	//Info("tick");
+	//	my_dt -= 1.f;
+	//	//++c;
+	//	if(c == 3)
+	//		c = 0;
+	//}
+	//if(input->Pressed(Key::F5))
+	//{
+	//	--c;
+	//	if(c == -1)
+	//		c = outlines.size() - 1;
+	//}
+	//if(input->Pressed(Key::F6))
+	//{
+	//	++c;
+	//	if(c == outlines.size())
+	//		c = 0;
+	//}
+	//for(uint i = 0; i < outlines.size(); ++i)
+	//{
+	//	//if(i == c)
+	//		debug_drawer->DrawPath(outlines[i], y, true);
+	//}
 	
 	//for(vector<Vec2>& outline : outlines)
 	//	debug_drawer->DrawPath(outline, y, true);
