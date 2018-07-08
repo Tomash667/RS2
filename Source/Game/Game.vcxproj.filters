@@ -28,6 +28,9 @@
     <Filter Include="Source Files\External">
       <UniqueIdentifier>{5bc31f08-487f-4303-8018-250d6b959ccb}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\External\Recast">
+      <UniqueIdentifier>{2eef525d-a147-497b-af89-120c160a5f30}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Game.h">
@@ -164,23 +167,38 @@
     <ClCompile Include="Source\Navmesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\External\Clipper\clipper.cpp">
-      <Filter>Source Files\External</Filter>
+    <ClCompile Include="..\External\recastnavigation\Recast\Source\Recast.cpp">
+      <Filter>Source Files\External\Recast</Filter>
     </ClCompile>
-    <ClCompile Include="..\External\poly2tri\common\shapes.cc">
-      <Filter>Source Files\External</Filter>
+    <ClCompile Include="..\External\recastnavigation\Recast\Source\RecastAlloc.cpp">
+      <Filter>Source Files\External\Recast</Filter>
     </ClCompile>
-    <ClCompile Include="..\External\poly2tri\sweep\advancing_front.cc">
-      <Filter>Source Files\External</Filter>
+    <ClCompile Include="..\External\recastnavigation\Recast\Source\RecastArea.cpp">
+      <Filter>Source Files\External\Recast</Filter>
     </ClCompile>
-    <ClCompile Include="..\External\poly2tri\sweep\cdt.cc">
-      <Filter>Source Files\External</Filter>
+    <ClCompile Include="..\External\recastnavigation\Recast\Source\RecastAssert.cpp">
+      <Filter>Source Files\External\Recast</Filter>
     </ClCompile>
-    <ClCompile Include="..\External\poly2tri\sweep\sweep.cc">
-      <Filter>Source Files\External</Filter>
+    <ClCompile Include="..\External\recastnavigation\Recast\Source\RecastContour.cpp">
+      <Filter>Source Files\External\Recast</Filter>
     </ClCompile>
-    <ClCompile Include="..\External\poly2tri\sweep\sweep_context.cc">
-      <Filter>Source Files\External</Filter>
+    <ClCompile Include="..\External\recastnavigation\Recast\Source\RecastFilter.cpp">
+      <Filter>Source Files\External\Recast</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\recastnavigation\Recast\Source\RecastLayers.cpp">
+      <Filter>Source Files\External\Recast</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\recastnavigation\Recast\Source\RecastMesh.cpp">
+      <Filter>Source Files\External\Recast</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\recastnavigation\Recast\Source\RecastMeshDetail.cpp">
+      <Filter>Source Files\External\Recast</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\recastnavigation\Recast\Source\RecastRasterization.cpp">
+      <Filter>Source Files\External\Recast</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\recastnavigation\Recast\Source\RecastRegion.cpp">
+      <Filter>Source Files\External\Recast</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

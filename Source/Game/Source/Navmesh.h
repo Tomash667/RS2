@@ -1,8 +1,14 @@
 #pragma once
 
+// FIXME - hide implementation details
+#include <Recast.h>
+
 class Navmesh
 {
 public:
+	Navmesh();
+	~Navmesh();
+	void Init(float level_size);
 	void Reset();
 	void StartRegion(const vector<Vec2>& outline) { this->outline = &outline; }
 	void EndRegion();
@@ -15,7 +21,7 @@ public:
 	Input* input;
 
 private:
-	void Triangulate(vector<p2t::Point*>* polyline, vector<p2t::Point*>* hole);
+	//void Triangulate(vector<p2t::Point*>* polyline, vector<p2t::Point*>* hole);
 
 	struct Triangle
 	{
@@ -27,4 +33,7 @@ private:
 	const vector<Vec2>* outline;
 	vector<Box2d> colliders;
 	vector<Vec2> points;
+
+	rcContext ctx;
+	rcConfig cfg;
 };

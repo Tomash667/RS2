@@ -24,8 +24,3 @@ struct Unit;
 struct Zombie;
 
 enum class PerkId;
-
-namespace p2t
-{
-	struct Point;
-}

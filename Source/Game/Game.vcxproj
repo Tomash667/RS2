@@ -95,7 +95,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)Engine\Include;$(SolutionDir)External\Visual Leak Detector\include;$(SolutionDir)External\Clipper;$(SolutionDir)External\poly2tri;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Engine\Include;$(SolutionDir)External\Visual Leak Detector\include;$(SolutionDir)External\recastnavigation\Recast\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(SolutionDir)Engine\Lib;$(SolutionDir)External\FMod\lib;$(SolutionDir)External\Visual Leak Detector\lib\Win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -131,7 +131,7 @@
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalIncludeDirectories>$(SolutionDir)Engine\Include;$(SolutionDir)External\Visual Leak Detector\include;$(SolutionDir)External\Clipper;$(SolutionDir)External\poly2tri;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Engine\Include;$(SolutionDir)External\Visual Leak Detector\include;$(SolutionDir)External\recastnavigation\Recast\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -190,12 +190,17 @@
     <ClInclude Include="Source\Zombie.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\External\Clipper\clipper.cpp" />
-    <ClCompile Include="..\External\poly2tri\common\shapes.cc" />
-    <ClCompile Include="..\External\poly2tri\sweep\advancing_front.cc" />
-    <ClCompile Include="..\External\poly2tri\sweep\cdt.cc" />
-    <ClCompile Include="..\External\poly2tri\sweep\sweep.cc" />
-    <ClCompile Include="..\External\poly2tri\sweep\sweep_context.cc" />
+    <ClCompile Include="..\External\recastnavigation\Recast\Source\Recast.cpp" />
+    <ClCompile Include="..\External\recastnavigation\Recast\Source\RecastAlloc.cpp" />
+    <ClCompile Include="..\External\recastnavigation\Recast\Source\RecastArea.cpp" />
+    <ClCompile Include="..\External\recastnavigation\Recast\Source\RecastAssert.cpp" />
+    <ClCompile Include="..\External\recastnavigation\Recast\Source\RecastContour.cpp" />
+    <ClCompile Include="..\External\recastnavigation\Recast\Source\RecastFilter.cpp" />
+    <ClCompile Include="..\External\recastnavigation\Recast\Source\RecastLayers.cpp" />
+    <ClCompile Include="..\External\recastnavigation\Recast\Source\RecastMesh.cpp" />
+    <ClCompile Include="..\External\recastnavigation\Recast\Source\RecastMeshDetail.cpp" />
+    <ClCompile Include="..\External\recastnavigation\Recast\Source\RecastRasterization.cpp" />
+    <ClCompile Include="..\External\recastnavigation\Recast\Source\RecastRegion.cpp" />
     <ClCompile Include="Source\Building.cpp" />
     <ClCompile Include="Source\CityGenerator.cpp" />
     <ClCompile Include="Source\Game.cpp" />

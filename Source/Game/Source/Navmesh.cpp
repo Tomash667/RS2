@@ -1,36 +1,84 @@
 #include "GameCore.h"
 #include "Navmesh.h"
 #include <DebugDrawer.h>
-#include <clipper.hpp>
-#include <poly2tri.h>
+#include <Recast.h>
+#include "Unit.h"
 // FIXME
 #include <Input.h>
 
-using namespace ClipperLib;
+Navmesh::Navmesh() : ctx(nullptr)
+{
+
+}
+
+Navmesh::~Navmesh()
+{
+
+}
+
+void Navmesh::Init(float map_size)
+{
+	rcConfig cfg = {};
+	cfg.cs = Unit::radius; // cell size
+	cfg.ch = 0.25f; // cell height
+	cfg.walkableSlopeAngle = 45.f;
+	cfg.walkableHeight = (int)ceilf(Unit::height / cfg.ch);
+	cfg.walkableClimb = 1; // in cells
+	cfg.walkableRadius = 1; // in cell size (Unit has size of 1 cell, needs more testing)
+	cfg.maxEdgeLen = 12; // ????? FIXME
+	cfg.maxSimplificationError = 1.3f; // ^^^^^^
+	cfg.minRegionArea = rcSqr(8); // ^
+	cfg.mergeRegionArea = rcSqr(20); // ^
+	cfg.maxVertsPerPoly = 6; // ^
+	cfg.detailSampleDist = cfg.cs * 6; // m_detailSampleDist < 0.9f ? 0 : m_cellSize * m_detailSampleDist
+	cfg.detailSampleMaxError = cfg.ch * 1.f; // ^
+	rcVcopy(cfg.bmin, Vec3(0, 0, 0));
+	rcVcopy(cfg.bmax, Vec3(map_size, 2.f, map_size));
+	rcCalcGridSize(cfg.bmin, cfg.bmax, cfg.cs, &cfg.width, &cfg.height);
+
+	// Allocate voxel heightfield where we rasterize our input data to.
+	rcHeightfield* solid = rcAllocHeightfield();
+	rcCreateHeightfield(&ctx, *solid, cfg.width, cfg.height, cfg.bmin, cfg.bmax, cfg.cs, cfg.ch);
+
+	const int n_tris = 2;
+	Vec3 verts[] = {
+		Vec3(0,0,0),
+		Vec3(map_size,0,0),
+		Vec3(0,0,map_size),
+		Vec3(map_size,0,map_size)
+	};
+	const int n_verts = 4;
+	int tris[] = {
+		0, 1, 2,
+		2, 1, 3
+	};
+
+	// Allocate array that can hold triangle area types.
+	// If you have multiple meshes you need to process, allocate
+	// and array which can hold the max number of triangles you need to process.
+	vector<byte> triareas;
+	triareas.resize(n_tris);
+
+	// Find triangles which are walkable based on their slope and rasterize them.
+	// If your input data is multiple meshes, you can transform them here, calculate
+	// the are type for each of the meshes and rasterize them.
+	memset(triareas.data(), 0, n_tris * sizeof(byte));
+	rcMarkWalkableTriangles(&ctx, cfg.walkableSlopeAngle, (float*)verts, n_verts, tris, n_tris, triareas.data());
+	rcRasterizeTriangles(&ctx, (float*)verts, triareas.data(), n_tris, *solid, cfg.walkableClimb);
+
+	rcFreeHeightField(solid);
+}
 
 void Navmesh::Reset()
 {
 	triangles.clear();
 }
 
-IntPoint ToIntPoint(const Vec2& p)
-{
-	return IntPoint(cInt(16 * p.x), cInt(16 * p.y));
-}
-
-p2t::Point* ToPoint(const IntPoint& p)
-{
-	return new p2t::Point(double(p.X) / 16, double(p.Y) / 16);
-}
-
-p2t::Point* ToPoint(const Vec2& p)
-{
-	return new p2t::Point(p.x, p.y);
-}
-
 void Navmesh::EndRegion()
 {
-	if(colliders.empty())
+	
+
+	/*if(colliders.empty())
 	{
 		vector<p2t::Point*> polyline;
 		for(const Vec2& pt : *outline)
@@ -71,10 +119,10 @@ void Navmesh::EndRegion()
 		hole.push_back(ToPoint(*it));
 
 	Triangulate(&polyline, &hole);
-	colliders.clear();
+	colliders.clear();*/
 }
 
-void Navmesh::Triangulate(vector<p2t::Point*>* polyline, vector<p2t::Point*>* hole)
+/*void Navmesh::Triangulate(vector<p2t::Point*>* polyline, vector<p2t::Point*>* hole)
 {
 	// traingulate
 	p2t::CDT cdt(*polyline);
@@ -108,7 +156,7 @@ void Navmesh::Triangulate(vector<p2t::Point*>* polyline, vector<p2t::Point*>* ho
 		DeleteElements(*hole);
 	DeleteElements(added_points);
 	points.clear();
-}
+}*/
 
 float my_dt;
 

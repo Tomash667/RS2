@@ -4,5 +4,4 @@ FMod - 4.44.61
 Visual Leak Detector 2.5.0
 
 Game:
-Clipper 6.4.2
-poly2tri (Latest commit 88de490  on 2 May 2013)
+recastnavigation (Lastest commit 05b2b8da80037887d3e79af8a59a8f0f8ed02602 18.06.2018)
