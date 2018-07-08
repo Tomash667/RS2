@@ -64,16 +64,16 @@ void Pathfinding::GenerateBlockedGrid(uint size, float tile_size, const vector<B
 					}
 				}
 			}
-			// top
-			if(!IS_SET(room.outside, DIR_F_TOP))
+			// bottom
+			if(!IS_SET(room.outside, DIR_F_BOTTOM))
 			{
 				int y = room.pos.y + room.size.y;
 				for(int x = room.pos.x; x < room.pos.x + room.size.x; ++x)
 				{
-					if(!b.IsDoor(Int2(x, y), DIR_BOTTOM))
+					if(!b.IsDoor(Int2(x, y), DIR_TOP))
 					{
-						tiles[x + pos.x + (y + pos.y - 1) * s].blocked |= BLOCKED_TOP;
-						tiles[x + pos.x + (y + pos.y) * s].blocked |= BLOCKED_BOTTOM;
+						tiles[x + pos.x + (y + pos.y - 1) * s].blocked |= BLOCKED_BOTTOM;
+						tiles[x + pos.x + (y + pos.y) * s].blocked |= BLOCKED_TOP;
 					}
 				}
 			}
@@ -84,8 +84,8 @@ void Pathfinding::GenerateBlockedGrid(uint size, float tile_size, const vector<B
 			tiles[pt.x + pos.x + (pt.y + pos.y) * s].blocked = BLOCKED_ALL;
 			tiles[pt.x + pos.x - 1 + (pt.y + pos.y) * s].blocked |= BLOCKED_RIGHT;
 			tiles[pt.x + pos.x + 1 + (pt.y + pos.y) * s].blocked |= BLOCKED_LEFT;
-			tiles[pt.x + pos.x + (pt.y + pos.y - 1) * s].blocked |= BLOCKED_TOP;
-			tiles[pt.x + pos.x + (pt.y + pos.y + 1) * s].blocked |= BLOCKED_BOTTOM;
+			tiles[pt.x + pos.x + (pt.y + pos.y - 1) * s].blocked |= BLOCKED_BOTTOM;
+			tiles[pt.x + pos.x + (pt.y + pos.y + 1) * s].blocked |= BLOCKED_TOP;
 		}
 	}
 }

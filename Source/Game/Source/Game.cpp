@@ -248,6 +248,8 @@ bool Game::OnTick(float dt)
 		|| change_state == GameState::QUIT)
 		return false;
 
+	navmesh->dt = dt;
+
 	Window* window = engine->GetWindow();
 	if(input->Down(Key::Alt) && input->Pressed(Key::Enter))
 	{
@@ -1286,14 +1288,6 @@ bool Game::CanSee(Unit& unit, const Vec3& pos)
 
 void Game::OnDebugDraw(DebugDrawer* debug_drawer)
 {
-	/*for(Zombie* zombie : level->zombies)
-	{
-		if(zombie->hp > 0 && zombie->pf_used)
-			pathfinding->DrawPath(debug, zombie->node->pos, zombie->target_pos, zombie->path);
-	}*/
-
-	//pathfinding->DrawBlocked(debug, level->player->node->pos);
-
 	navmesh->Draw(debug_drawer);
 }
 

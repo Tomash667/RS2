@@ -8,10 +8,10 @@ using namespace ClipperLib;
 
 void Navmesh::Reset()
 {
-	regions.clear();
+	triangles.clear();
 }
 
-IntPoint ToPoint(const Vec2& p)
+IntPoint ToIntPoint(const Vec2& p)
 {
 	return IntPoint(cInt(16 * p.x), cInt(16 * p.y));
 }
@@ -21,11 +21,23 @@ p2t::Point* ToPoint(const IntPoint& p)
 	return new p2t::Point(double(p.X) / 16, double(p.Y) / 16);
 }
 
+p2t::Point* ToPoint(const Vec2& p)
+{
+	return new p2t::Point(p.x, p.y);
+}
+
 void Navmesh::EndRegion()
 {
+	colliders.clear();
+	outlines.push_back(*outline);
+	return;
+
 	if(colliders.empty())
 	{
-		regions.push_back(region);
+		vector<p2t::Point*> polyline;
+		for(const Vec2& pt : *outline)
+			polyline.push_back(ToPoint(pt));
+		Triangulate(&polyline, nullptr);
 		return;
 	}
 
@@ -33,20 +45,18 @@ void Navmesh::EndRegion()
 
 	// build room polygon
 	Path path;
-	path.push_back(ToPoint(region.LeftTop()));
-	path.push_back(ToPoint(region.RightTop()));
-	path.push_back(ToPoint(region.RightBottom()));
-	path.push_back(ToPoint(region.LeftBottom()));
+	for(const Vec2& pt : *outline)
+		path.push_back(ToIntPoint(pt));
 	clipper.AddPath(path, ptSubject, true);
 
 	// add colliders
 	for(const Box2d& box : colliders)
 	{
 		path.clear();
-		path.push_back(ToPoint(box.LeftTop()));
-		path.push_back(ToPoint(box.RightTop()));
-		path.push_back(ToPoint(box.RightBottom()));
-		path.push_back(ToPoint(box.LeftBottom()));
+		path.push_back(ToIntPoint(box.LeftTop()));
+		path.push_back(ToIntPoint(box.RightTop()));
+		path.push_back(ToIntPoint(box.RightBottom()));
+		path.push_back(ToIntPoint(box.LeftBottom()));
 		clipper.AddPath(path, ptClip, true);
 	}
 
@@ -56,15 +66,22 @@ void Navmesh::EndRegion()
 
 	// for simplicity, first path is polygon, second is hole
 	assert(result.size() == 2u);
-	// triangulate
-	vector<p2t::Point*> polyline;
+	vector<p2t::Point*> polyline, hole;
 	for(const IntPoint& pt : result[0])
 		polyline.push_back(ToPoint(pt));
-	p2t::CDT cdt(polyline);
-	vector<p2t::Point*> hole;
 	for(auto it = result[1].rbegin(), end = result[1].rend(); it != end; ++it)
 		hole.push_back(ToPoint(*it));
-	cdt.AddHole(hole);
+
+	Triangulate(&polyline, &hole);
+	colliders.clear();
+}
+
+void Navmesh::Triangulate(vector<p2t::Point*>* polyline, vector<p2t::Point*>* hole)
+{
+	// traingulate
+	p2t::CDT cdt(*polyline);
+	if(hole)
+		cdt.AddHole(*hole);
 	cdt.Triangulate();
 	vector<p2t::Triangle*> result_triangles = cdt.GetTriangles();
 
@@ -80,23 +97,41 @@ void Navmesh::EndRegion()
 		triangles.push_back(tri2);
 	}
 
-	DeleteElements(polyline);
-	DeleteElements(hole);
-	colliders.clear();
+	// cleanup
+	DeleteElements(*polyline);
+	if(hole)
+		DeleteElements(*hole);
 }
+
+float my_dt;
 
 void Navmesh::Draw(DebugDrawer* debug_drawer)
 {
 	const float y = 0.2f;
-	debug_drawer->SetColor(Color(0, 128, 255, 128));
-	for(Box2d& box : regions)
-		debug_drawer->DrawQuad(box, y);
+	/*debug_drawer->SetColor(Color(0, 128, 255, 128));
 	for(Triangle& tri : triangles)
 		debug_drawer->DrawTriangle(tri.pos, y);
-	debug_drawer->SetWireframe(true);
+	debug_drawer->SetWireframe(true);*/
 	debug_drawer->SetColor(Color(0, 0, 255, 255));
-	for(Box2d& box : regions)
-		debug_drawer->DrawQuad(box, y);
-	for(Triangle& tri : triangles)
-		debug_drawer->DrawTriangle(tri.pos, y);
+	//for(Triangle& tri : triangles)
+	//	debug_drawer->DrawTriangle(tri.pos, y);
+
+	my_dt += dt;
+	static int c = 0;
+	if(my_dt >= 1.f)
+	{
+		//Info("tick");
+		my_dt -= 1.f;
+		++c;
+		if(c == 3)
+			c = 0;
+	}
+	for(uint i = 0; i < outlines.size(); ++i)
+	{
+		//if(i%3 == c)
+			debug_drawer->DrawPath(outlines[i], y, true);
+	}
+	
+	//for(vector<Vec2>& outline : outlines)
+	//	debug_drawer->DrawPath(outline, y, true);
 }

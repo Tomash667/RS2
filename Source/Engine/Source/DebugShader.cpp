@@ -5,7 +5,7 @@
 #include <d3d11_1.h>
 #include "InternalHelper.h"
 
-DebugShader::DebugShader(Render* render) : render(render), device_context(nullptr), vb(nullptr), locked(false)
+DebugShader::DebugShader(Render* render) : render(render), device_context(nullptr), vb(nullptr), locked(false), max_vertices(6u)
 {
 }
 
@@ -26,10 +26,16 @@ void DebugShader::Init()
 	render->CreateShader(shader, "debug.hlsl", desc, countof(desc), cbuffer_size);
 	shader.vertex_stride = sizeof(Vec3);
 
-	// create vertex buffer
+	CreateVertexBuffer();
+}
+
+void DebugShader::CreateVertexBuffer()
+{
+	SafeRelease(vb);
+
 	D3D11_BUFFER_DESC v_desc;
 	v_desc.Usage = D3D11_USAGE_DYNAMIC;
-	v_desc.ByteWidth = MAX_VERTICES * sizeof(Vec3);
+	v_desc.ByteWidth = max_vertices * sizeof(Vec3);
 	v_desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	v_desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	v_desc.MiscFlags = 0;
@@ -50,6 +56,7 @@ void DebugShader::Prepare(const Matrix& mat_view_proj)
 	render->SetDepthState(Render::DEPTH_READONLY);
 	render->SetCulling(false);
 	render->SetWireframe(false);
+	line_strip = false;
 
 	device_context->IASetInputLayout(shader.layout);
 	device_context->VSSetShader(shader.vertex_shader, nullptr, 0);
@@ -58,6 +65,12 @@ void DebugShader::Prepare(const Matrix& mat_view_proj)
 	device_context->PSSetConstantBuffers(0, 1, &shader.ps_buffer);
 
 	current_vb = nullptr;
+}
+
+void DebugShader::Restore()
+{
+	SetWireframe(false);
+	SetLineStrip(false);
 }
 
 void DebugShader::SetColor(Color color)
@@ -74,9 +87,24 @@ void DebugShader::SetWireframe(bool wireframe)
 	render->SetWireframe(wireframe);
 }
 
-Vec3* DebugShader::Lock()
+void DebugShader::SetLineStrip(bool line_strip)
+{
+	if(line_strip != this->line_strip)
+	{
+		this->line_strip = line_strip;
+		device_context->IASetPrimitiveTopology(line_strip ? D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP : D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	}
+}
+
+Vec3* DebugShader::Lock(uint count)
 {
 	assert(!locked);
+
+	if(count > max_vertices)
+	{
+		max_vertices = count;
+		CreateVertexBuffer();
+	}
 
 	if(current_vb != vb)
 	{
@@ -101,10 +129,11 @@ Vec3* DebugShader::Lock()
 	return (Vec3*)mappedResource.pData;
 }
 
-void DebugShader::Draw(uint vertex_count)
+void DebugShader::Draw(uint vertex_count, bool line_strip)
 {
-	assert(locked && vertex_count > 0 && vertex_count <= MAX_VERTICES);
+	assert(locked && vertex_count > 0 && vertex_count <= max_vertices);
 	locked = false;
+	SetLineStrip(line_strip);
 	device_context->Unmap(vb, 0);
 	device_context->Draw(vertex_count, 0);
 }

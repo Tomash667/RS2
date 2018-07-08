@@ -42,6 +42,7 @@ public:
 	void GatherColliders(vector<Collider>& results, const Box2d& box);
 	void Save(FileWriter& f);
 	void Load(FileReader& f);
+	void DrawColliders(DebugDrawer* debug_drawer);
 
 	Scene* scene;
 	Player* player;

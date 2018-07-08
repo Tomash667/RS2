@@ -16,6 +16,7 @@ const float CityGenerator::tile_size = 5.f;
 const float CityGenerator::floor_y = 0.05f;
 const float CityGenerator::wall_width = 0.2f;
 const float ts = CityGenerator::tile_size / 2;
+const float jamb_size = 0.25f;
 
 CityGenerator::~CityGenerator()
 {
@@ -208,23 +209,23 @@ void CityGenerator::FillBuildings()
 			else
 				room.outside |= DIR_F_RIGHT;
 
-			// bottom
+			// top
 			if(room.pos.y != 0)
 			{
 				for(uint x = room.pos.x, count = room.pos.x + room.size.x; x < count; ++x)
 					building->CheckConnect(room, indices[x + (room.pos.y - 1) * size.x], last);
 			}
 			else
-				room.outside |= DIR_F_BOTTOM;
+				room.outside |= DIR_F_TOP;
 
-			// top
+			// bottom
 			if(room.pos.y + room.size.y != size.y)
 			{
 				for(uint x = room.pos.x, count = room.pos.x + room.size.x; x < count; ++x)
 					building->CheckConnect(room, indices[x + (room.pos.y + room.size.y) * size.x], last);
 			}
 			else
-				room.outside |= DIR_F_TOP;
+				room.outside |= DIR_F_BOTTOM;
 
 			if(room.outside != 0)
 				outside_rooms.push_back(&room);
@@ -278,10 +279,10 @@ void CityGenerator::FillBuildings()
 					case DIR_RIGHT:
 						rect = Rect(room->pos.x + room->size.x - 1, room->pos.y, room->pos.x + room->size.x - 1, room->pos.y + room->size.y - 1);
 						break;
-					case DIR_BOTTOM:
+					case DIR_TOP:
 						rect = Rect(room->pos.x, room->pos.y, room->pos.x + room->size.x - 1, room->pos.y);
 						break;
-					case DIR_TOP:
+					case DIR_BOTTOM:
 						rect = Rect(room->pos.x, room->pos.y + room->size.y - 1, room->pos.x + room->size.x - 1, room->pos.y + room->size.y - 1);
 						break;
 					}
@@ -423,7 +424,7 @@ void CityGenerator::FillBuildings()
 				else
 				{
 					--intersection.p2.x;
-					dir = DIR_BOTTOM;
+					dir = DIR_TOP;
 					pt.y = intersection.p1.y;
 					pt.x = RandomNormal(intersection.p1.x, intersection.p2.x);
 				}
@@ -465,27 +466,27 @@ void CityGenerator::BuildBuildingsMesh()
 		const Vec2 door_jamb_y(2.5f, 4.f - 2.5f);
 		Vec3 cam_offset = Vec3(col_offset.x, door_jamb_y.x, col_offset.y);
 		// corners
-		//   left bottom
+		//   left top
 		builder.Append(mesh_corner, Matrix::Translation(offset));
 		level->AddCollider(Collider(Vec2(wall_width2, ts2) + col_offset, Vec2(wall_width2, ts2)));
 		level->AddCollider(Collider(Vec2(ts2, wall_width2) + col_offset, Vec2(ts2, wall_width2)));
-		//   right bottom
+		//   right top
 		builder.Append(mesh_corner, rotPI3_2 * Matrix::Translation(offset + Vec3(building->size.x * tile_size, 0, 0)));
 		level->AddCollider(Collider(Vec2(building->size.x * tile_size - wall_width2, ts2) + col_offset, Vec2(wall_width2, ts2)));
 		level->AddCollider(Collider(Vec2(building->size.x * tile_size - ts2, wall_width2) + col_offset, Vec2(ts2, wall_width2)));
-		//   left top
+		//   left bottom
 		builder.Append(mesh_corner, rotPI_2 * Matrix::Translation(offset + Vec3(0, 0, building->size.y * tile_size)));
 		level->AddCollider(Collider(Vec2(wall_width2, building->size.y * tile_size - ts2) + col_offset, Vec2(wall_width2, ts2)));
 		level->AddCollider(Collider(Vec2(ts2, building->size.y * tile_size - wall_width2) + col_offset, Vec2(ts2, wall_width2)));
-		//   right top
+		//   right bottom
 		builder.Append(mesh_corner, rotPI * Matrix::Translation(offset + Vec3(building->size.x * tile_size, 0, building->size.y * tile_size)));
 		level->AddCollider(Collider(Vec2(building->size.x * tile_size - wall_width2, building->size.y * tile_size - ts2) + col_offset, Vec2(wall_width2, ts2)));
 		level->AddCollider(Collider(Vec2(building->size.x * tile_size - ts2, building->size.y * tile_size - wall_width2) + col_offset, Vec2(ts2, wall_width2)));
 		// outside walls
 		for(int x = 1; x < size.x - 1; ++x)
 		{
-			// bottom
-			bool is_door = building->IsDoor(Int2(x, 0), DIR_BOTTOM);
+			// top
+			bool is_door = building->IsDoor(Int2(x, 0), DIR_TOP);
 			builder.Append(is_door ? mesh_door_jamb : mesh_wall,
 				rotPI3_2 * Matrix::Translation(offset + Vec3(x*ts + ts2, 0, wall_width2)));
 			if(is_door)
@@ -496,8 +497,8 @@ void CityGenerator::BuildBuildingsMesh()
 			}
 			else
 				level->AddCollider(Collider(Vec2(x * ts + ts2, wall_width2) + col_offset, Vec2(ts2, wall_width2)));
-			// top
-			is_door = building->IsDoor(Int2(x, size.y - 1), DIR_TOP);
+			// bottom
+			is_door = building->IsDoor(Int2(x, size.y - 1), DIR_BOTTOM);
 			builder.Append(is_door ? mesh_door_jamb : mesh_wall,
 				rotPI_2 * Matrix::Translation(offset + Vec3(x*ts + ts2, 0, size.y * ts - wall_width2)));
 			if(is_door)
@@ -550,31 +551,31 @@ void CityGenerator::BuildBuildingsMesh()
 						Matrix::Translation(offset + Vec3(x * ts, 0, y * ts + ts2)));
 					if(is_door)
 					{
-						level->AddCollider(Collider(Vec2(x * ts - wall_width2, y * ts + jamb_size2) + col_offset, Vec2(wall_width2, jamb_size2)));
-						level->AddCollider(Collider(Vec2(x * ts - wall_width2, (y + 1) * ts - jamb_size2) + col_offset, Vec2(wall_width2, jamb_size2)));
-						level->camera_colliders.push_back(Box::Create(Vec3(x * ts - wall_width2, 0, y * ts) + cam_offset, Vec3(wall_width, door_jamb_y.y, ts)));
+						level->AddCollider(Collider(Vec2(x * ts, y * ts + jamb_size2) + col_offset, Vec2(wall_width2, jamb_size2)));
+						level->AddCollider(Collider(Vec2(x * ts, (y + 1) * ts - jamb_size2) + col_offset, Vec2(wall_width2, jamb_size2)));
+						level->camera_colliders.push_back(Box::Create(Vec3(x * ts, 0, y * ts) + cam_offset, Vec3(wall_width, door_jamb_y.y, ts)));
 					}
 					else
-						level->AddCollider(Collider(Vec2(x * ts - wall_width2, y * ts + ts2) + col_offset, Vec2(wall_width2, ts2)));
+						level->AddCollider(Collider(Vec2(x * ts, y * ts + ts2) + col_offset, Vec2(wall_width2, ts2)));
 				}
 			}
-			// top
-			if(!IS_SET(room.outside, DIR_F_TOP))
+			// bottom
+			if(!IS_SET(room.outside, DIR_F_BOTTOM))
 			{
 				int y = room.pos.y + room.size.y;
 				for(int x = room.pos.x; x < room.pos.x + room.size.x; ++x)
 				{
-					bool is_door = building->IsDoor(Int2(x, y), DIR_BOTTOM);
+					bool is_door = building->IsDoor(Int2(x, y), DIR_TOP);
 					builder.Append(is_door ? mesh_door_jamb_inner : mesh_wall_inner,
 						rotPI_2 * Matrix::Translation(offset + Vec3(x*ts + ts2, 0, y*ts)));
 					if(is_door)
 					{
-						level->AddCollider(Collider(Vec2(x * ts + jamb_size2, y * ts - wall_width2) + col_offset, Vec2(jamb_size2, wall_width2)));
-						level->AddCollider(Collider(Vec2((x + 1) * ts - jamb_size2, y * ts - wall_width2) + col_offset, Vec2(jamb_size2, wall_width2)));
-						level->camera_colliders.push_back(Box::Create(Vec3(x * ts, 0, y * ts - wall_width2) + cam_offset, Vec3(ts, door_jamb_y.y, wall_width)));
+						level->AddCollider(Collider(Vec2(x * ts + jamb_size2, y * ts) + col_offset, Vec2(jamb_size2, wall_width2)));
+						level->AddCollider(Collider(Vec2((x + 1) * ts - jamb_size2, y * ts) + col_offset, Vec2(jamb_size2, wall_width2)));
+						level->camera_colliders.push_back(Box::Create(Vec3(x * ts, 0, y * ts) + cam_offset, Vec3(ts, door_jamb_y.y, wall_width)));
 					}
 					else
-						level->AddCollider(Collider(Vec2(x * ts + ts2, y * ts - wall_width2) + col_offset, Vec2(ts2, wall_width2)));
+						level->AddCollider(Collider(Vec2(x * ts + ts2, y * ts) + col_offset, Vec2(ts2, wall_width2)));
 				}
 			}
 		}
@@ -645,7 +646,7 @@ void CityGenerator::CreateScene()
 				}
 				if(y > 0 && map[x + (y - 1) * size] != T_ASPHALT)
 				{
-					// bottom
+					// top
 					node = new SceneNode;
 					node->pos = Vec3(tile_size * x + tile_size2, 0, tile_size * y);
 					node->rot = Vec3(0, PI / 2, 0);
@@ -654,7 +655,7 @@ void CityGenerator::CreateScene()
 				}
 				if(y < size - 1 && map[x + (y + 1) * size] != T_ASPHALT)
 				{
-					// top
+					// botom
 					node = new SceneNode;
 					node->pos = Vec3(tile_size * x + tile_size2, 0, tile_size * (y + 1));
 					node->rot = Vec3(0, PI / 2, 0);
@@ -848,17 +849,69 @@ void CityGenerator::Load(FileReader& f)
 void CityGenerator::BuildNavmesh()
 {
 	navmesh->Reset();
+	vector<Vec2> outline;
+
 	for(Building* building : buildings)
 	{
 		Box2d building_box = Box2d(building->box, Unit::radius + wall_width);
 		for(Building::Room& room : building->rooms)
 		{
+			// get region
 			Rect room_rect = room.GetRect();
 			Box2d box(building->pos.x * tile_size + room.pos.x * ts, building->pos.y * tile_size + room.pos.y * ts);
 			box.v2.x += ts * room.size.x;
 			box.v2.y += ts * room.size.y;
-			box.AddMargin((Unit::radius + wall_width) / 2);
-			navmesh->StartRegion(box.Intersect(building_box));
+			Box2d inner_box = box;
+			inner_box.AddMargin(Unit::radius + wall_width / 2);
+			inner_box = inner_box.Intersect(building_box);
+
+			// setup outline
+			const float margin = jamb_size + Unit::radius;
+			outline.clear();
+			outline.push_back(inner_box.LeftTop());
+			for(int x = room.pos.x; x < room.pos.x + room.size.x; ++x)
+			{
+				if(building->IsDoor(Int2(x, 0), DIR_TOP))
+				{
+					outline.push_back(Vec2(box.v1.x + ts * x + margin, inner_box.v1.y));
+					outline.push_back(Vec2(box.v1.x + ts * (x + 1) - margin, inner_box.v1.y));
+				}
+			}
+			outline.push_back(inner_box.RightTop());
+			for(int y = room.pos.y; y < room.pos.y + room.size.y; ++y)
+			{
+				if(building->IsDoor(Int2(room.size.x - 1, y), DIR_RIGHT))
+				{
+					outline.push_back(Vec2(inner_box.v2.x, box.v1.y + ts * y + margin));
+					outline.push_back(Vec2(inner_box.v2.x, box.v1.y + ts * (y + 1) - margin));
+				}
+			}
+			outline.push_back(inner_box.RightBottom());
+			for(int x = room.pos.x + room.size.x - 1; x >= room.pos.x; --x)
+			{
+				if(building->IsDoor(Int2(x, room.size.y - 1), DIR_BOTTOM))
+				{
+					outline.push_back(Vec2(box.v1.x + ts * (x + 1) - margin, inner_box.v2.y));
+					outline.push_back(Vec2(box.v1.x + ts * x + margin, inner_box.v2.y));
+				}
+			}
+			outline.push_back(inner_box.LeftBottom());
+			for(int y = room.pos.y + room.size.y - 1; y >= room.pos.y; --y)
+			{
+				if(building->IsDoor(Int2(0, y), DIR_LEFT))
+				{
+					outline.push_back(Vec2(inner_box.v1.x, box.v1.y + ts * (y + 1) - margin));
+					outline.push_back(Vec2(inner_box.v1.x, box.v1.y + ts * y + margin));
+				}
+			}
+			outline.clear();
+			outline.push_back(inner_box.LeftTop());
+			outline.push_back(inner_box.RightTop());
+			outline.push_back(inner_box.RightBottom());
+			outline.push_back(inner_box.LeftBottom());
+			//assert(outline.size() == 4 + 2 * (room.connected2.size() + CountBits(room.outside_used)));
+
+			navmesh->StartRegion(outline);
 			for(const Int2& pt : building->tables)
 			{
 				if(room_rect.IsInside(pt))

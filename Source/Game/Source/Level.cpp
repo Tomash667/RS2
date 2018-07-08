@@ -9,6 +9,7 @@
 #include "Player.h"
 #include "Item.h"
 #include "GameState.h"
+#include <DebugDrawer.h>
 
 Level::Level() : player(nullptr)
 {
@@ -470,5 +471,16 @@ void Level::Load(FileReader& f)
 		f >> timer;
 		bloods.push_back({ node, timer });
 		scene->Add(node);
+	}
+}
+
+void Level::DrawColliders(DebugDrawer* debug_drawer)
+{
+	debug_drawer->SetWireframe(true);
+	debug_drawer->SetColor(Color(255, 0, 0));
+	for(vector<Collider>& vc : colliders)
+	{
+		for(Collider& c : vc)
+			debug_drawer->DrawCube(c.ToBox());
 	}
 }

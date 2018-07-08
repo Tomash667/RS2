@@ -27,7 +27,7 @@ void DebugDrawer::Draw(const Matrix& mat_view, const Matrix& mat_view_proj, cons
 	this->cam_pos = cam_pos;
 	shader->Prepare(mat_view_proj);
 	handler(this);
-	shader->SetWireframe(false);
+	shader->Restore();
 }
 
 // https://www.gamedev.net/forums/topic/617595-solved-thick-constant-width-lines-using-quads/
@@ -53,41 +53,77 @@ void DebugDrawer::DrawLine(const Vec3& from, const Vec3& to, float width)
 	shader->Draw(6);
 }
 
+void DebugDrawer::DrawPath(const vector<Vec3>& path, bool closed)
+{
+	assert(path.size() >= 2u);
+	uint edges = path.size();
+	if(closed)
+		++edges;
+	Vec3* v = shader->Lock(edges);
+	for(uint i = 0, count = path.size(); i < count; ++i)
+	{
+		*v = path[i];
+		++v;
+	}
+	if(closed)
+		*v = path[0];
+	shader->Draw(edges, true);
+}
+
+void DebugDrawer::DrawPath(const vector<Vec2>& path, float y, bool closed)
+{
+	assert(path.size() >= 2u);
+	uint edges = path.size();
+	if(closed)
+		++edges;
+	Vec3* v = shader->Lock(edges);
+	for(uint i = 0, count = path.size(); i < count; ++i)
+	{
+		*v = path[i].XZ(y);
+		++v;
+	}
+	if(closed)
+		*v = path[0].XZ(y);
+	shader->Draw(edges, true);
+}
+
+void DebugDrawer::DrawTriangle(const Vec3(&pts)[3])
+{
+	Vec3* v = shader->Lock();
+	for(int i = 0; i < 3; ++i)
+		v[i] = pts[i];
+	shader->Draw(3);
+}
+
 void DebugDrawer::DrawTriangle(const Vec2(&pts)[3], float y)
 {
 	Vec3* v = shader->Lock();
-
 	for(int i = 0; i < 3; ++i)
 		v[i] = pts[i].XZ(y);
-
 	shader->Draw(3);
 }
 
 void DebugDrawer::DrawQuad(const Vec3 pos[4])
 {
 	Vec3* v = shader->Lock();
-
 	v[0] = pos[0];
 	v[1] = pos[1];
 	v[2] = pos[2];
 	v[3] = pos[1];
 	v[4] = pos[2];
 	v[5] = pos[3];
-
 	shader->Draw(6);
 }
 
 void DebugDrawer::DrawQuad(const Box2d& box, float y)
 {
 	Vec3* v = shader->Lock();
-
 	v[0] = box.LeftTop().XZ(y);
 	v[1] = box.RightTop().XZ(y);
 	v[2] = box.LeftBottom().XZ(y);
 	v[3] = v[2];
 	v[4] = v[1];
 	v[5] = box.RightBottom().XZ(y);
-
 	shader->Draw(6);
 }
 
