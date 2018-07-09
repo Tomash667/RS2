@@ -54,17 +54,36 @@ Navmesh::Navmesh() : solid(nullptr), chf(nullptr), cset(nullptr), pmesh(nullptr)
 
 Navmesh::~Navmesh()
 {
-	rcFreeHeightField(solid);
-	rcFreeCompactHeightfield(chf);
-	rcFreeContourSet(cset);
-	rcFreePolyMesh(pmesh);
-	rcFreePolyMeshDetail(dmesh);
+	Reset();
 	dtFreeNavMeshQuery(nav_query);
-	dtFreeNavMesh(navmesh);
 }
 
-bool Navmesh::Init(float map_size)
+void Navmesh::Reset()
 {
+	rcFreeHeightField(solid);
+	solid = nullptr;
+	rcFreeCompactHeightfield(chf);
+	chf = nullptr;
+	rcFreeContourSet(cset);
+	cset = nullptr;
+	rcFreePolyMesh(pmesh);
+	pmesh = nullptr;
+	rcFreePolyMeshDetail(dmesh);
+	dmesh = nullptr;
+	dtFreeNavMesh(navmesh);
+	navmesh = nullptr;
+}
+
+bool Navmesh::Build(float map_size)
+{
+	// FIXME
+	map_size = 10.f;
+	Info("Building navmesh...");
+	Timer t;
+
+	Reset();
+
+
 	const float agent_radius = Unit::radius;
 	const float agent_height = Unit::height;
 	const float agent_climb = 0.25f;
@@ -74,10 +93,7 @@ bool Navmesh::Init(float map_size)
 	//
 	// Step 1. Initialize build config.
 	//
-
-	ctx.resetTimers();
-	ctx.startTimer(RC_TIMER_TOTAL);
-
+	
 	// Init configuration (values from RecastDemo...)
 	const float detailSampleDist = 6.f;
 	rcConfig cfg = {};
@@ -112,10 +128,10 @@ bool Navmesh::Init(float map_size)
 
 	const int n_tris = 2;
 	Vec3 verts[] = {
-		Vec3(0,0,0),
-		Vec3(map_size,0,0),
 		Vec3(0,0,map_size),
-		Vec3(map_size,0,map_size)
+		Vec3(map_size,0,map_size),
+		Vec3(0,0,0),
+		Vec3(map_size,0,0)
 	};
 	const int n_verts = 4;
 	int tris[] = {
@@ -264,8 +280,7 @@ bool Navmesh::Init(float map_size)
 	}
 
 
-	dtNavMeshCreateParams params;
-	memset(&params, 0, sizeof(params));
+	dtNavMeshCreateParams params = {};
 	params.verts = pmesh->verts;
 	params.vertCount = pmesh->nverts;
 	params.polys = pmesh->polys;
@@ -278,13 +293,13 @@ bool Navmesh::Init(float map_size)
 	params.detailVertsCount = dmesh->nverts;
 	params.detailTris = dmesh->tris;
 	params.detailTriCount = dmesh->ntris;
-	params.offMeshConVerts = m_geom->getOffMeshConnectionVerts();
+	/*params.offMeshConVerts = m_geom->getOffMeshConnectionVerts();
 	params.offMeshConRad = m_geom->getOffMeshConnectionRads();
 	params.offMeshConDir = m_geom->getOffMeshConnectionDirs();
 	params.offMeshConAreas = m_geom->getOffMeshConnectionAreas();
 	params.offMeshConFlags = m_geom->getOffMeshConnectionFlags();
 	params.offMeshConUserID = m_geom->getOffMeshConnectionId();
-	params.offMeshConCount = m_geom->getOffMeshConnectionCount();
+	params.offMeshConCount = m_geom->getOffMeshConnectionCount();*/
 	params.walkableHeight = agent_height;
 	params.walkableRadius = agent_radius;
 	params.walkableClimb = agent_climb;
@@ -316,24 +331,13 @@ bool Navmesh::Init(float map_size)
 		return false;
 	}
 
-	ctx.stopTimer(RC_TIMER_TOTAL);
-
-	// Show performance stats.
-	duLogBuildTimes(*m_ctx, ctx.getAccumulatedTime(RC_TIMER_TOTAL));
-	ctx.log(RC_LOG_PROGRESS, ">> Polymesh: %d vertices  %d polygons", pmesh->nverts, pmesh->npolys);
-
-	m_totalBuildTimeMs = ctx.getAccumulatedTime(RC_TIMER_TOTAL) / 1000.0f;
+	Info("Finished building navmesh. Total time %g sec.", t.Tick());
 
 	return true;
 }
 
-void Navmesh::Reset()
-{
-	triangles.clear();
-}
-
-void Navmesh::EndRegion()
-{
+//void Navmesh::EndRegion()
+//{
 
 
 	/*if(colliders.empty())
@@ -378,7 +382,7 @@ void Navmesh::EndRegion()
 
 	Triangulate(&polyline, &hole);
 	colliders.clear();*/
-}
+//}
 
 /*void Navmesh::Triangulate(vector<p2t::Point*>* polyline, vector<p2t::Point*>* hole)
 {
@@ -416,7 +420,7 @@ void Navmesh::EndRegion()
 	points.clear();
 }*/
 
-float my_dt;
+/*float my_dt;
 
 void Navmesh::Draw(DebugDrawer* debug_drawer)
 {
@@ -460,3 +464,4 @@ void Navmesh::Draw(DebugDrawer* debug_drawer)
 	//for(vector<Vec2>& outline : outlines)
 	//	debug_drawer->DrawPath(outline, y, true);
 }
+*/

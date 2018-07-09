@@ -848,7 +848,9 @@ void CityGenerator::Load(FileReader& f)
 
 void CityGenerator::BuildNavmesh()
 {
-	navmesh->Reset();
+	navmesh->Build(map_size);
+
+	/*navmesh->Reset();
 	vector<Vec2> outline;
 
 	int index = -1; // FIXME
@@ -926,5 +928,5 @@ void CityGenerator::BuildNavmesh()
 				navmesh->AddPoint(inner_box.Midpoint());
 			navmesh->EndRegion();
 		}
-	}
+	}*/
 }

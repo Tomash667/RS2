@@ -1289,7 +1289,7 @@ bool Game::CanSee(Unit& unit, const Vec3& pos)
 
 void Game::OnDebugDraw(DebugDrawer* debug_drawer)
 {
-	navmesh->Draw(debug_drawer);
+	//navmesh->Draw(debug_drawer);
 }
 
 void Game::UpdateWorld(float dt)
