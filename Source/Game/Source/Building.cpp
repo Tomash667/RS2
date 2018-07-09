@@ -47,7 +47,7 @@ void Building::SetIsDoorMap()
 			break;
 		case DIR_BOTTOM:
 			if(door.first.y != s.y - 1)
-				is_door[door.first.x + (door.first.y + 1) * s.x] != DIR_F_TOP;
+				is_door[door.first.x + (door.first.y + 1) * s.x] |= DIR_F_TOP;
 			break;
 		}
 	}

@@ -31,6 +31,9 @@
     <Filter Include="Source Files\External\Recast">
       <UniqueIdentifier>{2eef525d-a147-497b-af89-120c160a5f30}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\External\Detour">
+      <UniqueIdentifier>{c406362e-b892-47ed-92ea-880d5dca7034}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Game.h">
@@ -199,6 +202,27 @@
     </ClCompile>
     <ClCompile Include="..\External\recastnavigation\Recast\Source\RecastRegion.cpp">
       <Filter>Source Files\External\Recast</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\recastnavigation\Detour\Source\DetourAlloc.cpp">
+      <Filter>Source Files\External\Detour</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\recastnavigation\Detour\Source\DetourAssert.cpp">
+      <Filter>Source Files\External\Detour</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\recastnavigation\Detour\Source\DetourCommon.cpp">
+      <Filter>Source Files\External\Detour</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\recastnavigation\Detour\Source\DetourNavMesh.cpp">
+      <Filter>Source Files\External\Detour</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\recastnavigation\Detour\Source\DetourNavMeshBuilder.cpp">
+      <Filter>Source Files\External\Detour</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\recastnavigation\Detour\Source\DetourNavMeshQuery.cpp">
+      <Filter>Source Files\External\Detour</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\recastnavigation\Detour\Source\DetourNode.cpp">
+      <Filter>Source Files\External\Detour</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

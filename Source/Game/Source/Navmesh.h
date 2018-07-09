@@ -2,13 +2,15 @@
 
 // FIXME - hide implementation details
 #include <Recast.h>
+#include <DetourNavMesh.h>
+#include <DetourNavMeshQuery.h>
 
 class Navmesh
 {
 public:
 	Navmesh();
 	~Navmesh();
-	void Init(float level_size);
+	bool Init(float level_size);
 	void Reset();
 	void StartRegion(const vector<Vec2>& outline) { this->outline = &outline; }
 	void EndRegion();
@@ -34,6 +36,14 @@ private:
 	vector<Box2d> colliders;
 	vector<Vec2> points;
 
-	rcContext ctx;
-	rcConfig cfg;
+	//
+	rcHeightfield* solid;
+	rcCompactHeightfield* chf;
+	rcContourSet* cset;
+	rcPolyMesh* pmesh;
+	rcPolyMeshDetail* dmesh;
+	vector<byte> triareas;
+	//
+	dtNavMeshQuery* nav_query;
+	dtNavMesh* navmesh;
 };

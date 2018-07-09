@@ -95,7 +95,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)Engine\Include;$(SolutionDir)External\Visual Leak Detector\include;$(SolutionDir)External\recastnavigation\Recast\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Engine\Include;$(SolutionDir)External\Visual Leak Detector\include;$(SolutionDir)External\recastnavigation\Recast\Include;$(SolutionDir)External\recastnavigation\Detour\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(SolutionDir)Engine\Lib;$(SolutionDir)External\FMod\lib;$(SolutionDir)External\Visual Leak Detector\lib\Win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -131,7 +131,7 @@
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalIncludeDirectories>$(SolutionDir)Engine\Include;$(SolutionDir)External\Visual Leak Detector\include;$(SolutionDir)External\recastnavigation\Recast\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Engine\Include;$(SolutionDir)External\Visual Leak Detector\include;$(SolutionDir)External\recastnavigation\Recast\Include;$(SolutionDir)External\recastnavigation\Detour\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -190,6 +190,13 @@
     <ClInclude Include="Source\Zombie.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\External\recastnavigation\Detour\Source\DetourAlloc.cpp" />
+    <ClCompile Include="..\External\recastnavigation\Detour\Source\DetourAssert.cpp" />
+    <ClCompile Include="..\External\recastnavigation\Detour\Source\DetourCommon.cpp" />
+    <ClCompile Include="..\External\recastnavigation\Detour\Source\DetourNavMesh.cpp" />
+    <ClCompile Include="..\External\recastnavigation\Detour\Source\DetourNavMeshBuilder.cpp" />
+    <ClCompile Include="..\External\recastnavigation\Detour\Source\DetourNavMeshQuery.cpp" />
+    <ClCompile Include="..\External\recastnavigation\Detour\Source\DetourNode.cpp" />
     <ClCompile Include="..\External\recastnavigation\Recast\Source\Recast.cpp" />
     <ClCompile Include="..\External\recastnavigation\Recast\Source\RecastAlloc.cpp" />
     <ClCompile Include="..\External\recastnavigation\Recast\Source\RecastArea.cpp" />
