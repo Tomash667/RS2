@@ -497,6 +497,7 @@ void Navmesh::Draw(DebugDrawer* debug_drawer)
 	if(!navmesh)
 		return;
 
+	const dtNavMesh* navmesh = this->navmesh;
 	Vec3 tri[3];
 
 	debug_drawer->SetColor(Color(0, 128, 255, 128));
@@ -509,16 +510,17 @@ void Navmesh::Draw(DebugDrawer* debug_drawer)
 
 		for(int i = 0; i < tile->header->polyCount; ++i)
 		{
+			const dtPoly& p = tile->polys[i];
 			const dtPolyDetail& pd = tile->detailMeshes[i];
 			for(int j = 0; j < pd.triCount; ++j)
 			{
 				const unsigned char* t = &tile->detailTris[(pd.triBase + j) * 4];
 				for(int k = 0; k < 3; ++k)
 				{
-					if(t[k] < p->vertCount)
-						tri[k] = &tile->verts[p->verts[t[k]] * 3];
+					if(t[k] < p.vertCount)
+						tri[k] = Vec3(&tile->verts[p.verts[t[k]] * 3]);
 					else
-						tri[k] = &tile->detailVerts[(pd->vertBase + t[k] - p->vertCount) * 3];
+						tri[k] = Vec3(&tile->detailVerts[(pd.vertBase + t[k] - p.vertCount) * 3]);
 				}
 
 				debug_drawer->DrawTriangle(tri);

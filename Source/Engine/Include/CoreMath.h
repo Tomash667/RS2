@@ -696,6 +696,7 @@ struct Vec3 : XMFLOAT3
 	Vec3(const Vec3& v);
 	Vec3(FXMVECTOR v);
 	explicit Vec3(const XMVECTORF32& v);
+	explicit Vec3(const float* f);
 
 	operator XMVECTOR() const;
 	operator float*();

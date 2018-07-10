@@ -1120,6 +1120,10 @@ inline Vec3::Vec3(const XMVECTORF32& v) : XMFLOAT3(v.f[0], v.f[1], v.f[2])
 {
 }
 
+inline Vec3::Vec3(const float* f) : XMFLOAT3(f[0], f[1], f[2])
+{
+}
+
 inline Vec3::operator XMVECTOR() const
 {
 	return XMLoadFloat3(this);
