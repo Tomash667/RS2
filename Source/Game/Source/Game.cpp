@@ -323,6 +323,9 @@ void Game::UpdateGame(float dt)
 	scene->Update(dt);
 }
 
+bool start_set, end_set;
+Vec3 start_pos, end_pos;
+
 void Game::UpdatePlayer(float dt)
 {
 	Player* player = level->player;
@@ -336,6 +339,23 @@ void Game::UpdatePlayer(float dt)
 		}
 		return;
 	}
+
+	// FIXME
+	bool check = false;
+	if(input->Pressed(Key::F5))
+	{
+		start_set = true;
+		start_pos = player->node->pos;
+		check = true;
+	}
+	if(input->Pressed(Key::F6))
+	{
+		end_set = true;
+		end_pos = player->node->pos;
+		check = true;
+	}
+	if(check && start_set && end_set)
+		navmesh->FindPath(start_pos, end_pos);
 
 	// show gick perk dialog when survived night
 	if(game_state.day != player->last_survived_day && game_state.hour >= 7.f)

@@ -11,11 +11,12 @@ public:
 	Navmesh();
 	~Navmesh();
 	bool Build(float level_size);
+	void FindPath(const Vec3& from, const Vec3& to);
 	//void StartRegion(const vector<Vec2>& outline) { this->outline = &outline; }
 	//void EndRegion();
 	//void AddCollier(const Box2d& box) { colliders.push_back(box); }
 	//void AddPoint(const Vec2& pt) { points.push_back(pt); }
-	//void Draw(DebugDrawer* debug_drawer);
+	void Draw(DebugDrawer* debug_drawer);
 
 	// FIXME
 	float dt;
@@ -46,4 +47,12 @@ private:
 	//
 	dtNavMeshQuery* nav_query;
 	dtNavMesh* navmesh;
+	dtQueryFilter filter;
+
+	// FIXME
+	Vec3 start_pos, end_pos;
+	bool have_path;
+	static const int MAX_PATH = 256;
+	dtPolyRef path[MAX_PATH];
+	int path_length;
 };

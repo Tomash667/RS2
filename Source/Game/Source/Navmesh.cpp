@@ -50,6 +50,9 @@ struct BuildContext : rcContext
 Navmesh::Navmesh() : solid(nullptr), chf(nullptr), cset(nullptr), pmesh(nullptr), dmesh(nullptr), navmesh(nullptr)
 {
 	nav_query = dtAllocNavMeshQuery();
+
+	filter.setIncludeFlags(POLYFLAGS_WALK);
+	filter.setExcludeFlags(0);
 }
 
 Navmesh::~Navmesh()
@@ -76,6 +79,9 @@ void Navmesh::Reset()
 
 bool Navmesh::Build(float map_size)
 {
+	// FIXME tmp
+	have_path = false;
+
 	// FIXME
 	map_size = 10.f;
 	Info("Building navmesh...");
@@ -93,7 +99,7 @@ bool Navmesh::Build(float map_size)
 	//
 	// Step 1. Initialize build config.
 	//
-	
+
 	// Init configuration (values from RecastDemo...)
 	const float detailSampleDist = 6.f;
 	rcConfig cfg = {};
@@ -465,3 +471,67 @@ void Navmesh::Draw(DebugDrawer* debug_drawer)
 	//	debug_drawer->DrawPath(outline, y, true);
 }
 */
+
+void Navmesh::FindPath(const Vec3& from, const Vec3& to)
+{
+	start_pos = from;
+	end_pos = to;
+	have_path = false;
+
+	const float ext[] = { 2.f, 4.f, 2.f };
+
+	dtPolyRef start_ref, end_ref;
+	nav_query->findNearestPoly(from, ext, &filter, &start_ref, nullptr);
+	nav_query->findNearestPoly(to, ext, &filter, &end_ref, nullptr);
+
+	if(start_ref != 0 && end_ref != 0)
+	{
+		nav_query->findPath(start_ref, end_ref, from, to, &filter, path, &path_length, MAX_PATH);
+		if(path_length != 0)
+			have_path = true;
+	}
+}
+
+void Navmesh::Draw(DebugDrawer* debug_drawer)
+{
+	if(!navmesh)
+		return;
+
+	Vec3 tri[3];
+
+	debug_drawer->SetColor(Color(0, 128, 255, 128));
+
+	for(int tile_i = 0, count = navmesh->getMaxTiles(); tile_i < count; ++tile_i)
+	{
+		const dtMeshTile* tile = navmesh->getTile(tile_i);
+		if(!tile->header)
+			continue;
+
+		for(int i = 0; i < tile->header->polyCount; ++i)
+		{
+			const dtPolyDetail& pd = tile->detailMeshes[i];
+			for(int j = 0; j < pd.triCount; ++j)
+			{
+				const unsigned char* t = &tile->detailTris[(pd.triBase + j) * 4];
+				for(int k = 0; k < 3; ++k)
+				{
+					if(t[k] < p->vertCount)
+						tri[k] = &tile->verts[p->verts[t[k]] * 3];
+					else
+						tri[k] = &tile->detailVerts[(pd->vertBase + t[k] - p->vertCount) * 3];
+				}
+
+				debug_drawer->DrawTriangle(tri);
+			}
+		}
+	}
+
+	if(have_path)
+	{
+		debug_drawer->SetColor(Color(0, 0, 255));
+		debug_drawer->DrawSphere(start_pos + Vec3(0, 0.1f, 0), 0.3f);
+
+		debug_drawer->SetColor(Color(255, 0, 0));
+		debug_drawer->DrawSphere(end_pos + Vec3(0, 0.1f, 0), 0.3f);
+	}
+}
