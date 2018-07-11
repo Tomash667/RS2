@@ -124,6 +124,9 @@ void CityGenerator::GenerateMap()
 	Tree::Node* first = roads_tree.nodes.front();
 	player_start_pos = Vec3(tile_size * first->split_pos.x + tile_size / 2 * first->split_size.x,
 		0, tile_size * first->split_pos.y + tile_size / 2 * first->split_size.y);
+
+	// FIXME
+	player_start_pos = Vec3(1, 0, 1);
 }
 
 void CityGenerator::DrawMap()

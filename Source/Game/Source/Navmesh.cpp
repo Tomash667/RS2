@@ -519,51 +519,78 @@ void Navmesh::Draw(DebugDrawer* debug_drawer)
 
 	// !!! depth mask = false
 
-	DrawNavmesh(*navmesh, *nav_query);
-
-	// duDebugDrawNavMeshWithClosedList
-
-	const dtNavMesh* navmesh = this->navmesh;
-	Vec3 tri[3];
-
-	debug_drawer->SetColor(Color(0, 128, 255, 128));
-
-	for(int tile_i = 0, count = navmesh->getMaxTiles(); tile_i < count; ++tile_i)
-	{
-		const dtMeshTile* tile = navmesh->getTile(tile_i);
-		if(!tile->header)
-			continue;
-
-		for(int i = 0; i < tile->header->polyCount; ++i)
-		{
-			const dtPoly& p = tile->polys[i];
-			const dtPolyDetail& pd = tile->detailMeshes[i];
-			for(int j = 0; j < pd.triCount; ++j)
-			{
-				const unsigned char* t = &tile->detailTris[(pd.triBase + j) * 4];
-				for(int k = 0; k < 3; ++k)
-				{
-					if(t[k] < p.vertCount)
-						tri[k] = Vec3(&tile->verts[p.verts[t[k]] * 3]);
-					else
-						tri[k] = Vec3(&tile->detailVerts[(pd.vertBase + t[k] - p.vertCount) * 3]);
-				}
-
-				debug_drawer->DrawTriangle(tri);
-			}
-		}
-	}
+	DrawNavmesh(debug_drawer, *navmesh, *nav_query);
 
 	if(start_set)
 	{
-		debug_drawer->SetColor(Color(0, 0, 255));
+		debug_drawer->SetColor(Color(0, 0, 255, 200));
 		debug_drawer->DrawSphere(start_pos + Vec3(0, 0.1f, 0), 0.3f);
 	}
 
 	if(end_set)
 	{
-		debug_drawer->SetColor(Color(255, 0, 0));
+		debug_drawer->SetColor(Color(255, 0, 0, 200));
 		debug_drawer->DrawSphere(end_pos + Vec3(0, 0.1f, 0), 0.3f);
+	}
+
+	if(have_path)
+	{
+			duDebugDrawNavMeshPoly(&dd, *m_navMesh, m_startRef, startCol);
+			duDebugDrawNavMeshPoly(&dd, *m_navMesh, m_endRef, endCol);
+
+			if(m_npolys)
+			{
+				for(int i = 0; i < m_npolys; ++i)
+				{
+					if(m_polys[i] == m_startRef || m_polys[i] == m_endRef)
+						continue;
+					duDebugDrawNavMeshPoly(&dd, *m_navMesh, m_polys[i], pathCol);
+				}
+			}
+
+			if(m_nsmoothPath)
+			{
+				dd.depthMask(false);
+				const unsigned int spathCol = duRGBA(0, 0, 0, 220);
+				dd.begin(DU_DRAW_LINES, 3.0f);
+				for(int i = 0; i < m_nsmoothPath; ++i)
+					dd.vertex(m_smoothPath[i * 3], m_smoothPath[i * 3 + 1] + 0.1f, m_smoothPath[i * 3 + 2], spathCol);
+				dd.end();
+				dd.depthMask(true);
+			}
+
+			if(m_pathIterNum)
+			{
+				duDebugDrawNavMeshPoly(&dd, *m_navMesh, m_pathIterPolys[0], duRGBA(255, 255, 255, 128));
+
+				dd.depthMask(false);
+				dd.begin(DU_DRAW_LINES, 1.0f);
+
+				const unsigned int prevCol = duRGBA(255, 192, 0, 220);
+				const unsigned int curCol = duRGBA(255, 255, 255, 220);
+				const unsigned int steerCol = duRGBA(0, 192, 255, 220);
+
+				dd.vertex(m_prevIterPos[0], m_prevIterPos[1] - 0.3f, m_prevIterPos[2], prevCol);
+				dd.vertex(m_prevIterPos[0], m_prevIterPos[1] + 0.3f, m_prevIterPos[2], prevCol);
+
+				dd.vertex(m_iterPos[0], m_iterPos[1] - 0.3f, m_iterPos[2], curCol);
+				dd.vertex(m_iterPos[0], m_iterPos[1] + 0.3f, m_iterPos[2], curCol);
+
+				dd.vertex(m_prevIterPos[0], m_prevIterPos[1] + 0.3f, m_prevIterPos[2], prevCol);
+				dd.vertex(m_iterPos[0], m_iterPos[1] + 0.3f, m_iterPos[2], prevCol);
+
+				dd.vertex(m_prevIterPos[0], m_prevIterPos[1] + 0.3f, m_prevIterPos[2], steerCol);
+				dd.vertex(m_steerPos[0], m_steerPos[1] + 0.3f, m_steerPos[2], steerCol);
+
+				for(int i = 0; i < m_steerPointCount - 1; ++i)
+				{
+					dd.vertex(m_steerPoints[i * 3 + 0], m_steerPoints[i * 3 + 1] + 0.2f, m_steerPoints[i * 3 + 2], duDarkenCol(steerCol));
+					dd.vertex(m_steerPoints[(i + 1) * 3 + 0], m_steerPoints[(i + 1) * 3 + 1] + 0.2f, m_steerPoints[(i + 1) * 3 + 2], duDarkenCol(steerCol));
+				}
+
+				dd.end();
+				dd.depthMask(true);
+			}
 	}
 }
 
@@ -604,7 +631,7 @@ void Navmesh::DrawMeshTile(DebugDrawer* debug_drawer, const dtNavMesh& mesh, con
 
 		const dtPolyDetail* pd = &tile->detailMeshes[i];
 
-		unsigned int col;
+		Color col;
 		if(query.isInClosedList(base | (dtPolyRef)i))
 			col = Color(255, 196, 0, 64);
 		else
@@ -626,63 +653,61 @@ void Navmesh::DrawMeshTile(DebugDrawer* debug_drawer, const dtNavMesh& mesh, con
 		}
 	}
 
-	DrawPolyBoundaries(debug_drawer, tile, Color(0, 48, 64, 32), 1.5f, true);
-	DrawPolyBoundaries(debug_drawer, tile, Color(0, 48, 64, 220), 2.5f, false);
+	DrawPolyBoundaries(debug_drawer, tile, Color(0, 48, 64, 64), 0.05f, true);
+	DrawPolyBoundaries(debug_drawer, tile, Color(0, 48, 64, 250), 0.1f, false);
 
 	// FIXME: spr po co te punkty
-	const unsigned int vcol = duRGBA(0, 0, 0, 196);
+	/*const unsigned int vcol = duRGBA(0, 0, 0, 196);
 	dd->begin(DU_DRAW_POINTS, 3.0f);
 	for(int i = 0; i < tile->header->vertCount; ++i)
 	{
 		const float* v = &tile->verts[i * 3];
 		dd->vertex(v[0], v[1], v[2], vcol);
 	}
-	dd->end();
+	dd->end();*/
+}
+
+static float distancePtLine2d(const float* pt, const float* p, const float* q)
+{
+	float pqx = q[0] - p[0];
+	float pqz = q[2] - p[2];
+	float dx = pt[0] - p[0];
+	float dz = pt[2] - p[2];
+	float d = pqx * pqx + pqz * pqz;
+	float t = pqx * dx + pqz * dz;
+	if(d != 0)
+		t /= d;
+	dx = p[0] + t * pqx - pt[0];
+	dz = p[2] + t * pqz - pt[2];
+	return dx * dx + dz * dz;
 }
 
 // drawPolyBoundaries
 void Navmesh::DrawPolyBoundaries(DebugDrawer* debug_drawer, const dtMeshTile* tile, Color color, float line_width, bool inner)
 {
 	static const float thr = 0.01f*0.01f;
-
-	dd->begin(DU_DRAW_LINES, linew);
+	debug_drawer->SetColor(color);
 
 	for(int i = 0; i < tile->header->polyCount; ++i)
 	{
 		const dtPoly* p = &tile->polys[i];
 
-		if(p->getType() == DT_POLYTYPE_OFFMESH_CONNECTION) continue;
+		if(p->getType() == DT_POLYTYPE_OFFMESH_CONNECTION)
+			continue;
 
 		const dtPolyDetail* pd = &tile->detailMeshes[i];
 
 		for(int j = 0, nj = (int)p->vertCount; j < nj; ++j)
 		{
-			unsigned int c = col;
 			if(inner)
 			{
-				if(p->neis[j] == 0) continue;
-				if(p->neis[j] & DT_EXT_LINK)
-				{
-					bool con = false;
-					for(unsigned int k = p->firstLink; k != DT_NULL_LINK; k = tile->links[k].next)
-					{
-						if(tile->links[k].edge == j)
-						{
-							con = true;
-							break;
-						}
-					}
-					if(con)
-						c = duRGBA(255, 255, 255, 48);
-					else
-						c = duRGBA(0, 0, 0, 48);
-				}
-				else
-					c = duRGBA(0, 48, 64, 32);
+				if(p->neis[j] == 0)
+					continue;
 			}
 			else
 			{
-				if(p->neis[j] != 0) continue;
+				if(p->neis[j] != 0)
+					continue;
 			}
 
 			const float* v0 = &tile->verts[p->verts[j] * 3];
@@ -703,16 +728,12 @@ void Navmesh::DrawPolyBoundaries(DebugDrawer* debug_drawer, const dtMeshTile* ti
 				}
 				for(int m = 0, n = 2; m < 3; n = m++)
 				{
-					if(((t[3] >> (n * 2)) & 0x3) == 0) continue;	// Skip inner detail edges.
-					if(distancePtLine2d(tv[n], v0, v1) < thr &&
-						distancePtLine2d(tv[m], v0, v1) < thr)
-					{
-						dd->vertex(tv[n], c);
-						dd->vertex(tv[m], c);
-					}
+					if(((t[3] >> (n * 2)) & 0x3) == 0)
+						continue;	// Skip inner detail edges.
+					if(distancePtLine2d(tv[n], v0, v1) < thr && distancePtLine2d(tv[m], v0, v1) < thr)
+						debug_drawer->DrawLine(Vec3(tv[n]), Vec3(tv[m]), line_width);
 				}
 			}
 		}
 	}
-	dd->end();
 }
