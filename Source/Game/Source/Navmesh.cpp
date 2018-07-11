@@ -53,6 +53,10 @@ Navmesh::Navmesh() : solid(nullptr), chf(nullptr), cset(nullptr), pmesh(nullptr)
 
 	filter.setIncludeFlags(POLYFLAGS_WALK);
 	filter.setExcludeFlags(0);
+
+	have_path = false;
+	start_set = false;
+	end_set = false;
 }
 
 Navmesh::~Navmesh()
@@ -81,6 +85,8 @@ bool Navmesh::Build(float map_size)
 {
 	// FIXME tmp
 	have_path = false;
+	start_set = false;
+	end_set = false;
 
 	// FIXME
 	map_size = 10.f;
@@ -472,10 +478,24 @@ void Navmesh::Draw(DebugDrawer* debug_drawer)
 }
 */
 
+void Navmesh::SetPos(const Vec3& pos, bool start)
+{
+	if(start)
+	{
+		start_pos = pos;
+		start_set = true;
+	}
+	else
+	{
+		end_pos = pos;
+		end_set = true;
+	}
+	if(start_set && end_set)
+		FindPath(start_pos, end_pos);
+}
+
 void Navmesh::FindPath(const Vec3& from, const Vec3& to)
 {
-	start_pos = from;
-	end_pos = to;
 	have_path = false;
 
 	const float ext[] = { 2.f, 4.f, 2.f };
@@ -496,6 +516,12 @@ void Navmesh::Draw(DebugDrawer* debug_drawer)
 {
 	if(!navmesh)
 		return;
+
+	// !!! depth mask = false
+
+	DrawNavmesh(*navmesh, *nav_query);
+
+	// duDebugDrawNavMeshWithClosedList
 
 	const dtNavMesh* navmesh = this->navmesh;
 	Vec3 tri[3];
@@ -528,12 +554,165 @@ void Navmesh::Draw(DebugDrawer* debug_drawer)
 		}
 	}
 
-	if(have_path)
+	if(start_set)
 	{
 		debug_drawer->SetColor(Color(0, 0, 255));
 		debug_drawer->DrawSphere(start_pos + Vec3(0, 0.1f, 0), 0.3f);
+	}
 
+	if(end_set)
+	{
 		debug_drawer->SetColor(Color(255, 0, 0));
 		debug_drawer->DrawSphere(end_pos + Vec3(0, 0.1f, 0), 0.3f);
 	}
+}
+
+// duDebugDrawNavMeshWithClosedList
+void Navmesh::DrawNavmesh(DebugDrawer* debug_drawer, const dtNavMesh& mesh, const dtNavMeshQuery& query)
+{
+	for(int i = 0, count = mesh.getMaxTiles(); i < count; ++i)
+	{
+		const dtMeshTile* tile = mesh.getTile(i);
+		if(tile->header)
+			DrawMeshTile(debug_drawer, mesh, query, tile);
+	}
+}
+
+int bit(int a, int b)
+{
+	return (a & (1 << b)) >> b;
+}
+
+Color IntToCol(int i, int a)
+{
+	int	r = bit(i, 1) + bit(i, 3) * 2 + 1;
+	int	g = bit(i, 2) + bit(i, 4) * 2 + 1;
+	int	b = bit(i, 0) + bit(i, 5) * 2 + 1;
+	return Color(r * 63, g * 63, b * 63, a);
+}
+
+// drawMeshTile
+void Navmesh::DrawMeshTile(DebugDrawer* debug_drawer, const dtNavMesh& mesh, const dtNavMeshQuery& query, const dtMeshTile* tile)
+{
+	dtPolyRef base = mesh.getPolyRefBase(tile);
+
+	for(int i = 0; i < tile->header->polyCount; ++i)
+	{
+		const dtPoly* p = &tile->polys[i];
+		if(p->getType() == DT_POLYTYPE_OFFMESH_CONNECTION)	// Skip off-mesh links.
+			continue;
+
+		const dtPolyDetail* pd = &tile->detailMeshes[i];
+
+		unsigned int col;
+		if(query.isInClosedList(base | (dtPolyRef)i))
+			col = Color(255, 196, 0, 64);
+		else
+			col = Color(0, 192, 255, 64);
+		debug_drawer->SetColor(col);
+
+		for(int j = 0; j < pd->triCount; ++j)
+		{
+			const unsigned char* t = &tile->detailTris[(pd->triBase + j) * 4];
+			Vec3 tri[3];
+			for(int k = 0; k < 3; ++k)
+			{
+				if(t[k] < p->vertCount)
+					tri[k] = Vec3(&tile->verts[p->verts[t[k]] * 3]);
+				else
+					tri[k] = Vec3(&tile->detailVerts[(pd->vertBase + t[k] - p->vertCount) * 3]);
+			}
+			debug_drawer->DrawTriangle(tri);
+		}
+	}
+
+	DrawPolyBoundaries(debug_drawer, tile, Color(0, 48, 64, 32), 1.5f, true);
+	DrawPolyBoundaries(debug_drawer, tile, Color(0, 48, 64, 220), 2.5f, false);
+
+	// FIXME: spr po co te punkty
+	const unsigned int vcol = duRGBA(0, 0, 0, 196);
+	dd->begin(DU_DRAW_POINTS, 3.0f);
+	for(int i = 0; i < tile->header->vertCount; ++i)
+	{
+		const float* v = &tile->verts[i * 3];
+		dd->vertex(v[0], v[1], v[2], vcol);
+	}
+	dd->end();
+}
+
+// drawPolyBoundaries
+void Navmesh::DrawPolyBoundaries(DebugDrawer* debug_drawer, const dtMeshTile* tile, Color color, float line_width, bool inner)
+{
+	static const float thr = 0.01f*0.01f;
+
+	dd->begin(DU_DRAW_LINES, linew);
+
+	for(int i = 0; i < tile->header->polyCount; ++i)
+	{
+		const dtPoly* p = &tile->polys[i];
+
+		if(p->getType() == DT_POLYTYPE_OFFMESH_CONNECTION) continue;
+
+		const dtPolyDetail* pd = &tile->detailMeshes[i];
+
+		for(int j = 0, nj = (int)p->vertCount; j < nj; ++j)
+		{
+			unsigned int c = col;
+			if(inner)
+			{
+				if(p->neis[j] == 0) continue;
+				if(p->neis[j] & DT_EXT_LINK)
+				{
+					bool con = false;
+					for(unsigned int k = p->firstLink; k != DT_NULL_LINK; k = tile->links[k].next)
+					{
+						if(tile->links[k].edge == j)
+						{
+							con = true;
+							break;
+						}
+					}
+					if(con)
+						c = duRGBA(255, 255, 255, 48);
+					else
+						c = duRGBA(0, 0, 0, 48);
+				}
+				else
+					c = duRGBA(0, 48, 64, 32);
+			}
+			else
+			{
+				if(p->neis[j] != 0) continue;
+			}
+
+			const float* v0 = &tile->verts[p->verts[j] * 3];
+			const float* v1 = &tile->verts[p->verts[(j + 1) % nj] * 3];
+
+			// Draw detail mesh edges which align with the actual poly edge.
+			// This is really slow.
+			for(int k = 0; k < pd->triCount; ++k)
+			{
+				const unsigned char* t = &tile->detailTris[(pd->triBase + k) * 4];
+				const float* tv[3];
+				for(int m = 0; m < 3; ++m)
+				{
+					if(t[m] < p->vertCount)
+						tv[m] = &tile->verts[p->verts[t[m]] * 3];
+					else
+						tv[m] = &tile->detailVerts[(pd->vertBase + (t[m] - p->vertCount)) * 3];
+				}
+				for(int m = 0, n = 2; m < 3; n = m++)
+				{
+					if(((t[3] >> (n * 2)) & 0x3) == 0) continue;	// Skip inner detail edges.
+					if(distancePtLine2d(tv[n], v0, v1) < thr &&
+						distancePtLine2d(tv[m], v0, v1) < thr)
+					{
+						dd->vertex(tv[n], c);
+						dd->vertex(tv[m], c);
+					}
+				}
+			}
+		}
+	}
+	dd->end();
 }

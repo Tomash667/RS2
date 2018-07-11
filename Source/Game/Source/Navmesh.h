@@ -21,10 +21,14 @@ public:
 	// FIXME
 	float dt;
 	Input* input;
+	void SetPos(const Vec3& pos, bool start);
 
 private:
 	void Reset();
 	//void Triangulate(vector<p2t::Point*>* polyline, vector<p2t::Point*>* hole);
+	void DrawNavmesh(DebugDrawer* debug_drawer, const dtNavMesh& mesh, const dtNavMeshQuery& query);
+	void DrawMeshTile(DebugDrawer* debug_drawer, const dtNavMesh& mesh, const dtNavMeshQuery& query, const dtMeshTile* tile);
+	void DrawPolyBoundaries(DebugDrawer* debug_drawer, const dtMeshTile* tile, Color color, float line_width, bool inner);
 
 	//struct Triangle
 	//{
@@ -50,8 +54,8 @@ private:
 	dtQueryFilter filter;
 
 	// FIXME
+	bool start_set, end_set, have_path;
 	Vec3 start_pos, end_pos;
-	bool have_path;
 	static const int MAX_PATH = 256;
 	dtPolyRef path[MAX_PATH];
 	int path_length;
