@@ -29,6 +29,8 @@ private:
 	void DrawNavmesh(DebugDrawer* debug_drawer, const dtNavMesh& mesh, const dtNavMeshQuery& query);
 	void DrawMeshTile(DebugDrawer* debug_drawer, const dtNavMesh& mesh, const dtNavMeshQuery& query, const dtMeshTile* tile);
 	void DrawPolyBoundaries(DebugDrawer* debug_drawer, const dtMeshTile* tile, Color color, float line_width, bool inner);
+	void DrawPath(DebugDrawer* debug_drawer, const dtNavMesh& mesh);
+	void DrawPoly(DebugDrawer* debug_drawer, const dtNavMesh& mesh, dtPolyRef ref, Color col);
 
 	//struct Triangle
 	//{
@@ -57,6 +59,8 @@ private:
 	bool start_set, end_set, have_path;
 	Vec3 start_pos, end_pos;
 	static const int MAX_PATH = 256;
-	dtPolyRef path[MAX_PATH];
+	static const int MAX_SMOOTH = 2048;
+	dtPolyRef path[MAX_PATH], start_ref, end_ref;
+	vector<Vec3> smooth_path;
 	int path_length;
 };
