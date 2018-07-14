@@ -69,7 +69,7 @@ void CityGenerator::Generate()
 	BuildBuildingsMesh();
 	BuildNavmesh();
 	CreateScene();
-	level->SpawnBarriers();
+	//level->SpawnBarriers(); FIXME
 	level->SpawnPlayer(player_start_pos);
 	SpawnItems();
 	//SpawnZombies(); FIXME

@@ -7,6 +7,8 @@
 #include "Unit.h"
 // FIXME
 #include <Input.h>
+#include <ResourceManager.h>
+#include <Mesh.h>
 
 enum PolyArea
 {
@@ -109,21 +111,21 @@ bool Navmesh::Build(float map_size)
 	// Init configuration (values from RecastDemo...)
 	const float detailSampleDist = 6.f;
 	rcConfig cfg = {};
-	cfg.cs = Unit::radius; // cell size
+	cfg.cs = 0.15f; // cell size
 	cfg.ch = 0.25f; // cell height
 	cfg.walkableSlopeAngle = 45.f;
 	cfg.walkableHeight = (int)ceilf(agent_height / cfg.ch);
-	cfg.walkableClimb = 1; // in cells
-	cfg.walkableRadius = 1; // in cell size (Unit has size of 1 cell, needs more testing)
-	cfg.maxEdgeLen = 12;
+	cfg.walkableClimb = 3; // in cells
+	cfg.walkableRadius = (int)(Unit::radius / cfg.cs);
+	cfg.maxEdgeLen = 80;
 	cfg.maxSimplificationError = 1.3f;
 	cfg.minRegionArea = rcSqr(8);
 	cfg.mergeRegionArea = rcSqr(20);
 	cfg.maxVertsPerPoly = 6;
 	cfg.detailSampleDist = detailSampleDist < 0.9f ? 0 : cfg.cs * detailSampleDist;
 	cfg.detailSampleMaxError = cfg.ch * 1.f;
-	rcVcopy(cfg.bmin, Vec3(0, 0, 0));
-	rcVcopy(cfg.bmax, Vec3(map_size, 2.f, map_size));
+	rcVcopy(cfg.bmin, Vec3(-4.74862289f, -1.23880994f, -5.95265818f));
+	rcVcopy(cfg.bmax, Vec3(4.74862289f, 1.82665098f, 4.86848688f));
 	rcCalcGridSize(cfg.bmin, cfg.bmax, cfg.cs, &cfg.width, &cfg.height);
 
 	//
@@ -138,18 +140,15 @@ bool Navmesh::Build(float map_size)
 		return false;
 	}
 
-	const int n_tris = 2;
-	Vec3 verts[] = {
-		Vec3(0,0,map_size),
-		Vec3(map_size,0,map_size),
-		Vec3(0,0,0),
-		Vec3(map_size,0,0)
-	};
-	const int n_verts = 4;
-	int tris[] = {
-		0, 1, 2,
-		2, 1, 3
-	};
+	Mesh* mesh = res_mgr->GetMeshRaw("navmesh.qmsh");
+
+	const int n_tris = mesh->head.n_tris;
+	Vec3* verts = (Vec3*)mesh->vertex_data.data();
+	const int n_verts = mesh->head.n_verts;
+	vector<int> tris;
+	tris.resize(n_tris * 3);
+	for(int i = 0; i < n_tris * 3; ++i)
+		tris[i] = mesh->index_data[i];
 
 	// Allocate array that can hold triangle area types.
 	// If you have multiple meshes you need to process, allocate
@@ -160,8 +159,8 @@ bool Navmesh::Build(float map_size)
 	// If your input data is multiple meshes, you can transform them here, calculate
 	// the are type for each of the meshes and rasterize them.
 	memset(triareas.data(), 0, n_tris * sizeof(byte));
-	rcMarkWalkableTriangles(&ctx, cfg.walkableSlopeAngle, (float*)verts, n_verts, tris, n_tris, triareas.data());
-	if(!rcRasterizeTriangles(&ctx, (float*)verts, triareas.data(), n_tris, *solid, cfg.walkableClimb))
+	rcMarkWalkableTriangles(&ctx, cfg.walkableSlopeAngle, (float*)verts, n_verts, tris.data(), n_tris, triareas.data());
+	if(!rcRasterizeTriangles(&ctx, (float*)verts, n_verts, tris.data(), triareas.data(), n_tris, *solid, cfg.walkableClimb))
 	{
 		ctx.log(RC_LOG_ERROR, "Could not rasterize triangles.");
 		return false;
@@ -348,136 +347,6 @@ bool Navmesh::Build(float map_size)
 	return true;
 }
 
-//void Navmesh::EndRegion()
-//{
-
-
-	/*if(colliders.empty())
-	{
-		vector<p2t::Point*> polyline;
-		for(const Vec2& pt : *outline)
-			polyline.push_back(ToPoint(pt));
-		Triangulate(&polyline, nullptr);
-		return;
-	}
-
-	Clipper clipper;
-
-	// build room polygon
-	Path path;
-	for(const Vec2& pt : *outline)
-		path.push_back(ToIntPoint(pt));
-	clipper.AddPath(path, ptSubject, true);
-
-	// add colliders
-	for(const Box2d& box : colliders)
-	{
-		path.clear();
-		path.push_back(ToIntPoint(box.LeftTop()));
-		path.push_back(ToIntPoint(box.RightTop()));
-		path.push_back(ToIntPoint(box.RightBottom()));
-		path.push_back(ToIntPoint(box.LeftBottom()));
-		clipper.AddPath(path, ptClip, true);
-	}
-
-	// clip
-	Paths result;
-	clipper.Execute(ctDifference, result);
-
-	// for simplicity, first path is polygon, second is hole
-	assert(result.size() == 2u);
-	vector<p2t::Point*> polyline, hole;
-	for(const IntPoint& pt : result[0])
-		polyline.push_back(ToPoint(pt));
-	for(auto it = result[1].rbegin(), end = result[1].rend(); it != end; ++it)
-		hole.push_back(ToPoint(*it));
-
-	Triangulate(&polyline, &hole);
-	colliders.clear();*/
-//}
-
-/*void Navmesh::Triangulate(vector<p2t::Point*>* polyline, vector<p2t::Point*>* hole)
-{
-	// traingulate
-	p2t::CDT cdt(*polyline);
-	if(hole)
-		cdt.AddHole(*hole);
-	vector<p2t::Point*> added_points;
-	for(Vec2& pt : points)
-	{
-		p2t::Point* p = ToPoint(pt);
-		cdt.AddPoint(p);
-		added_points.push_back(p);
-	}
-	cdt.Triangulate();
-	vector<p2t::Triangle*> result_triangles = cdt.GetTriangles();
-
-	// copy triangles
-	for(p2t::Triangle* tri : result_triangles)
-	{
-		Triangle tri2;
-		for(int i = 0; i < 3; ++i)
-		{
-			p2t::Point* pt = tri->GetPoint(i);
-			tri2.pos[i] = Vec2((float)pt->x, (float)pt->y);
-		}
-		triangles.push_back(tri2);
-	}
-
-	// cleanup
-	DeleteElements(*polyline);
-	if(hole)
-		DeleteElements(*hole);
-	DeleteElements(added_points);
-	points.clear();
-}*/
-
-/*float my_dt;
-
-void Navmesh::Draw(DebugDrawer* debug_drawer)
-{
-	const float y = 0.2f;
-	debug_drawer->SetColor(Color(0, 128, 255, 128));
-	for(Triangle& tri : triangles)
-		debug_drawer->DrawTriangle(tri.pos, y);
-	debug_drawer->SetWireframe(true);
-	debug_drawer->SetColor(Color(0, 0, 255, 255));
-	for(Triangle& tri : triangles)
-		debug_drawer->DrawTriangle(tri.pos, y);
-
-	//my_dt += dt;
-	//static int c = 13;
-	//if(my_dt >= 1.f)
-	//{
-	//	//Info("tick");
-	//	my_dt -= 1.f;
-	//	//++c;
-	//	if(c == 3)
-	//		c = 0;
-	//}
-	//if(input->Pressed(Key::F5))
-	//{
-	//	--c;
-	//	if(c == -1)
-	//		c = outlines.size() - 1;
-	//}
-	//if(input->Pressed(Key::F6))
-	//{
-	//	++c;
-	//	if(c == outlines.size())
-	//		c = 0;
-	//}
-	//for(uint i = 0; i < outlines.size(); ++i)
-	//{
-	//	//if(i == c)
-	//		debug_drawer->DrawPath(outlines[i], y, true);
-	//}
-
-	//for(vector<Vec2>& outline : outlines)
-	//	debug_drawer->DrawPath(outline, y, true);
-}
-*/
-
 void Navmesh::SetPos(const Vec3& pos, bool start)
 {
 	if(start)
@@ -505,132 +374,290 @@ void Navmesh::FindPath(const Vec3& from, const Vec3& to)
 
 	if(start_ref != 0 && end_ref != 0)
 	{
-		nav_query->findPath(start_ref, end_ref, from, to, &filter, path, &path_length, MAX_PATH);
+		nav_query->findPath(start_ref, end_ref, from, to, &filter, path, &path_length, MAX_POLYS);
 		if(path_length == 0)
 			return;
-		
+
 		have_path = true;
-		smooth_path.clear();
 
-		dtPolyRef polys[MAX_PATH];
-		memcpy(polys, path, sizeof(dtPolyRef)*path_length);
-		int npolys = path_length;
+		//SmoothPath();
+		FindStraightPath();
 
-		Vec3 iterPos, targetPos;
-		nav_query->closestPointOnPoly(start_ref, start_pos, iterPos, nullptr);
-		nav_query->closestPointOnPoly(polys[npolys - 1], end_pos, targetPos, nullptr);
 
-		static const float STEP_SIZE = 0.5f;
-		static const float SLOP = 0.01f;
+		// FIXME
+		Info("Path found, length:%d, smooth:%d, straight:%d", path_length, smooth_path.size(), straight_path_length);
+	}
+}
 
-		smooth_path.push_back(iterPos);
+void Navmesh::FindStraightPath()
+{
+	straight_path_length = 0;
 
-		// Move towards target a small advancement at a time until target reached or
-		// when ran out of memory to store the path.
-		while(npolys && smooth_path.size() < MAX_SMOOTH)
+	// In case of partial path, make sure the end point is clamped to the last polygon.
+	Vec3 epos = end_pos;
+	if(path[path_length - 1] != end_ref)
+		nav_query->closestPointOnPoly(path[path_length - 1], end_pos, epos, nullptr);
+
+	nav_query->findStraightPath(start_pos, epos, path, path_length, (float*)straight_path, straight_path_flags,
+		straight_path_polys, &straight_path_length, MAX_POLYS, 0);
+}
+
+inline bool inRange(const Vec3& v1, const Vec3& v2, const float r, const float h)
+{
+	const float dx = v2.x - v1.x;
+	const float dy = v2.y - v1.y;
+	const float dz = v2.z - v1.z;
+	return (dx*dx + dz * dz) < r*r && fabsf(dy) < h;
+}
+
+static int fixupCorridor(dtPolyRef* path, const int npath, const int maxPath,
+	const dtPolyRef* visited, const int nvisited)
+{
+	int furthestPath = -1;
+	int furthestVisited = -1;
+
+	// Find furthest common polygon.
+	for(int i = npath - 1; i >= 0; --i)
+	{
+		bool found = false;
+		for(int j = nvisited - 1; j >= 0; --j)
 		{
-			// Find location to steer towards.
-			float steerPos[3];
-			unsigned char steerPosFlag;
-			dtPolyRef steerPosRef;
-
-			if(!getSteerTarget(m_navQuery, iterPos, targetPos, SLOP,
-				polys, npolys, steerPos, steerPosFlag, steerPosRef))
-				break;
-
-			bool endOfPath = (steerPosFlag & DT_STRAIGHTPATH_END) ? true : false;
-			bool offMeshConnection = (steerPosFlag & DT_STRAIGHTPATH_OFFMESH_CONNECTION) ? true : false;
-
-			// Find movement delta.
-			float delta[3], len;
-			dtVsub(delta, steerPos, iterPos);
-			len = dtMathSqrtf(dtVdot(delta, delta));
-			// If the steer target is end of path or off-mesh link, do not move past the location.
-			if((endOfPath || offMeshConnection) && len < STEP_SIZE)
-				len = 1;
-			else
-				len = STEP_SIZE / len;
-			float moveTgt[3];
-			dtVmad(moveTgt, iterPos, delta, len);
-
-			// Move
-			float result[3];
-			dtPolyRef visited[16];
-			int nvisited = 0;
-			m_navQuery->moveAlongSurface(polys[0], iterPos, moveTgt, &m_filter,
-				result, visited, &nvisited, 16);
-
-			npolys = fixupCorridor(polys, npolys, MAX_POLYS, visited, nvisited);
-			npolys = fixupShortcuts(polys, npolys, m_navQuery);
-
-			float h = 0;
-			m_navQuery->getPolyHeight(polys[0], result, &h);
-			result[1] = h;
-			dtVcopy(iterPos, result);
-
-			// Handle end of path and off-mesh links when close enough.
-			if(endOfPath && inRange(iterPos, steerPos, SLOP, 1.0f))
+			if(path[i] == visited[j])
 			{
-				// Reached end of path.
-				dtVcopy(iterPos, targetPos);
-				if(m_nsmoothPath < MAX_SMOOTH)
-				{
-					dtVcopy(&m_smoothPath[m_nsmoothPath * 3], iterPos);
-					m_nsmoothPath++;
-				}
+				furthestPath = i;
+				furthestVisited = j;
+				found = true;
+			}
+		}
+		if(found)
+			break;
+	}
+
+	// If no intersection found just return current path. 
+	if(furthestPath == -1 || furthestVisited == -1)
+		return npath;
+
+	// Concatenate paths.	
+
+	// Adjust beginning of the buffer to include the visited.
+	const int req = nvisited - furthestVisited;
+	const int orig = rcMin(furthestPath + 1, npath);
+	int size = rcMax(0, npath - orig);
+	if(req + size > maxPath)
+		size = maxPath - req;
+	if(size)
+		memmove(path + req, path + orig, size * sizeof(dtPolyRef));
+
+	// Store visited
+	for(int i = 0; i < req; ++i)
+		path[i] = visited[(nvisited - 1) - i];
+
+	return req + size;
+}
+
+// This function checks if the path has a small U-turn, that is,
+// a polygon further in the path is adjacent to the first polygon
+// in the path. If that happens, a shortcut is taken.
+// This can happen if the target (T) location is at tile boundary,
+// and we're (S) approaching it parallel to the tile edge.
+// The choice at the vertex can be arbitrary, 
+//  +---+---+
+//  |:::|:::|
+//  +-S-+-T-+
+//  |:::|   | <-- the step can end up in here, resulting U-turn path.
+//  +---+---+
+static int fixupShortcuts(dtPolyRef* path, int npath, dtNavMeshQuery* navQuery)
+{
+	if(npath < 3)
+		return npath;
+
+	// Get connected polygons
+	static const int maxNeis = 16;
+	dtPolyRef neis[maxNeis];
+	int nneis = 0;
+
+	const dtMeshTile* tile = 0;
+	const dtPoly* poly = 0;
+	if(dtStatusFailed(navQuery->getAttachedNavMesh()->getTileAndPolyByRef(path[0], &tile, &poly)))
+		return npath;
+
+	for(unsigned int k = poly->firstLink; k != DT_NULL_LINK; k = tile->links[k].next)
+	{
+		const dtLink* link = &tile->links[k];
+		if(link->ref != 0)
+		{
+			if(nneis < maxNeis)
+				neis[nneis++] = link->ref;
+		}
+	}
+
+	// If any of the neighbour polygons is within the next few polygons
+	// in the path, short cut to that polygon directly.
+	static const int maxLookAhead = 6;
+	int cut = 0;
+	for(int i = min(maxLookAhead, npath) - 1; i > 1 && cut == 0; i--)
+	{
+		for(int j = 0; j < nneis; j++)
+		{
+			if(path[i] == neis[j])
+			{
+				cut = i;
 				break;
 			}
-			else if(offMeshConnection && inRange(iterPos, steerPos, SLOP, 1.0f))
+		}
+	}
+	if(cut > 1)
+	{
+		int offset = cut - 1;
+		npath -= offset;
+		for(int i = 1; i < npath; i++)
+			path[i] = path[i + offset];
+	}
+
+	return npath;
+}
+
+static bool getSteerTarget(const dtNavMeshQuery& query, const Vec3& startPos, const Vec3& endPos, const float minTargetDist,
+	const dtPolyRef* path, const int pathSize, Vec3& steerPos, unsigned char& steerPosFlag, dtPolyRef& steerPosRef)
+{
+	// Find steer target.
+	static const int MAX_STEER_POINTS = 3;
+	Vec3 steerPath[MAX_STEER_POINTS];
+	unsigned char steerPathFlags[MAX_STEER_POINTS];
+	dtPolyRef steerPathPolys[MAX_STEER_POINTS];
+	int nsteerPath = 0;
+	query.findStraightPath(startPos, endPos, path, pathSize,
+		(float*)steerPath, steerPathFlags, steerPathPolys, &nsteerPath, MAX_STEER_POINTS);
+	if(!nsteerPath)
+		return false;
+
+	// Find vertex far enough to steer to.
+	int ns = 0;
+	while(ns < nsteerPath)
+	{
+		// Stop at Off-Mesh link or when point is further than slop away.
+		if((steerPathFlags[ns] & DT_STRAIGHTPATH_OFFMESH_CONNECTION) ||
+			!inRange(steerPath[ns], startPos, minTargetDist, 1000.0f))
+			break;
+		ns++;
+	}
+	// Failed to find good point to steer to.
+	if(ns >= nsteerPath)
+		return false;
+
+	steerPos = steerPath[ns];
+	steerPos.y = startPos.y;
+	steerPosFlag = steerPathFlags[ns];
+	steerPosRef = steerPathPolys[ns];
+
+	return true;
+}
+
+void Navmesh::SmoothPath()
+{
+	smooth_path.clear();
+
+	dtPolyRef polys[MAX_POLYS];
+	memcpy(polys, path, sizeof(dtPolyRef)*path_length);
+	int npolys = path_length;
+
+	Vec3 iterPos, targetPos;
+	nav_query->closestPointOnPoly(start_ref, start_pos, iterPos, nullptr);
+	nav_query->closestPointOnPoly(polys[npolys - 1], end_pos, targetPos, nullptr);
+
+	static const float STEP_SIZE = 0.5f;
+	static const float SLOP = 0.01f;
+
+	smooth_path.push_back(iterPos);
+
+	// Move towards target a small advancement at a time until target reached or
+	// when ran out of memory to store the path.
+	while(npolys && smooth_path.size() < MAX_SMOOTH)
+	{
+		// Find location to steer towards.
+		Vec3 steerPos;
+		unsigned char steerPosFlag;
+		dtPolyRef steerPosRef;
+
+		if(!getSteerTarget(*nav_query, iterPos, targetPos, SLOP, polys, npolys, steerPos, steerPosFlag, steerPosRef))
+			break;
+
+		bool endOfPath = (steerPosFlag & DT_STRAIGHTPATH_END) ? true : false;
+		bool offMeshConnection = (steerPosFlag & DT_STRAIGHTPATH_OFFMESH_CONNECTION) ? true : false;
+
+		// Find movement delta.
+		Vec3 delta = steerPos - iterPos;
+		float len = sqrtf(delta.Dot2d());
+		// If the steer target is end of path or off-mesh link, do not move past the location.
+		if((endOfPath || offMeshConnection) && len < STEP_SIZE)
+			len = 1;
+		else
+			len = STEP_SIZE / len;
+		Vec3 moveTgt = iterPos + delta * len;
+
+		// Move
+		Vec3 result;
+		dtPolyRef visited[16];
+		int nvisited = 0;
+		nav_query->moveAlongSurface(polys[0], iterPos, moveTgt, &filter, result, visited, &nvisited, 16);
+
+		npolys = fixupCorridor(polys, npolys, MAX_POLYS, visited, nvisited);
+		npolys = fixupShortcuts(polys, npolys, nav_query);
+
+		float h = 0;
+		nav_query->getPolyHeight(polys[0], result, &h);
+		result[1] = h;
+		iterPos = result;
+
+		// Handle end of path and off-mesh links when close enough.
+		if(endOfPath && inRange(iterPos, steerPos, SLOP, 1.0f))
+		{
+			// Reached end of path.
+			iterPos = targetPos;
+			if(smooth_path.size() < MAX_SMOOTH)
+				smooth_path.push_back(iterPos);
+			break;
+		}
+		else if(offMeshConnection && inRange(iterPos, steerPos, SLOP, 1.0f))
+		{
+			// Reached off-mesh connection.
+			Vec3 startPos, endPos;
+
+			// Advance the path up to and over the off-mesh connection.
+			dtPolyRef prevRef = 0, polyRef = polys[0];
+			int npos = 0;
+			while(npos < npolys && polyRef != steerPosRef)
 			{
-				// Reached off-mesh connection.
-				float startPos[3], endPos[3];
-
-				// Advance the path up to and over the off-mesh connection.
-				dtPolyRef prevRef = 0, polyRef = polys[0];
-				int npos = 0;
-				while(npos < npolys && polyRef != steerPosRef)
-				{
-					prevRef = polyRef;
-					polyRef = polys[npos];
-					npos++;
-				}
-				for(int i = npos; i < npolys; ++i)
-					polys[i - npos] = polys[i];
-				npolys -= npos;
-
-				// Handle the connection.
-				dtStatus status = m_navMesh->getOffMeshConnectionPolyEndPoints(prevRef, polyRef, startPos, endPos);
-				if(dtStatusSucceed(status))
-				{
-					if(m_nsmoothPath < MAX_SMOOTH)
-					{
-						dtVcopy(&m_smoothPath[m_nsmoothPath * 3], startPos);
-						m_nsmoothPath++;
-						// Hack to make the dotted path not visible during off-mesh connection.
-						if(m_nsmoothPath & 1)
-						{
-							dtVcopy(&m_smoothPath[m_nsmoothPath * 3], startPos);
-							m_nsmoothPath++;
-						}
-					}
-					// Move position at the other side of the off-mesh link.
-					dtVcopy(iterPos, endPos);
-					float eh = 0.0f;
-					m_navQuery->getPolyHeight(polys[0], iterPos, &eh);
-					iterPos[1] = eh;
-				}
+				prevRef = polyRef;
+				polyRef = polys[npos];
+				npos++;
 			}
+			for(int i = npos; i < npolys; ++i)
+				polys[i - npos] = polys[i];
+			npolys -= npos;
 
-			// Store results.
-			if(m_nsmoothPath < MAX_SMOOTH)
+			// Handle the connection.
+			dtStatus status = navmesh->getOffMeshConnectionPolyEndPoints(prevRef, polyRef, startPos, endPos);
+			if(dtStatusSucceed(status))
 			{
-				dtVcopy(&m_smoothPath[m_nsmoothPath * 3], iterPos);
-				m_nsmoothPath++;
+				if(smooth_path.size() < MAX_SMOOTH)
+				{
+					smooth_path.push_back(startPos);
+					// Hack to make the dotted path not visible during off-mesh connection.
+					if(smooth_path.size() & 1)
+						smooth_path.push_back(startPos);
+				}
+				// Move position at the other side of the off-mesh link.
+				iterPos = endPos;
+				float eh = 0.0f;
+				nav_query->getPolyHeight(polys[0], iterPos, &eh);
+				iterPos[1] = eh;
 			}
 		}
 
-		// FIXME
-		Info("Path found, length:%u, smooth:%u", path_length, smooth_path.size());
+		// Store results.
+		if(smooth_path.size() < MAX_SMOOTH)
+			smooth_path.push_back(iterPos);
 	}
 }
 
@@ -656,7 +683,10 @@ void Navmesh::Draw(DebugDrawer* debug_drawer)
 	}
 
 	if(have_path)
-		DrawPath(debug_drawer, *navmesh);
+	{
+		DrawPathPoly(debug_drawer, *navmesh);
+		DrawStraightPath(debug_drawer, *navmesh);
+	}
 }
 
 // duDebugDrawNavMeshWithClosedList
@@ -793,7 +823,7 @@ void Navmesh::DrawPolyBoundaries(DebugDrawer* debug_drawer, const dtMeshTile* ti
 	}
 }
 
-void Navmesh::DrawPath(DebugDrawer* debug_drawer, const dtNavMesh& mesh)
+void Navmesh::DrawPathPoly(DebugDrawer* debug_drawer, const dtNavMesh& mesh)
 {
 	DrawPoly(debug_drawer, mesh, start_ref, Color(128, 25, 0, 64));
 	DrawPoly(debug_drawer, mesh, end_ref, Color(51, 102, 0, 64));
@@ -808,21 +838,42 @@ void Navmesh::DrawPath(DebugDrawer* debug_drawer, const dtNavMesh& mesh)
 			DrawPoly(debug_drawer, mesh, poly, Color(0, 0, 0, 64));
 		}
 	}
+}
 
-	if(!smooth_path.empty())
+void Navmesh::DrawStraightPath(DebugDrawer* debug_drawer, const dtNavMesh& mesh)
+{
+	if(!straight_path_length)
+		return;
+
+	for(int i = 0; i < straight_path_length - 1; ++i)
 	{
-		debug_drawer->SetColor(Color(0, 0, 0, 220));
-		Vec3 pts[2];
-		int index = 0;
-		for(const Vec3& pt : smooth_path)
+		Color col;
+		if(straight_path_flags[i] & DT_STRAIGHTPATH_OFFMESH_CONNECTION)
+			col = Color(128, 96, 0, 220);
+		else
+			col = Color(64, 16, 0, 220);
+
+		debug_drawer->SetColor(col);
+		debug_drawer->DrawLine(straight_path[i], straight_path[i + 1], 0.1f);
+	}
+}
+
+void Navmesh::DrawSmoothPath(DebugDrawer* debug_drawer, const dtNavMesh& mesh)
+{
+	if(smooth_path.empty())
+		return;
+
+	debug_drawer->SetColor(Color(0, 0, 0, 220));
+	Vec3 pts[2];
+	int index = 0;
+	for(const Vec3& pt : smooth_path)
+	{
+		pts[index] = pt;
+		++index;
+		if(index == 2)
 		{
-			pts[index] = pt;
-			++index;
-			if(index == 2)
-			{
-				index = 0;
-				debug_drawer->DrawLine(pts[0], pts[1], 0.1f);
-			}
+			index = 0;
+			debug_drawer->DrawLine(pts[0], pts[1], 0.1f);
 		}
 	}
 }
@@ -838,7 +889,7 @@ void Navmesh::DrawPoly(DebugDrawer* debug_drawer, const dtNavMesh& mesh, dtPolyR
 	const unsigned int ip = (unsigned int)(poly - tile->polys);
 
 	assert(poly->getType() != DT_POLYTYPE_OFFMESH_CONNECTION); // removed code
-	
+
 	const dtPolyDetail* pd = &tile->detailMeshes[ip];
 	debug_drawer->SetColor(col);
 

@@ -21,15 +21,20 @@ public:
 	// FIXME
 	float dt;
 	Input* input;
+	ResourceManager* res_mgr;
 	void SetPos(const Vec3& pos, bool start);
 
 private:
 	void Reset();
+	void FindStraightPath();
+	void SmoothPath();
 	//void Triangulate(vector<p2t::Point*>* polyline, vector<p2t::Point*>* hole);
 	void DrawNavmesh(DebugDrawer* debug_drawer, const dtNavMesh& mesh, const dtNavMeshQuery& query);
 	void DrawMeshTile(DebugDrawer* debug_drawer, const dtNavMesh& mesh, const dtNavMeshQuery& query, const dtMeshTile* tile);
 	void DrawPolyBoundaries(DebugDrawer* debug_drawer, const dtMeshTile* tile, Color color, float line_width, bool inner);
-	void DrawPath(DebugDrawer* debug_drawer, const dtNavMesh& mesh);
+	void DrawPathPoly(DebugDrawer* debug_drawer, const dtNavMesh& mesh);
+	void DrawStraightPath(DebugDrawer* debug_drawer, const dtNavMesh& mesh);
+	void DrawSmoothPath(DebugDrawer* debug_drawer, const dtNavMesh& mesh);
 	void DrawPoly(DebugDrawer* debug_drawer, const dtNavMesh& mesh, dtPolyRef ref, Color col);
 
 	//struct Triangle
@@ -58,9 +63,11 @@ private:
 	// FIXME
 	bool start_set, end_set, have_path;
 	Vec3 start_pos, end_pos;
-	static const int MAX_PATH = 256;
+	static const int MAX_POLYS = 256;
 	static const int MAX_SMOOTH = 2048;
-	dtPolyRef path[MAX_PATH], start_ref, end_ref;
+	dtPolyRef path[MAX_POLYS], start_ref, end_ref, straight_path_polys[MAX_POLYS];
 	vector<Vec3> smooth_path;
-	int path_length;
+	Vec3 straight_path[MAX_POLYS];
+	int path_length, straight_path_length;
+	byte straight_path_flags[MAX_POLYS];
 };
