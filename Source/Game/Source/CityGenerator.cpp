@@ -67,8 +67,8 @@ void CityGenerator::Generate()
 	GenerateMap();
 	FillBuildings();
 	BuildBuildingsMesh();
-	BuildNavmesh();
 	CreateScene();
+	BuildNavmesh();
 	//level->SpawnBarriers(); FIXME
 	level->SpawnPlayer(player_start_pos);
 	SpawnItems();
@@ -851,7 +851,73 @@ void CityGenerator::Load(FileReader& f)
 
 void CityGenerator::BuildNavmesh()
 {
-	navmesh->Build(map_size);
+	geom.verts.clear();
+	geom.tris.clear();
+
+	// floor
+	geom.verts.insert(geom.verts.end(),
+		{
+			Vec3(0, 0, 0),
+			Vec3(map_size, 0, 0),
+			Vec3(0, 0, map_size),
+			Vec3(map_size, 0, map_size)
+		}
+	);
+	geom.tris.insert(geom.tris.end(),
+		{
+			2,3,0,
+			0,3,1
+		}
+	);
+
+	// colliders
+	auto& colliders = level->GetColliders();
+	for(vector<Collider>& vc : colliders)
+	{
+		for(Collider& c : vc)
+		{
+			Box box = c.ToBox();
+			int offset = geom.verts.size();
+			geom.verts.insert(geom.verts.end(),
+				{
+					box.v1,
+					Vec3(box.v2.x, box.v1.y, box.v1.z),
+					Vec3(box.v1.x, box.v1.y, box.v2.z),
+					Vec3(box.v2.x, box.v1.y, box.v2.z),
+					Vec3(box.v1.x, box.v2.y, box.v1.z),
+					Vec3(box.v2.x, box.v2.y, box.v1.z),
+					Vec3(box.v1.x, box.v2.y, box.v2.z),
+					box.v2
+				}
+			);
+#define TRI(a,b,c) offset+a,offset+b,offset+c
+			geom.tris.insert(geom.tris.end(),
+				{
+					// left
+					TRI(6,4,2),
+					TRI(2,4,0),
+					// right
+					TRI(5,7,1),
+					TRI(1,7,3),
+					// top
+					TRI(4,5,0),
+					TRI(0,5,1),
+					// bottom
+					TRI(7,6,3),
+					TRI(3,6,2)
+				}
+			);
+#undef TRI
+		}
+	}
+
+	NavmeshGeometry nav_geom;
+	nav_geom.verts = geom.verts.data();
+	nav_geom.vert_count = geom.verts.size();
+	nav_geom.tris = geom.tris.data();
+	nav_geom.tri_count = geom.tris.size() / 3;
+	nav_geom.bounds = Box(0, 0, 0, map_size, 2.f, map_size);
+	navmesh->Build(nav_geom);
 
 	/*navmesh->Reset();
 	vector<Vec2> outline;
@@ -932,4 +998,14 @@ void CityGenerator::BuildNavmesh()
 			navmesh->EndRegion();
 		}
 	}*/
+}
+
+void LevelGeometry::SaveObj(cstring filename)
+{
+	TextWriter f(filename);
+	f << "mtllib mat.mtl\no Plane\n";
+	for(Vec3& v : verts)
+		f << Format("v %g %g %g\n", v.x, v.y, v.z);
+	for(int i = 0; i < tris.size() / 3; ++i)
+		f << Format("f %d %d %d\n", tris[i * 3 + 0] + 1, tris[i * 3 + 1] + 1, tris[i * 3 + 2] + 1);
 }

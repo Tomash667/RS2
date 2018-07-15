@@ -54,7 +54,7 @@ private:
 	unique_ptr<Pathfinding> pathfinding;
 	unique_ptr<Navmesh> navmesh;
 	vector<std::pair<Vec3, float>> alert_pos;
-	bool in_game, allow_mouse, quickstart;
+	bool in_game, allow_mouse, quickstart, draw_navmesh;
 
 	// resources
 	Texture* tex_blood, *tex_zombie_blood, *tex_hit_object;

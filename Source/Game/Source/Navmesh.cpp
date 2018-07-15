@@ -7,8 +7,6 @@
 #include "Unit.h"
 // FIXME
 #include <Input.h>
-#include <ResourceManager.h>
-#include <Mesh.h>
 
 enum PolyArea
 {
@@ -83,7 +81,7 @@ void Navmesh::Reset()
 	navmesh = nullptr;
 }
 
-bool Navmesh::Build(float map_size)
+bool Navmesh::Build(const NavmeshGeometry& geom)
 {
 	// FIXME tmp
 	have_path = false;
@@ -91,7 +89,6 @@ bool Navmesh::Build(float map_size)
 	end_set = false;
 
 	// FIXME
-	map_size = 10.f;
 	Info("Building navmesh...");
 	Timer t;
 
@@ -119,13 +116,13 @@ bool Navmesh::Build(float map_size)
 	cfg.walkableRadius = (int)(Unit::radius / cfg.cs);
 	cfg.maxEdgeLen = 80;
 	cfg.maxSimplificationError = 1.3f;
-	cfg.minRegionArea = rcSqr(8);
+	cfg.minRegionArea = rcSqr(10);
 	cfg.mergeRegionArea = rcSqr(20);
 	cfg.maxVertsPerPoly = 6;
 	cfg.detailSampleDist = detailSampleDist < 0.9f ? 0 : cfg.cs * detailSampleDist;
 	cfg.detailSampleMaxError = cfg.ch * 1.f;
-	rcVcopy(cfg.bmin, Vec3(-4.74862289f, -1.23880994f, -5.95265818f));
-	rcVcopy(cfg.bmax, Vec3(4.74862289f, 1.82665098f, 4.86848688f));
+	rcVcopy(cfg.bmin, geom.bounds.v1);
+	rcVcopy(cfg.bmax, geom.bounds.v2);
 	rcCalcGridSize(cfg.bmin, cfg.bmax, cfg.cs, &cfg.width, &cfg.height);
 
 	//
@@ -139,28 +136,18 @@ bool Navmesh::Build(float map_size)
 		ctx.log(RC_LOG_ERROR, "Could not create solid heightfield.");
 		return false;
 	}
-
-	Mesh* mesh = res_mgr->GetMeshRaw("navmesh.qmsh");
-
-	const int n_tris = mesh->head.n_tris;
-	Vec3* verts = (Vec3*)mesh->vertex_data.data();
-	const int n_verts = mesh->head.n_verts;
-	vector<int> tris;
-	tris.resize(n_tris * 3);
-	for(int i = 0; i < n_tris * 3; ++i)
-		tris[i] = mesh->index_data[i];
-
+	
 	// Allocate array that can hold triangle area types.
 	// If you have multiple meshes you need to process, allocate
 	// and array which can hold the max number of triangles you need to process.
-	triareas.resize(n_tris);
+	triareas.resize(geom.tri_count);
 
 	// Find triangles which are walkable based on their slope and rasterize them.
 	// If your input data is multiple meshes, you can transform them here, calculate
 	// the are type for each of the meshes and rasterize them.
-	memset(triareas.data(), 0, n_tris * sizeof(byte));
-	rcMarkWalkableTriangles(&ctx, cfg.walkableSlopeAngle, (float*)verts, n_verts, tris.data(), n_tris, triareas.data());
-	if(!rcRasterizeTriangles(&ctx, (float*)verts, n_verts, tris.data(), triareas.data(), n_tris, *solid, cfg.walkableClimb))
+	memset(triareas.data(), 0, geom.tri_count * sizeof(byte));
+	rcMarkWalkableTriangles(&ctx, cfg.walkableSlopeAngle, (float*)geom.verts, geom.vert_count, geom.tris, geom.tri_count, triareas.data());
+	if(!rcRasterizeTriangles(&ctx, (float*)geom.verts, geom.vert_count, geom.tris, triareas.data(), geom.tri_count, *solid, cfg.walkableClimb))
 	{
 		ctx.log(RC_LOG_ERROR, "Could not rasterize triangles.");
 		return false;
@@ -666,9 +653,9 @@ void Navmesh::Draw(DebugDrawer* debug_drawer)
 	if(!navmesh)
 		return;
 
-	// !!! depth mask = false
-
+	debug_drawer->BeginBatch();
 	DrawNavmesh(debug_drawer, *navmesh, *nav_query);
+	debug_drawer->EndBatch();
 
 	if(start_set)
 	{
@@ -684,8 +671,10 @@ void Navmesh::Draw(DebugDrawer* debug_drawer)
 
 	if(have_path)
 	{
+		debug_drawer->BeginBatch();
 		DrawPathPoly(debug_drawer, *navmesh);
 		DrawStraightPath(debug_drawer, *navmesh);
+		debug_drawer->EndBatch();
 	}
 }
 
@@ -736,15 +725,13 @@ void Navmesh::DrawMeshTile(DebugDrawer* debug_drawer, const dtNavMesh& mesh, con
 		for(int j = 0; j < pd->triCount; ++j)
 		{
 			const unsigned char* t = &tile->detailTris[(pd->triBase + j) * 4];
-			Vec3 tri[3];
 			for(int k = 0; k < 3; ++k)
 			{
 				if(t[k] < p->vertCount)
-					tri[k] = Vec3(&tile->verts[p->verts[t[k]] * 3]);
+					debug_drawer->AddVertex(Vec3(&tile->verts[p->verts[t[k]] * 3]));
 				else
-					tri[k] = Vec3(&tile->detailVerts[(pd->vertBase + t[k] - p->vertCount) * 3]);
+					debug_drawer->AddVertex(Vec3(&tile->detailVerts[(pd->vertBase + t[k] - p->vertCount) * 3]));
 			}
-			debug_drawer->DrawTriangle(tri);
 		}
 	}
 
@@ -816,7 +803,7 @@ void Navmesh::DrawPolyBoundaries(DebugDrawer* debug_drawer, const dtMeshTile* ti
 					if(((t[3] >> (n * 2)) & 0x3) == 0)
 						continue;	// Skip inner detail edges.
 					if(distancePtLine2d(tv[n], v0, v1) < thr && distancePtLine2d(tv[m], v0, v1) < thr)
-						debug_drawer->DrawLine(Vec3(tv[n]), Vec3(tv[m]), line_width);
+						debug_drawer->AddLine(Vec3(tv[n]), Vec3(tv[m]), line_width);
 				}
 			}
 		}
@@ -854,7 +841,7 @@ void Navmesh::DrawStraightPath(DebugDrawer* debug_drawer, const dtNavMesh& mesh)
 			col = Color(64, 16, 0, 220);
 
 		debug_drawer->SetColor(col);
-		debug_drawer->DrawLine(straight_path[i], straight_path[i + 1], 0.1f);
+		debug_drawer->AddLine(straight_path[i], straight_path[i + 1], 0.1f);
 	}
 }
 
@@ -873,7 +860,7 @@ void Navmesh::DrawSmoothPath(DebugDrawer* debug_drawer, const dtNavMesh& mesh)
 		if(index == 2)
 		{
 			index = 0;
-			debug_drawer->DrawLine(pts[0], pts[1], 0.1f);
+			debug_drawer->AddLine(pts[0], pts[1], 0.1f);
 		}
 	}
 }
@@ -896,14 +883,12 @@ void Navmesh::DrawPoly(DebugDrawer* debug_drawer, const dtNavMesh& mesh, dtPolyR
 	for(int i = 0; i < pd->triCount; ++i)
 	{
 		const unsigned char* t = &tile->detailTris[(pd->triBase + i) * 4];
-		Vec3 tri[3];
 		for(int j = 0; j < 3; ++j)
 		{
 			if(t[j] < poly->vertCount)
-				tri[j] = Vec3(&tile->verts[poly->verts[t[j]] * 3]);
+				debug_drawer->AddVertex(Vec3(&tile->verts[poly->verts[t[j]] * 3]));
 			else
-				tri[j] = Vec3(&tile->detailVerts[(pd->vertBase + t[j] - poly->vertCount) * 3]);
+				debug_drawer->AddVertex(Vec3(&tile->detailVerts[(pd->vertBase + t[j] - poly->vertCount) * 3]));
 		}
-		debug_drawer->DrawTriangle(tri);
 	}
 }

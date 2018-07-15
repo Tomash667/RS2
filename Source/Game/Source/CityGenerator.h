@@ -11,6 +11,14 @@ enum Tile
 	T_MAX
 };
 
+struct LevelGeometry
+{
+	vector<Vec3> verts;
+	vector<int> tris;
+
+	void SaveObj(cstring filename);
+};
+
 class CityGenerator
 {
 public:
@@ -49,6 +57,7 @@ private:
 	float mesh_offset[T_MAX], map_size;
 	vector<Building*> buildings;
 	Vec3 player_start_pos;
+	LevelGeometry geom;
 
 	// resources
 	Mesh* mesh[T_MAX], *mesh_curb, *mesh_table,

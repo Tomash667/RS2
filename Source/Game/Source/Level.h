@@ -43,6 +43,7 @@ public:
 	void Save(FileWriter& f);
 	void Load(FileReader& f);
 	void DrawColliders(DebugDrawer* debug_drawer);
+	vector<vector<Collider>>& GetColliders() { return colliders; }
 
 	Scene* scene;
 	Player* player;

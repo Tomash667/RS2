@@ -35,7 +35,7 @@
 const int level_size = 32;
 
 
-Game::Game() : camera(nullptr), quickstart(false), config(nullptr), pick_perk(nullptr)
+Game::Game() : camera(nullptr), quickstart(false), config(nullptr), pick_perk(nullptr), draw_navmesh(false)
 {
 }
 
@@ -152,7 +152,6 @@ void Game::InitGame()
 	pathfinding.reset(new Pathfinding);
 	navmesh.reset(new Navmesh);
 	navmesh->input = input;
-	navmesh->res_mgr = res_mgr;
 
 	// sky
 	sky = new Sky(scene);
@@ -306,6 +305,8 @@ void Game::UpdateGame(float dt)
 		SceneNode* node = level->player->node;
 		level->SpawnZombie(node->pos + Vec3(cos(node->rot.y) * 10, 0, sin(node->rot.y) * 10));
 	}
+	if(input->Pressed(Key::F8))
+		draw_navmesh = !draw_navmesh;
 #endif
 
 	game_state.hour += dt / 60;
@@ -1296,7 +1297,8 @@ bool Game::CanSee(Unit& unit, const Vec3& pos)
 
 void Game::OnDebugDraw(DebugDrawer* debug_drawer)
 {
-	navmesh->Draw(debug_drawer);
+	if(draw_navmesh)
+		navmesh->Draw(debug_drawer);
 }
 
 void Game::UpdateWorld(float dt)

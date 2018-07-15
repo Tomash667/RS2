@@ -5,12 +5,20 @@
 #include <DetourNavMesh.h>
 #include <DetourNavMeshQuery.h>
 
+struct NavmeshGeometry
+{
+	Vec3* verts;
+	int* tris;
+	Box bounds;
+	uint vert_count, tri_count;
+};
+
 class Navmesh
 {
 public:
 	Navmesh();
 	~Navmesh();
-	bool Build(float level_size);
+	bool Build(const NavmeshGeometry& geom);
 	void FindPath(const Vec3& from, const Vec3& to);
 	//void StartRegion(const vector<Vec2>& outline) { this->outline = &outline; }
 	//void EndRegion();
@@ -21,7 +29,6 @@ public:
 	// FIXME
 	float dt;
 	Input* input;
-	ResourceManager* res_mgr;
 	void SetPos(const Vec3& pos, bool start);
 
 private:

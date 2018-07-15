@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Shader.h"
+#include "Vertex.h"
 
 class DebugShader
 {
@@ -9,25 +9,21 @@ public:
 	~DebugShader();
 	void Init();
 	void Prepare(const Matrix& mat_view_proj);
-	void Restore();
-	Vec3* Lock(uint vertex_count = 0);
-	void Draw(uint vertex_count, bool line_strip = false);
-	void Draw(Mesh* mesh, const Matrix& mat_world);
-
-	void SetColor(Color color);
-	void SetWireframe(bool wireframe);
+	void Draw(const vector<ColorVertex>& verts);
+	void Draw(const Mesh* mesh, const Matrix& mat_world, Color color);
 
 private:
+	void InitInternal();
 	void CreateVertexBuffer();
-	void SetLineStrip(bool line_strip);
 
 	Render* render;
 	ID3D11DeviceContext* device_context;
-	Shader shader;
+	ID3D11VertexShader* vertex_shader, *vertex_shader_color;
+	ID3D11PixelShader* pixel_shader, *pixel_shader_color;
+	ID3D11InputLayout* layout, *layout_color;
+	ID3D11Buffer* vs_buffer, *ps_buffer;
 	ID3D11Buffer* vb, *current_vb;
 	Matrix mat_view_proj;
-	uint max_vertices;
-	bool locked, line_strip;
-
-	static const uint MAX_VERTICES = 6;
+	uint max_verts;
+	Color prev_color;
 };
