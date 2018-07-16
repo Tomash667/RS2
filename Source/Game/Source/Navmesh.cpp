@@ -8,6 +8,13 @@
 // FIXME
 #include <Input.h>
 
+const float CELL_SIZE = 0.25f;
+const float CELL_HEIGHT = 0.5f;
+const float AGENT_RADIUS = Unit::radius;
+const float AGENT_HEIGHT = Unit::height;
+const float AGENT_CLIMB = 0.25f;
+const int NAV_QUERY_MAX_NODES = 2048;
+
 enum PolyArea
 {
 	POLYAREA_GROUND
@@ -67,6 +74,10 @@ Navmesh::~Navmesh()
 
 void Navmesh::Reset()
 {
+	have_path = false;
+	start_set = false;
+	end_set = false;
+
 	rcFreeHeightField(solid);
 	solid = nullptr;
 	rcFreeCompactHeightfield(chf);
@@ -81,39 +92,102 @@ void Navmesh::Reset()
 	navmesh = nullptr;
 }
 
+bool Navmesh::PrepareTiles(float tile_size, uint tiles)
+{
+	assert(tile_size >= 1.f && tiles >= 1u);
+
+	Info("Building tiled mesh...");
+	Timer t;
+
+	navmesh = dtAllocNavMesh();
+
+	dtNavMeshParams params;
+	rcVcopy(params.orig, Vec3(0, 0, 0));
+	params.tileHeight = tile_size * CELL_SIZE;
+	params.tileWidth = params.tileHeight;
+	params.maxTiles = tiles * tiles;
+	params.maxPolys = 512;
+
+	dtStatus status = navmesh->init(&params);
+	if(dtStatusFailed(status))
+	{
+		Error("Failed to init tiled navmesh.");
+		return false;
+	}
+
+	status = nav_query->init(navmesh, NAV_QUERY_MAX_NODES);
+	if(dtStatusFailed(status))
+	{
+		Error("Failed to init tiled navmesh query.");
+		return false;
+	}
+
+	is_tiled = false;
+	this->tile_size = tile_size;
+	this->tiles = tiles;
+
+	Info("Finished building tiles navmesh: %g", t.Tick()); // FIXME remove
+	return true;
+}
+
 bool Navmesh::Build(const NavmeshGeometry& geom)
 {
-	// FIXME tmp
-	have_path = false;
-	start_set = false;
-	end_set = false;
-
 	// FIXME
 	Info("Building navmesh...");
 	Timer t;
 
 	Reset();
 
+	byte* navData;
+	int navDataSize;
+	if(!BuildTileMesh(Int2(0, 0), geom, navData, navDataSize))
+		return false;
 
-	const float agent_radius = Unit::radius;
-	const float agent_height = Unit::height;
-	const float agent_climb = 0.25f;
+	navmesh = dtAllocNavMesh();
+	dtStatus status = navmesh->init(navData, navDataSize, DT_TILE_FREE_DATA);
+	if(dtStatusFailed(status))
+	{
+		dtFree(navData);
+		ctx.log(RC_LOG_ERROR, "Could not init Detour navmesh");
+		return false;
+	}
 
+	status = nav_query->init(navmesh, NAV_QUERY_MAX_NODES);
+	if(dtStatusFailed(status))
+	{
+		ctx.log(RC_LOG_ERROR, "Could not init Detour navmesh query");
+		return false;
+	}
+
+	Info("Finished building navmesh. Total time %g sec.", t.Tick());
+
+	return true;
+}
+
+void Navmesh::BuildTile(const Int2& tile)
+{
+
+}
+
+bool Navmesh::BuildTileMesh(const Int2& tile, const NavmeshGeometry& geom, byte*& data, int& data_size)
+{
 	BuildContext ctx;
+	Timer t;
+	Cleanup();
 
 	//
 	// Step 1. Initialize build config.
 	//
 
-	// Init configuration (values from RecastDemo...)
+	// Init configuration
 	const float detailSampleDist = 6.f;
 	rcConfig cfg = {};
-	cfg.cs = 0.15f; // cell size
-	cfg.ch = 0.25f; // cell height
+	cfg.cs = CELL_SIZE;
+	cfg.ch = CELL_HEIGHT;
 	cfg.walkableSlopeAngle = 45.f;
-	cfg.walkableHeight = (int)ceilf(agent_height / cfg.ch);
+	cfg.walkableHeight = (int)ceilf(AGENT_HEIGHT / cfg.ch);
 	cfg.walkableClimb = 3; // in cells
-	cfg.walkableRadius = (int)(Unit::radius / cfg.cs);
+	cfg.walkableRadius = (int)(AGENT_RADIUS / cfg.cs);
 	cfg.maxEdgeLen = 80;
 	cfg.maxSimplificationError = 1.3f;
 	cfg.minRegionArea = rcSqr(10);
@@ -123,7 +197,15 @@ bool Navmesh::Build(const NavmeshGeometry& geom)
 	cfg.detailSampleMaxError = cfg.ch * 1.f;
 	rcVcopy(cfg.bmin, geom.bounds.v1);
 	rcVcopy(cfg.bmax, geom.bounds.v2);
-	rcCalcGridSize(cfg.bmin, cfg.bmax, cfg.cs, &cfg.width, &cfg.height);
+	if(is_tiled)
+	{
+		cfg.tileSize = (int)(tile_size / cfg.cs); // FIXME verify
+		cfg.borderSize = cfg.walkableRadius + 3;
+		cfg.width = cfg.tileSize + cfg.borderSize * 2;
+		cfg.height = cfg.width;
+	}
+	else
+		rcCalcGridSize(cfg.bmin, cfg.bmax, cfg.cs, &cfg.width, &cfg.height);
 
 	//
 	// Step 2. Rasterize input polygon soup.
@@ -136,7 +218,7 @@ bool Navmesh::Build(const NavmeshGeometry& geom)
 		ctx.log(RC_LOG_ERROR, "Could not create solid heightfield.");
 		return false;
 	}
-	
+
 	// Allocate array that can hold triangle area types.
 	// If you have multiple meshes you need to process, allocate
 	// and array which can hold the max number of triangles you need to process.
@@ -211,7 +293,7 @@ bool Navmesh::Build(const NavmeshGeometry& geom)
 	}
 
 	// Partition the walkable surface into simple regions without holes.
-	if(!rcBuildRegions(&ctx, *chf, 0, cfg.minRegionArea, cfg.mergeRegionArea))
+	if(!rcBuildRegions(&ctx, *chf, cfg.borderSize, cfg.minRegionArea, cfg.mergeRegionArea))
 	{
 		ctx.log(RC_LOG_ERROR, "Could not build watershed regions.");
 		return false;
@@ -228,6 +310,9 @@ bool Navmesh::Build(const NavmeshGeometry& geom)
 		ctx.log(RC_LOG_ERROR, "Could not create contours.");
 		return false;
 	}
+
+	if(cset->nconts == 0)
+		return false;
 
 	//
 	// Step 6. Build polygons mesh from contours.
@@ -264,7 +349,7 @@ bool Navmesh::Build(const NavmeshGeometry& geom)
 	// (Optional) Step 8. Create Detour data from Recast poly mesh.
 	//
 
-	unsigned char* navData = 0;
+	byte* navData = 0;
 	int navDataSize = 0;
 
 	// Update poly flags from areas.
@@ -276,7 +361,6 @@ bool Navmesh::Build(const NavmeshGeometry& geom)
 			pmesh->flags[i] = POLYFLAGS_WALK;
 		}
 	}
-
 
 	dtNavMeshCreateParams params = {};
 	params.verts = pmesh->verts;
@@ -291,13 +375,6 @@ bool Navmesh::Build(const NavmeshGeometry& geom)
 	params.detailVertsCount = dmesh->nverts;
 	params.detailTris = dmesh->tris;
 	params.detailTriCount = dmesh->ntris;
-	/*params.offMeshConVerts = m_geom->getOffMeshConnectionVerts();
-	params.offMeshConRad = m_geom->getOffMeshConnectionRads();
-	params.offMeshConDir = m_geom->getOffMeshConnectionDirs();
-	params.offMeshConAreas = m_geom->getOffMeshConnectionAreas();
-	params.offMeshConFlags = m_geom->getOffMeshConnectionFlags();
-	params.offMeshConUserID = m_geom->getOffMeshConnectionId();
-	params.offMeshConCount = m_geom->getOffMeshConnectionCount();*/
 	params.walkableHeight = agent_height;
 	params.walkableRadius = agent_radius;
 	params.walkableClimb = agent_climb;
@@ -306,6 +383,11 @@ bool Navmesh::Build(const NavmeshGeometry& geom)
 	params.cs = cfg.cs;
 	params.ch = cfg.ch;
 	params.buildBvTree = true;
+	if(is_tiled)
+	{
+		params.tileX = tile.x;
+		params.tileY = tile.y;
+	}
 
 	if(!dtCreateNavMeshData(&params, &navData, &navDataSize))
 	{
@@ -313,25 +395,20 @@ bool Navmesh::Build(const NavmeshGeometry& geom)
 		return false;
 	}
 
-	navmesh = dtAllocNavMesh();
-	dtStatus status = navmesh->init(navData, navDataSize, DT_TILE_FREE_DATA);
-	if(dtStatusFailed(status))
-	{
-		dtFree(navData);
-		ctx.log(RC_LOG_ERROR, "Could not init Detour navmesh");
-		return false;
-	}
+	Info("Finished building navmesh tile. Total time %g sec.", t.Tick());
 
-	status = nav_query->init(navmesh, 2048);
-	if(dtStatusFailed(status))
-	{
-		ctx.log(RC_LOG_ERROR, "Could not init Detour navmesh query");
-		return false;
-	}
-
-	Info("Finished building navmesh. Total time %g sec.", t.Tick());
-
+	data = navData;
+	data_size = navDataSize;
 	return true;
+}
+
+Box2d Navmesh::GetBoxForTile(const Int2& tile)
+{
+	assert(tile.x >= 0 && tile.y >= 0 && tile.x < tiles && tile.y < tiles);
+	const int walkableRadius = (int)(AGENT_RADIUS / CELL_SIZE);
+	const int borderSize = walkableRadius + 3;
+	const float border = borderSize * CELL_SIZE;
+	return Box2d(tile_size * x - border, tile_size * y - border, tile_size * (x + 1) + border, tile_size * (y + 1) + border);
 }
 
 void Navmesh::SetPos(const Vec3& pos, bool start)

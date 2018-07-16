@@ -18,7 +18,10 @@ class Navmesh
 public:
 	Navmesh();
 	~Navmesh();
+	bool PrepareTiles(float tile_size, uint tiles);
 	bool Build(const NavmeshGeometry& geom);
+	void BuildTile(const Int2& tile, const NavmeshGeometry& geom);
+	Box2d GetBoxForTile(const Int2& tile);
 	void FindPath(const Vec3& from, const Vec3& to);
 	//void StartRegion(const vector<Vec2>& outline) { this->outline = &outline; }
 	//void EndRegion();
@@ -32,7 +35,9 @@ public:
 	void SetPos(const Vec3& pos, bool start);
 
 private:
+	void Cleanup(); //TODO: intermediate results
 	void Reset();
+	bool BuildTileMesh(const Int2& tile, const NavmeshGeometry& geom, byte*& data, int& data_size);
 	void FindStraightPath();
 	void SmoothPath();
 	//void Triangulate(vector<p2t::Point*>* polyline, vector<p2t::Point*>* hole);
@@ -66,6 +71,10 @@ private:
 	dtNavMeshQuery* nav_query;
 	dtNavMesh* navmesh;
 	dtQueryFilter filter;
+
+	float tile_size;
+	uint tiles;
+	bool is_tiled;
 
 	// FIXME
 	bool start_set, end_set, have_path;
