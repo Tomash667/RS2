@@ -2506,6 +2506,11 @@ inline Vec2 Box2d::Size() const
 	return Vec2(SizeX(), SizeY());
 }
 
+inline Box Box2d::ToBoxXZ(float y1, float y2) const
+{
+	return Box(v1.x, y1, v1.y, v2.x, y2, v2.y);
+}
+
 inline bool Box2d::Intersect(const Box2d& a, const Box2d& b, Box2d& result)
 {
 	float x = max(a.Left(), b.Left());

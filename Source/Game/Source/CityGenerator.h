@@ -42,6 +42,7 @@ private:
 	void BuildBuildingsMesh();
 	void CreateScene();
 	void BuildNavmesh();
+	void BuildNavmeshTile(const Int2& tile);
 	void SpawnItems();
 	void SpawnItem(Building* building, Item* item);
 	void SpawnZombies();

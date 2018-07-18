@@ -53,6 +53,7 @@ struct BuildContext : rcContext
 		Logger::Get()->Log(level, msg);
 	}
 };
+static BuildContext ctx;
 
 Navmesh::Navmesh() : solid(nullptr), chf(nullptr), cset(nullptr), pmesh(nullptr), dmesh(nullptr), navmesh(nullptr)
 {
@@ -78,6 +79,13 @@ void Navmesh::Reset()
 	start_set = false;
 	end_set = false;
 
+	Cleanup();
+	dtFreeNavMesh(navmesh);
+	navmesh = nullptr;
+}
+
+void Navmesh::Cleanup()
+{
 	rcFreeHeightField(solid);
 	solid = nullptr;
 	rcFreeCompactHeightfield(chf);
@@ -88,13 +96,12 @@ void Navmesh::Reset()
 	pmesh = nullptr;
 	rcFreePolyMeshDetail(dmesh);
 	dmesh = nullptr;
-	dtFreeNavMesh(navmesh);
-	navmesh = nullptr;
 }
 
 bool Navmesh::PrepareTiles(float tile_size, uint tiles)
 {
 	assert(tile_size >= 1.f && tiles >= 1u);
+	assert(!navmesh);
 
 	Info("Building tiled mesh...");
 	Timer t;
@@ -122,7 +129,7 @@ bool Navmesh::PrepareTiles(float tile_size, uint tiles)
 		return false;
 	}
 
-	is_tiled = false;
+	is_tiled = true;
 	this->tile_size = tile_size;
 	this->tiles = tiles;
 
@@ -132,11 +139,14 @@ bool Navmesh::PrepareTiles(float tile_size, uint tiles)
 
 bool Navmesh::Build(const NavmeshGeometry& geom)
 {
+	assert(!navmesh);
+
 	// FIXME
 	Info("Building navmesh...");
 	Timer t;
 
 	Reset();
+	is_tiled = false;
 
 	byte* navData;
 	int navDataSize;
@@ -164,14 +174,28 @@ bool Navmesh::Build(const NavmeshGeometry& geom)
 	return true;
 }
 
-void Navmesh::BuildTile(const Int2& tile)
+bool Navmesh::BuildTile(const Int2& tile, const NavmeshGeometry& geom)
 {
+	assert(navmesh && is_tiled);
 
+	byte* data;
+	int data_size;
+
+	if(!BuildTileMesh(tile, geom, data, data_size))
+		return false;
+
+	dtStatus status = navmesh->addTile(data, data_size, DT_TILE_FREE_DATA, 0, nullptr);
+	if(dtStatusFailed(status))
+	{
+		dtFree(data);
+		return false;
+	}
+
+	return true;
 }
 
 bool Navmesh::BuildTileMesh(const Int2& tile, const NavmeshGeometry& geom, byte*& data, int& data_size)
 {
-	BuildContext ctx;
 	Timer t;
 	Cleanup();
 
@@ -375,9 +399,9 @@ bool Navmesh::BuildTileMesh(const Int2& tile, const NavmeshGeometry& geom, byte*
 	params.detailVertsCount = dmesh->nverts;
 	params.detailTris = dmesh->tris;
 	params.detailTriCount = dmesh->ntris;
-	params.walkableHeight = agent_height;
-	params.walkableRadius = agent_radius;
-	params.walkableClimb = agent_climb;
+	params.walkableHeight = AGENT_HEIGHT;
+	params.walkableRadius = AGENT_RADIUS;
+	params.walkableClimb = AGENT_CLIMB;
 	rcVcopy(params.bmin, pmesh->bmin);
 	rcVcopy(params.bmax, pmesh->bmax);
 	params.cs = cfg.cs;
@@ -404,11 +428,12 @@ bool Navmesh::BuildTileMesh(const Int2& tile, const NavmeshGeometry& geom, byte*
 
 Box2d Navmesh::GetBoxForTile(const Int2& tile)
 {
-	assert(tile.x >= 0 && tile.y >= 0 && tile.x < tiles && tile.y < tiles);
+	assert(tile.x >= 0 && tile.y >= 0 && tile.x < (int)tiles && tile.y < (int)tiles);
 	const int walkableRadius = (int)(AGENT_RADIUS / CELL_SIZE);
 	const int borderSize = walkableRadius + 3;
 	const float border = borderSize * CELL_SIZE;
-	return Box2d(tile_size * x - border, tile_size * y - border, tile_size * (x + 1) + border, tile_size * (y + 1) + border);
+	return Box2d(tile_size * tile.x - border, tile_size * tile.y - border,
+		tile_size * (tile.x + 1) + border, tile_size * (tile.y + 1) + border);
 }
 
 void Navmesh::SetPos(const Vec3& pos, bool start)

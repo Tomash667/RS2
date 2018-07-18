@@ -851,6 +851,16 @@ void CityGenerator::Load(FileReader& f)
 
 void CityGenerator::BuildNavmesh()
 {
+	//navmesh->PrepareTiles(160.f, 1);
+	
+	//for(int x = 0; x < 4; ++x)
+	//	for(int y = 0; y < 4; ++y)
+	//		BuildNavmeshTile(Int2(x, y));
+	BuildNavmeshTile(Int2(0, 0));
+}
+
+void CityGenerator::BuildNavmeshTile(const Int2& tile)
+{
 	geom.verts.clear();
 	geom.tris.clear();
 
@@ -871,44 +881,45 @@ void CityGenerator::BuildNavmesh()
 	);
 
 	// colliders
-	auto& colliders = level->GetColliders();
-	for(vector<Collider>& vc : colliders)
+	//Box2d box = navmesh->GetBoxForTile(tile);
+	Box2d box = Box2d(0, 0, 160, 160);
+	vector<Collider> colliders;
+	level->GatherColliders(colliders, box);
+
+	for(Collider& c : colliders)
 	{
-		for(Collider& c : vc)
-		{
-			Box box = c.ToBox();
-			int offset = geom.verts.size();
-			geom.verts.insert(geom.verts.end(),
-				{
-					box.v1,
-					Vec3(box.v2.x, box.v1.y, box.v1.z),
-					Vec3(box.v1.x, box.v1.y, box.v2.z),
-					Vec3(box.v2.x, box.v1.y, box.v2.z),
-					Vec3(box.v1.x, box.v2.y, box.v1.z),
-					Vec3(box.v2.x, box.v2.y, box.v1.z),
-					Vec3(box.v1.x, box.v2.y, box.v2.z),
-					box.v2
-				}
-			);
+		Box box = c.ToBox();
+		int offset = geom.verts.size();
+		geom.verts.insert(geom.verts.end(),
+			{
+				box.v1,
+				Vec3(box.v2.x, box.v1.y, box.v1.z),
+				Vec3(box.v1.x, box.v1.y, box.v2.z),
+				Vec3(box.v2.x, box.v1.y, box.v2.z),
+				Vec3(box.v1.x, box.v2.y, box.v1.z),
+				Vec3(box.v2.x, box.v2.y, box.v1.z),
+				Vec3(box.v1.x, box.v2.y, box.v2.z),
+				box.v2
+			}
+		);
 #define TRI(a,b,c) offset+a,offset+b,offset+c
-			geom.tris.insert(geom.tris.end(),
-				{
-					// left
-					TRI(6,4,2),
-					TRI(2,4,0),
-					// right
-					TRI(5,7,1),
-					TRI(1,7,3),
-					// top
-					TRI(4,5,0),
-					TRI(0,5,1),
-					// bottom
-					TRI(7,6,3),
-					TRI(3,6,2)
-				}
-			);
+		geom.tris.insert(geom.tris.end(),
+			{
+				// left
+				TRI(6,4,2),
+				TRI(2,4,0),
+				// right
+				TRI(5,7,1),
+				TRI(1,7,3),
+				// top
+				TRI(4,5,0),
+				TRI(0,5,1),
+				// bottom
+				TRI(7,6,3),
+				TRI(3,6,2)
+			}
+		);
 #undef TRI
-		}
 	}
 
 	NavmeshGeometry nav_geom;
@@ -916,88 +927,9 @@ void CityGenerator::BuildNavmesh()
 	nav_geom.vert_count = geom.verts.size();
 	nav_geom.tris = geom.tris.data();
 	nav_geom.tri_count = geom.tris.size() / 3;
-	nav_geom.bounds = Box(0, 0, 0, map_size, 2.f, map_size);
+	nav_geom.bounds = box.ToBoxXZ(0.f, 2.f);
+	//navmesh->BuildTile(tile, nav_geom);
 	navmesh->Build(nav_geom);
-
-	/*navmesh->Reset();
-	vector<Vec2> outline;
-
-	int index = -1; // FIXME
-
-	for(Building* building : buildings)
-	{
-		Box2d building_box = Box2d(building->box, Unit::radius + wall_width);
-		for(Building::Room& room : building->rooms)
-		{
-			++index;
-
-			// get region
-			Rect room_rect = room.GetRect();
-			Box2d box(building->pos.x * tile_size + room.pos.x * ts, building->pos.y * tile_size + room.pos.y * ts);
-			box.v2.x += ts * room.size.x;
-			box.v2.y += ts * room.size.y;
-			Box2d inner_box = box;
-			inner_box.AddMargin(Unit::radius + wall_width / 2);
-			inner_box = inner_box.Intersect(building_box);
-
-			// setup outline
-			const float margin = jamb_size + Unit::radius;
-			outline.clear();
-			outline.push_back(inner_box.LeftTop());
-			for(int x = room.pos.x; x < room.pos.x + room.size.x; ++x)
-			{
-				if(building->IsDoor(Int2(x, room.pos.y), DIR_TOP))
-				{
-					outline.push_back(Vec2(building->box.v1.x + ts * x + margin, inner_box.v1.y));
-					outline.push_back(Vec2(building->box.v1.x + ts * (x + 1) - margin, inner_box.v1.y));
-				}
-			}
-			outline.push_back(inner_box.RightTop());
-			for(int y = room.pos.y; y < room.pos.y + room.size.y; ++y)
-			{
-				if(building->IsDoor(Int2(room.pos.x + room.size.x - 1, y), DIR_RIGHT))
-				{
-					outline.push_back(Vec2(inner_box.v2.x, building->box.v1.y + ts * y + margin));
-					outline.push_back(Vec2(inner_box.v2.x, building->box.v1.y + ts * (y + 1) - margin));
-				}
-			}
-			outline.push_back(inner_box.RightBottom());
-			for(int x = room.pos.x + room.size.x - 1; x >= room.pos.x; --x)
-			{
-				if(building->IsDoor(Int2(x, room.pos.y + room.size.y - 1), DIR_BOTTOM))
-				{
-					outline.push_back(Vec2(building->box.v1.x + ts * (x + 1) - margin, inner_box.v2.y));
-					outline.push_back(Vec2(building->box.v1.x + ts * x + margin, inner_box.v2.y));
-				}
-			}
-			outline.push_back(inner_box.LeftBottom());
-			for(int y = room.pos.y + room.size.y - 1; y >= room.pos.y; --y)
-			{
-				if(building->IsDoor(Int2(room.pos.x, y), DIR_LEFT))
-				{
-					outline.push_back(Vec2(inner_box.v1.x, building->box.v1.y + ts * (y + 1) - margin));
-					outline.push_back(Vec2(inner_box.v1.x, building->box.v1.y + ts * y + margin));
-				}
-			}
-			assert(outline.size() == 4 + 2 * (room.connected2.size() + CountBits(room.outside_used)));
-
-			navmesh->StartRegion(outline);
-			bool empty = true;
-			for(const Int2& pt : building->tables)
-			{
-				if(room_rect.IsInside(pt))
-				{
-					Box2d collider = Box2d::Create(building->box.v1 + Vec2(ts * pt.x, ts * pt.y), Vec2(ts, ts));
-					collider.AddMargin(-Unit::radius);
-					navmesh->AddCollier(collider);
-					empty = false;
-				}
-			}
-			if(empty)
-				navmesh->AddPoint(inner_box.Midpoint());
-			navmesh->EndRegion();
-		}
-	}*/
 }
 
 void LevelGeometry::SaveObj(cstring filename)
@@ -1006,6 +938,6 @@ void LevelGeometry::SaveObj(cstring filename)
 	f << "mtllib mat.mtl\no Plane\n";
 	for(Vec3& v : verts)
 		f << Format("v %g %g %g\n", v.x, v.y, v.z);
-	for(int i = 0; i < tris.size() / 3; ++i)
+	for(uint i = 0; i < tris.size() / 3; ++i)
 		f << Format("f %d %d %d\n", tris[i * 3 + 0] + 1, tris[i * 3 + 1] + 1, tris[i * 3 + 2] + 1);
 }

@@ -1027,6 +1027,7 @@ struct Box2d
 		w = (v2.x - v1.x) / 2;
 		h = (v2.y - v1.y) / 2;
 	}
+	Box ToBoxXZ(float y1, float y2) const;
 
 	float& Left() { return v1.x; }
 	float& Right() { return v2.x; }

@@ -20,7 +20,7 @@ public:
 	~Navmesh();
 	bool PrepareTiles(float tile_size, uint tiles);
 	bool Build(const NavmeshGeometry& geom);
-	void BuildTile(const Int2& tile, const NavmeshGeometry& geom);
+	bool BuildTile(const Int2& tile, const NavmeshGeometry& geom);
 	Box2d GetBoxForTile(const Int2& tile);
 	void FindPath(const Vec3& from, const Vec3& to);
 	//void StartRegion(const vector<Vec2>& outline) { this->outline = &outline; }
