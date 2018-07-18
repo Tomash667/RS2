@@ -12,7 +12,7 @@ const float CELL_SIZE = 0.25f;
 const float CELL_HEIGHT = 0.5f;
 const float AGENT_RADIUS = Unit::radius;
 const float AGENT_HEIGHT = Unit::height;
-const float AGENT_CLIMB = 0.25f;
+const float AGENT_CLIMB = 0.5f;
 const int NAV_QUERY_MAX_NODES = 2048;
 
 enum PolyArea
@@ -210,7 +210,7 @@ bool Navmesh::BuildTileMesh(const Int2& tile, const NavmeshGeometry& geom, byte*
 	cfg.ch = CELL_HEIGHT;
 	cfg.walkableSlopeAngle = 45.f;
 	cfg.walkableHeight = (int)ceilf(AGENT_HEIGHT / cfg.ch);
-	cfg.walkableClimb = 3; // in cells
+	cfg.walkableClimb = (int)ceilf(AGENT_CLIMB / cfg.ch); // in cells
 	cfg.walkableRadius = (int)(AGENT_RADIUS / cfg.cs);
 	cfg.maxEdgeLen = 80;
 	cfg.maxSimplificationError = 1.3f;

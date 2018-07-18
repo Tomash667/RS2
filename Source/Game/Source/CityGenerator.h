@@ -19,6 +19,15 @@ struct LevelGeometry
 	void SaveObj(cstring filename);
 };
 
+enum ThreadState
+{
+	THREAD_IDLE,
+	THREAD_STOPPED,
+	THREAD_STOPPING,
+	THREAD_WORKING,
+	THREAD_QUIT
+};
+
 class CityGenerator
 {
 public:
@@ -41,6 +50,7 @@ private:
 	void FillBuildings();
 	void BuildBuildingsMesh();
 	void CreateScene();
+	void NavmeshThreadLoop();
 	void BuildNavmesh();
 	void BuildNavmeshTile(const Int2& tile);
 	void SpawnItems();
@@ -59,6 +69,9 @@ private:
 	vector<Building*> buildings;
 	Vec3 player_start_pos;
 	LevelGeometry geom;
+	std::thread navmesh_thread;
+	ThreadState navmesh_thread_state;
+	Int2 navmesh_next_tile;
 
 	// resources
 	Mesh* mesh[T_MAX], *mesh_curb, *mesh_table,

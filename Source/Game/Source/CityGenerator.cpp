@@ -17,6 +17,7 @@ const float CityGenerator::floor_y = 0.05f;
 const float CityGenerator::wall_width = 0.2f;
 const float ts = CityGenerator::tile_size / 2;
 const float jamb_size = 0.25f;
+const uint NAVMESH_TILES = 16;
 
 CityGenerator::~CityGenerator()
 {
@@ -53,6 +54,9 @@ void CityGenerator::Init(Scene* scene, Level* level, Pathfinding* pathfinding, R
 	mesh_door_jamb = res_mgr->GetMeshRaw("buildings/door_jamb.qmsh");
 	mesh_door_jamb_inner = res_mgr->GetMeshRaw("buildings/door_jamb_inner.qmsh");
 	mesh_ceil = res_mgr->GetMeshRaw("buildings/ceil.qmsh");
+
+	navmesh_thread_state = THREAD_IDLE;
+	navmesh_thread = std::thread(&CityGenerator::NavmeshThreadLoop, this);
 }
 
 void CityGenerator::Reset()
@@ -849,14 +853,49 @@ void CityGenerator::Load(FileReader& f)
 	pathfinding->GenerateBlockedGrid(size, tile_size, buildings);
 }
 
+void CityGenerator::NavmeshThreadLoop()
+{
+	while(true)
+	{
+		switch(navmesh_thread_state)
+		{
+		case THREAD_IDLE:
+		case THREAD_STOPPED:
+			std::this_thread::yield();
+			break;
+		case THREAD_STOPPING:
+			navmesh_thread_state = THREAD_STOPPED;
+			std::this_thread::yield();
+			break;
+		case THREAD_QUIT:
+			return;
+		case THREAD_WORKING:
+			{
+				BuildNavmeshTile(navmesh_next_tile);
+				++navmesh_next_tile.x;
+				if(navmesh_next_tile.x == NAVMESH_TILES)
+				{
+					navmesh_next_tile.x = 0;
+					navmesh_next_tile.y++;
+					if(navmesh_next_tile.y == NAVMESH_TILES)
+						navmesh_thread_state = THREAD_IDLE;
+				}
+			}
+			break;
+		}
+	}
+}
+
 void CityGenerator::BuildNavmesh()
 {
-	//navmesh->PrepareTiles(160.f, 1);
+	navmesh->PrepareTiles(10.f, NAVMESH_TILES);
 	
-	//for(int x = 0; x < 4; ++x)
-	//	for(int y = 0; y < 4; ++y)
+	//for(int x = 0; x < 16; ++x)
+	//	for(int y = 0; y < 16; ++y)
 	//		BuildNavmeshTile(Int2(x, y));
-	BuildNavmeshTile(Int2(0, 0));
+
+	navmesh_next_tile = Int2::Zero;
+	navmesh_thread_state = THREAD_WORKING;
 }
 
 void CityGenerator::BuildNavmeshTile(const Int2& tile)
@@ -881,8 +920,7 @@ void CityGenerator::BuildNavmeshTile(const Int2& tile)
 	);
 
 	// colliders
-	//Box2d box = navmesh->GetBoxForTile(tile);
-	Box2d box = Box2d(0, 0, 160, 160);
+	Box2d box = navmesh->GetBoxForTile(tile);
 	vector<Collider> colliders;
 	level->GatherColliders(colliders, box);
 
@@ -928,8 +966,7 @@ void CityGenerator::BuildNavmeshTile(const Int2& tile)
 	nav_geom.tris = geom.tris.data();
 	nav_geom.tri_count = geom.tris.size() / 3;
 	nav_geom.bounds = box.ToBoxXZ(0.f, 2.f);
-	//navmesh->BuildTile(tile, nav_geom);
-	navmesh->Build(nav_geom);
+	navmesh->BuildTile(tile, nav_geom);
 }
 
 void LevelGeometry::SaveObj(cstring filename)

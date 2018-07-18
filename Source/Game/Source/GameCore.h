@@ -1,6 +1,7 @@
 #pragma once
 
 #include "EngineCore.h"
+#include <thread>
 
 class CityGenerator;
 class Game;
