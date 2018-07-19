@@ -21,16 +21,16 @@ struct LevelGeometry
 
 enum ThreadState
 {
-	THREAD_IDLE,
-	THREAD_STOPPED,
-	THREAD_STOPPING,
+	THREAD_NOT_STARTED,
 	THREAD_WORKING,
+	THREAD_FINISHED,
 	THREAD_QUIT
 };
 
 class CityGenerator
 {
 public:
+	CityGenerator();
 	~CityGenerator();
 	void Init(Scene* scene, Level* level, Pathfinding* pathfinding, ResourceManager* res_mgr, uint size, uint splits, Navmesh* navmesh);
 	void Reset();
@@ -40,6 +40,8 @@ public:
 	float GetMapSize() { return map_size; }
 	void Save(FileWriter& f);
 	void Load(FileReader& f);
+	void CheckNavmeshGeneration();
+	void WaitForNavmeshThread();
 
 	static const float tile_size;
 	static const float floor_y;
@@ -71,7 +73,9 @@ private:
 	LevelGeometry geom;
 	std::thread navmesh_thread;
 	ThreadState navmesh_thread_state;
+	int navmesh_built;
 	Int2 navmesh_next_tile;
+	Timer navmesh_timer;
 
 	// resources
 	Mesh* mesh[T_MAX], *mesh_curb, *mesh_table,

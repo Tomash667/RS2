@@ -235,6 +235,7 @@ void Game::StartGame(bool load)
 
 void Game::ExitToMenu()
 {
+	city_generator->WaitForNavmeshThread();
 	main_menu->Show();
 	game_gui->visible = false;
 	city_generator->Reset();
@@ -247,7 +248,10 @@ bool Game::OnTick(float dt)
 
 	if((input->Down(Key::Alt) && input->Pressed(Key::F4))
 		|| change_state == GameState::QUIT)
+	{
+		city_generator->WaitForNavmeshThread();
 		return false;
+	}
 
 	navmesh->dt = dt;
 
@@ -293,6 +297,7 @@ void Game::UpdateGame(float dt)
 
 	allow_mouse = !game_gui->IsMouseRequired();
 
+	city_generator->CheckNavmeshGeneration();
 	UpdatePlayer(dt);
 	UpdateZombies(dt);
 	camera->Update(dt, allow_mouse);
@@ -1381,6 +1386,8 @@ void Game::UpdateWorld(float dt)
 
 void Game::SaveAndExit()
 {
+	city_generator->WaitForNavmeshThread();
+
 	try
 	{
 		FileWriter f("save");

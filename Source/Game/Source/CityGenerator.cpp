@@ -19,6 +19,10 @@ const float ts = CityGenerator::tile_size / 2;
 const float jamb_size = 0.25f;
 const uint NAVMESH_TILES = 16;
 
+CityGenerator::CityGenerator() : navmesh_timer(false)
+{
+}
+
 CityGenerator::~CityGenerator()
 {
 	DeleteElements(buildings);
@@ -55,8 +59,7 @@ void CityGenerator::Init(Scene* scene, Level* level, Pathfinding* pathfinding, R
 	mesh_door_jamb_inner = res_mgr->GetMeshRaw("buildings/door_jamb_inner.qmsh");
 	mesh_ceil = res_mgr->GetMeshRaw("buildings/ceil.qmsh");
 
-	navmesh_thread_state = THREAD_IDLE;
-	navmesh_thread = std::thread(&CityGenerator::NavmeshThreadLoop, this);
+	navmesh_thread_state = THREAD_NOT_STARTED;
 }
 
 void CityGenerator::Reset()
@@ -859,13 +862,9 @@ void CityGenerator::NavmeshThreadLoop()
 	{
 		switch(navmesh_thread_state)
 		{
-		case THREAD_IDLE:
-		case THREAD_STOPPED:
-			std::this_thread::yield();
-			break;
-		case THREAD_STOPPING:
-			navmesh_thread_state = THREAD_STOPPED;
-			std::this_thread::yield();
+		case THREAD_NOT_STARTED:
+		case THREAD_FINISHED:
+			assert(0);
 			break;
 		case THREAD_QUIT:
 			return;
@@ -878,7 +877,11 @@ void CityGenerator::NavmeshThreadLoop()
 					navmesh_next_tile.x = 0;
 					navmesh_next_tile.y++;
 					if(navmesh_next_tile.y == NAVMESH_TILES)
-						navmesh_thread_state = THREAD_IDLE;
+					{
+						navmesh_built = 1;
+						navmesh_thread_state = THREAD_FINISHED;
+						return;
+					}
 				}
 			}
 			break;
@@ -890,12 +893,37 @@ void CityGenerator::BuildNavmesh()
 {
 	navmesh->PrepareTiles(10.f, NAVMESH_TILES);
 	
-	//for(int x = 0; x < 16; ++x)
-	//	for(int y = 0; y < 16; ++y)
-	//		BuildNavmeshTile(Int2(x, y));
-
+	/*navmesh_timer.Start();
+	navmesh_built = 0;
 	navmesh_next_tile = Int2::Zero;
 	navmesh_thread_state = THREAD_WORKING;
+	navmesh_thread = std::thread(&CityGenerator::NavmeshThreadLoop, this);*/
+
+	for(int x = 0; x < NAVMESH_TILES; ++x)
+		for(int y = 0; y < NAVMESH_TILES; ++y)
+			BuildNavmeshTile(Int2(x, y));
+}
+
+void CityGenerator::CheckNavmeshGeneration()
+{
+	if(navmesh_built == 1)
+	{
+		navmesh_built = 2;
+		float t = navmesh_timer.Tick();
+		Info("Finished navmesh generation. Took %g sec.", t);
+	}
+}
+
+void CityGenerator::WaitForNavmeshThread()
+{
+	if(navmesh_thread_state == THREAD_WORKING)
+	{
+		navmesh_thread_state = THREAD_QUIT;
+		navmesh_thread.join();
+	}
+	else if(navmesh_thread_state == THREAD_FINISHED)
+		navmesh_thread.join();
+	navmesh_thread_state = THREAD_NOT_STARTED;
 }
 
 void CityGenerator::BuildNavmeshTile(const Int2& tile)

@@ -101,11 +101,10 @@ void Navmesh::Cleanup()
 bool Navmesh::PrepareTiles(float tile_size, uint tiles)
 {
 	assert(tile_size >= 1.f && tiles >= 1u);
-	assert(!navmesh);
 
 	Info("Building tiled mesh...");
-	Timer t;
 
+	Reset();
 	navmesh = dtAllocNavMesh();
 
 	dtNavMeshParams params;
@@ -133,18 +132,11 @@ bool Navmesh::PrepareTiles(float tile_size, uint tiles)
 	this->tile_size = tile_size;
 	this->tiles = tiles;
 
-	Info("Finished building tiles navmesh: %g", t.Tick()); // FIXME remove
 	return true;
 }
 
 bool Navmesh::Build(const NavmeshGeometry& geom)
 {
-	assert(!navmesh);
-
-	// FIXME
-	Info("Building navmesh...");
-	Timer t;
-
 	Reset();
 	is_tiled = false;
 
@@ -168,9 +160,7 @@ bool Navmesh::Build(const NavmeshGeometry& geom)
 		ctx.log(RC_LOG_ERROR, "Could not init Detour navmesh query");
 		return false;
 	}
-
-	Info("Finished building navmesh. Total time %g sec.", t.Tick());
-
+	
 	return true;
 }
 
@@ -196,7 +186,6 @@ bool Navmesh::BuildTile(const Int2& tile, const NavmeshGeometry& geom)
 
 bool Navmesh::BuildTileMesh(const Int2& tile, const NavmeshGeometry& geom, byte*& data, int& data_size)
 {
-	Timer t;
 	Cleanup();
 
 	//
@@ -418,9 +407,7 @@ bool Navmesh::BuildTileMesh(const Int2& tile, const NavmeshGeometry& geom, byte*
 		ctx.log(RC_LOG_ERROR, "Could not build Detour navmesh.");
 		return false;
 	}
-
-	Info("Finished building navmesh tile. Total time %g sec.", t.Tick());
-
+	
 	data = navData;
 	data_size = navDataSize;
 	return true;
