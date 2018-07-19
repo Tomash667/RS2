@@ -17,7 +17,7 @@ const float CityGenerator::floor_y = 0.05f;
 const float CityGenerator::wall_width = 0.2f;
 const float ts = CityGenerator::tile_size / 2;
 const float jamb_size = 0.25f;
-const uint NAVMESH_TILES = 16;
+const uint NAVMESH_TILES = 32;
 
 CityGenerator::CityGenerator() : navmesh_timer(false)
 {
@@ -448,7 +448,8 @@ void CityGenerator::FillBuildings()
 			if(Rand() % 4 == 0)
 			{
 				Int2 pt = Int2(RandomNormal(1, room.size.x - 2), RandomNormal(1, room.size.y - 2)) + room.pos;
-				building->tables.push_back(pt);
+				bool rotated = Rand() % 2 == 0;
+				building->tables.push_back({ pt, rotated });
 			}
 		}
 	}
@@ -691,15 +692,22 @@ void CityGenerator::CreateScene()
 		building_mesh->rot = Vec3::Zero;
 		building_node->Add(building_mesh);
 
-		for(Int2& pt : b.tables)
+		for(Building::Table& table : b.tables)
 		{
-			SceneNode* table = new SceneNode;
-			table->mesh = mesh_table;
-			table->pos = Vec3(tile_size * b.pos.x + tile_size / 2 * pt.x + tile_size / 4, 0, tile_size * b.pos.y + tile_size / 2 * pt.y + tile_size / 4);
-			table->rot = Vec3::Zero;
-			building_node->Add(table);
-
-			level->AddCollider(Collider(table->pos.XZ(), Vec2(2.1f / 2, 2.1f / 2), false));
+			SceneNode* node = new SceneNode;
+			node->mesh = mesh_table;
+			node->pos = Vec3(tile_size * b.pos.x + tile_size / 2 * table.pos.x + tile_size / 4,
+				0, tile_size * b.pos.y + tile_size / 2 * table.pos.y + tile_size / 4);
+			Vec2 half_ext = Vec2(1.9f / 2, 1.1f / 2);
+			if(table.rotated)
+			{
+				node->rot = Vec3(0, PI / 2, 0);
+				half_ext.Swap();
+			}
+			else
+				node->rot = Vec3::Zero;
+			building_node->Add(node);
+			level->AddCollider(Collider(node->pos.XZ(), half_ext, false));
 		}
 
 		scene->Add(building_node);
@@ -777,9 +785,9 @@ void CityGenerator::SpawnItem(Building* building, Item* item)
 		Vec2 pos = Vec2(Random(wall_width * 2, room.size.x * ts - wall_width * 2), Random(wall_width * 2, room.size.y * ts - wall_width * 2));
 		Int2 pt = Int2(int(pos.x / ts) + room.pos.x, int(pos.y / ts) + room.pos.y);
 		bool ok = true;
-		for(Int2& table_pt : building->tables)
+		for(Building::Table& table : building->tables)
 		{
-			if(pt == table_pt)
+			if(pt == table.pos)
 			{
 				ok = false;
 				break;
@@ -894,7 +902,7 @@ void CityGenerator::BuildNavmesh()
 	// no tiles
 	//BuildNavmeshTile(Int2::Zero, false);
 
-	navmesh->PrepareTiles(10.f, NAVMESH_TILES);
+	navmesh->PrepareTiles(map_size / NAVMESH_TILES, NAVMESH_TILES);
 
 	// build blocking
 	//const int tiles_to_build = NAVMESH_TILES;

@@ -79,14 +79,14 @@ void Pathfinding::GenerateBlockedGrid(uint size, float tile_size, const vector<B
 			}
 		}
 		// tables
-		for(const Int2& pt : b.tables)
+		/*for(const Int2& pt : b.tables)
 		{
 			tiles[pt.x + pos.x + (pt.y + pos.y) * s].blocked = BLOCKED_ALL;
 			tiles[pt.x + pos.x - 1 + (pt.y + pos.y) * s].blocked |= BLOCKED_RIGHT;
 			tiles[pt.x + pos.x + 1 + (pt.y + pos.y) * s].blocked |= BLOCKED_LEFT;
 			tiles[pt.x + pos.x + (pt.y + pos.y - 1) * s].blocked |= BLOCKED_BOTTOM;
 			tiles[pt.x + pos.x + (pt.y + pos.y + 1) * s].blocked |= BLOCKED_TOP;
-		}
+		}*/
 	}
 }
 

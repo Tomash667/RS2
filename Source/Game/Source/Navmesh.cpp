@@ -763,6 +763,7 @@ void Navmesh::Draw(DebugDrawer* debug_drawer)
 		debug_drawer->BeginBatch();
 		DrawPathPoly(debug_drawer, *navmesh);
 		DrawStraightPath(debug_drawer, *navmesh);
+		//DrawSmoothPath(debug_drawer, *navmesh);
 		debug_drawer->EndBatch();
 	}
 }

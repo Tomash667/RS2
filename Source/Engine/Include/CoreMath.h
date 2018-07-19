@@ -636,6 +636,10 @@ struct Vec2 : XMFLOAT2
 	void Normalize(Vec2& v) const;
 	Vec2 Normalized() const;
 	float Random() const;
+	void Swap()
+	{
+		std::swap(x, y);
+	}
 	Vec3 XY(float z = 0.f) const;
 	Vec3 XZ(float y = 0.f) const;
 

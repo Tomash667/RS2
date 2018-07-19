@@ -36,6 +36,12 @@ struct Building
 		bool visited;
 	};
 
+	struct Table
+	{
+		Int2 pos;
+		bool rotated;
+	};
+
 	Building() : mesh(nullptr) {}
 	~Building() { delete mesh; }
 	void CheckConnect(Room& room, uint index, uint& last_index);
@@ -48,7 +54,7 @@ struct Building
 	Int2 pos, size;
 	vector<Room> rooms;
 	vector<std::pair<Int2, DIR>> doors;
-	vector<Int2> tables;
+	vector<Table> tables;
 	vector<int> is_door;
 	Mesh* mesh;
 };
