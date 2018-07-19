@@ -54,7 +54,7 @@ private:
 	void CreateScene();
 	void NavmeshThreadLoop();
 	void BuildNavmesh();
-	void BuildNavmeshTile(const Int2& tile);
+	void BuildNavmeshTile(const Int2& tile, bool is_tiled);
 	void SpawnItems();
 	void SpawnItem(Building* building, Item* item);
 	void SpawnZombies();

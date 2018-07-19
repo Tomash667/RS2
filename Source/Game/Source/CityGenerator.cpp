@@ -870,7 +870,7 @@ void CityGenerator::NavmeshThreadLoop()
 			return;
 		case THREAD_WORKING:
 			{
-				BuildNavmeshTile(navmesh_next_tile);
+				BuildNavmeshTile(navmesh_next_tile, true);
 				++navmesh_next_tile.x;
 				if(navmesh_next_tile.x == NAVMESH_TILES)
 				{
@@ -891,17 +891,23 @@ void CityGenerator::NavmeshThreadLoop()
 
 void CityGenerator::BuildNavmesh()
 {
+	// no tiles
+	//BuildNavmeshTile(Int2::Zero, false);
+
 	navmesh->PrepareTiles(10.f, NAVMESH_TILES);
-	
-	/*navmesh_timer.Start();
+
+	// build blocking
+	//const int tiles_to_build = NAVMESH_TILES;
+	//for(int x = 0; x < tiles_to_build; ++x)
+	//	for(int y = 0; y < tiles_to_build; ++y)
+	//		BuildNavmeshTile(Int2(x, y), true);
+
+	// build in background
+	navmesh_timer.Start();
 	navmesh_built = 0;
 	navmesh_next_tile = Int2::Zero;
 	navmesh_thread_state = THREAD_WORKING;
-	navmesh_thread = std::thread(&CityGenerator::NavmeshThreadLoop, this);*/
-
-	for(int x = 0; x < NAVMESH_TILES; ++x)
-		for(int y = 0; y < NAVMESH_TILES; ++y)
-			BuildNavmeshTile(Int2(x, y));
+	navmesh_thread = std::thread(&CityGenerator::NavmeshThreadLoop, this);
 }
 
 void CityGenerator::CheckNavmeshGeneration()
@@ -926,7 +932,7 @@ void CityGenerator::WaitForNavmeshThread()
 	navmesh_thread_state = THREAD_NOT_STARTED;
 }
 
-void CityGenerator::BuildNavmeshTile(const Int2& tile)
+void CityGenerator::BuildNavmeshTile(const Int2& tile, bool is_tiled)
 {
 	geom.verts.clear();
 	geom.tris.clear();
@@ -948,7 +954,7 @@ void CityGenerator::BuildNavmeshTile(const Int2& tile)
 	);
 
 	// colliders
-	Box2d box = navmesh->GetBoxForTile(tile);
+	Box2d box = is_tiled ? navmesh->GetBoxForTile(tile) : Box2d(0, 0, map_size, map_size);
 	vector<Collider> colliders;
 	level->GatherColliders(colliders, box);
 
@@ -994,7 +1000,10 @@ void CityGenerator::BuildNavmeshTile(const Int2& tile)
 	nav_geom.tris = geom.tris.data();
 	nav_geom.tri_count = geom.tris.size() / 3;
 	nav_geom.bounds = box.ToBoxXZ(0.f, 2.f);
-	navmesh->BuildTile(tile, nav_geom);
+	if(is_tiled)
+		navmesh->BuildTile(tile, nav_geom);
+	else
+		navmesh->Build(nav_geom);
 }
 
 void LevelGeometry::SaveObj(cstring filename)

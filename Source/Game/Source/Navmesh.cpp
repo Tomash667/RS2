@@ -9,10 +9,10 @@
 #include <Input.h>
 
 const float CELL_SIZE = 0.25f;
-const float CELL_HEIGHT = 0.5f;
+const float CELL_HEIGHT = 0.25f;
 const float AGENT_RADIUS = Unit::radius;
 const float AGENT_HEIGHT = Unit::height;
-const float AGENT_CLIMB = 0.5f;
+const float AGENT_CLIMB = 0.25f;
 const int NAV_QUERY_MAX_NODES = 2048;
 
 enum PolyArea
@@ -109,7 +109,7 @@ bool Navmesh::PrepareTiles(float tile_size, uint tiles)
 
 	dtNavMeshParams params;
 	rcVcopy(params.orig, Vec3(0, 0, 0));
-	params.tileHeight = tile_size * CELL_SIZE;
+	params.tileHeight = tile_size;
 	params.tileWidth = params.tileHeight;
 	params.maxTiles = tiles * tiles;
 	params.maxPolys = 512;
@@ -212,7 +212,7 @@ bool Navmesh::BuildTileMesh(const Int2& tile, const NavmeshGeometry& geom, byte*
 	rcVcopy(cfg.bmax, geom.bounds.v2);
 	if(is_tiled)
 	{
-		cfg.tileSize = (int)(tile_size / cfg.cs); // FIXME verify
+		cfg.tileSize = (int)(tile_size / cfg.cs);
 		cfg.borderSize = cfg.walkableRadius + 3;
 		cfg.width = cfg.tileSize + cfg.borderSize * 2;
 		cfg.height = cfg.width;
