@@ -467,7 +467,7 @@ bool Navmesh::FindTestPath(const Vec3& from, const Vec3& to, bool smooth)
 		return false;
 
 	test_path.ok = true;
-	if(smooth)
+	if(!smooth)
 	{
 		FindStraightPath(test_path.end_ref, from, test_path.end_pos, test_path.path);
 		Info("Path found, length:%d, straight:%d", tmp_path_length, test_path.path.size());
@@ -492,8 +492,18 @@ void Navmesh::FindStraightPath(dtPolyRef end_ref, const Vec3& start_pos, const V
 	nav_query->findStraightPath(start_pos, epos, tmp_path, tmp_path_length, (float*)tmp_straight_path, nullptr,
 		nullptr, &length, MAX_POLYS, 0);
 
-	out_path.resize(length);
-	memcpy(out_path.data(), tmp_straight_path, sizeof(Vec3) * length);
+	if(length >= 2)
+	{
+		out_path.resize(length);
+		memcpy(out_path.data(), tmp_straight_path, sizeof(Vec3) * length);
+	}
+	else
+	{
+		// fix for path starting & ending in same 'mini' tile
+		out_path.resize(2);
+		out_path[0] = start_pos;
+		out_path[1] = end_pos;
+	}
 }
 
 inline bool inRange(const Vec3& v1, const Vec3& v2, const float r, const float h)
@@ -965,6 +975,58 @@ void Navmesh::DrawPoly(DebugDrawer* debug_drawer, const dtNavMesh& mesh, dtPolyR
 				debug_drawer->AddVertex(Vec3(&tile->verts[poly->verts[t[j]] * 3]));
 			else
 				debug_drawer->AddVertex(Vec3(&tile->detailVerts[(pd->vertBase + t[j] - poly->vertCount) * 3]));
+		}
+	}
+}
+
+void Navmesh::Save(FileWriter& f)
+{
+	const dtNavMesh& mesh = *navmesh;
+
+	const int count = mesh.getMaxTiles();
+	int tiles = 0;
+	for(int i = 0; i < count; ++i)
+	{
+		const dtMeshTile* tile = mesh.getTile(i);
+		if(tile && tile->header && tile->dataSize)
+			++tiles;
+	}
+	f << tiles;
+
+	for(int i = 0; i < count; ++i)
+	{
+		const dtMeshTile* tile = mesh.getTile(i);
+		if(tile && tile->header && tile->dataSize)
+		{
+			f << mesh.getTileRef(tile);
+			f << tile->dataSize;
+			f.Write(tile->data, tile->dataSize);
+		}
+	}
+}
+
+void Navmesh::Load(FileReader& f)
+{
+	// call PrepareTiles first
+	assert(navmesh && is_tiled);
+
+	int tiles;
+	f >> tiles;
+
+	for(int i = 0; i < tiles; ++i)
+	{
+		dtTileRef tile_ref;
+		int data_size;
+		f >> tile_ref;
+		f >> data_size;
+		byte* data = (byte*)dtAlloc(data_size, DT_ALLOC_PERM);
+		f.Read(data, data_size);
+
+		dtStatus status = navmesh->addTile(data, data_size, DT_TILE_FREE_DATA, tile_ref, nullptr);
+		if(dtStatusFailed(status))
+		{
+			dtFree(data);
+			throw Format("Failed to load navmesh for tile %d.", i);
 		}
 	}
 }

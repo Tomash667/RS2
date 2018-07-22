@@ -77,7 +77,7 @@ void CityGenerator::Generate()
 	level->SpawnBarriers();
 	level->SpawnPlayer(player_start_pos);
 	SpawnItems();
-	//SpawnZombies(); FIXME
+	SpawnZombies();
 }
 
 void CityGenerator::GenerateMap()
@@ -128,9 +128,6 @@ void CityGenerator::GenerateMap()
 	Tree::Node* first = roads_tree.nodes.front();
 	player_start_pos = Vec3(tile_size * first->split_pos.x + tile_size / 2 * first->split_size.x,
 		0, tile_size * first->split_pos.y + tile_size / 2 * first->split_size.y);
-
-	// FIXME
-	player_start_pos = Vec3(1, 0, 1);
 }
 
 void CityGenerator::DrawMap()
@@ -841,6 +838,12 @@ void CityGenerator::Save(FileWriter& f)
 	f << buildings.size();
 	for(Building* b : buildings)
 		b->Save(f);
+
+	navmesh->Save(f);
+	bool done = navmesh_built != 0;
+	f << done;
+	if(!done)
+		f << navmesh_next_tile;
 }
 
 void CityGenerator::Load(FileReader& f)
@@ -858,6 +861,21 @@ void CityGenerator::Load(FileReader& f)
 	BuildBuildingsMesh();
 	CreateScene();
 	level->SpawnBarriers();
+
+	navmesh->PrepareTiles(map_size / NAVMESH_TILES, NAVMESH_TILES);
+	navmesh->Load(f);
+	bool done;
+	f >> done;
+	if(!done)
+	{
+		f >> navmesh_next_tile;
+		navmesh_timer.Start();
+		navmesh_built = 0;
+		navmesh_thread_state = THREAD_WORKING;
+		navmesh_thread = std::thread(&CityGenerator::NavmeshThreadLoop, this);
+	}
+	else
+		navmesh_built = 2;
 }
 
 void CityGenerator::NavmeshThreadLoop()

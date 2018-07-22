@@ -22,6 +22,8 @@ public:
 	bool FindTestPath(const Vec3& from, const Vec3& to, bool smooth);
 	void Draw(DebugDrawer* debug_drawer);
 	void DrawPath(DebugDrawer* debug_drawer, const vector<Vec3>& path, bool smooth);
+	void Save(FileWriter& f);
+	void Load(FileReader& f);
 
 private:
 	struct TestPath

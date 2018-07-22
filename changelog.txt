@@ -1,10 +1,12 @@
 Rouge Survival Changelog
 ======================================================
-v0.2 (2018-07-??:
+v0.2 (2018-07-??):
 + survive night to gain perk (Firearms, Light eater, Medic, Necrology, Strong, Tough)
 + day & night system, clouds
++ navigation mesh based pathfinding
 + options (resolution, fullscreen, vsync, volume)
 + player stats panel
+- fixed heavy lag when zombie tries to find path that is blocked by wall
 - fixed zombie memory leaks
 
 v0.1 (2018-06-17):

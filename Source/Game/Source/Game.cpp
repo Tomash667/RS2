@@ -139,7 +139,7 @@ void Game::InitGame()
 	Info("Initializing game.");
 	in_game = false;
 
-	Srand(0); // FIXME
+	Srand();
 	engine->GetWindow()->SetCursorLock(true);
 
 	level.reset(new Level);
@@ -160,9 +160,8 @@ void Game::InitGame()
 	sky->moon.enabled = true;
 	scene->SetSky(sky);
 
-	// FIXME
-	scene->SetDebugDrawHandler(delegate<void(DebugDrawer*)>(this, &Game::OnDebugDraw));
-	scene->SetDebugDrawEnabled(true);
+	//scene->SetDebugDrawHandler(delegate<void(DebugDrawer*)>(this, &Game::OnDebugDraw));
+	//scene->SetDebugDrawEnabled(true);
 
 	camera = new ThirdPersonCamera(scene->GetCamera(), level.get(), input);
 #ifdef _DEBUG
@@ -1062,24 +1061,23 @@ void Game::UpdateZombies(float dt)
 						if(travel_dist >= dist && CheckMovePos(*zombie, move_pos))
 						{
 							moved = true;
-							if(zombie->pf_state == PF_USED)
+							if(zombie->pf_state != PF_USED || zombie->pf_index + 1 >= (int)zombie->path.size())
 							{
-								if(zombie->pf_index == (int)zombie->path.size())
-									zombie->pf_state = PF_NOT_USED; // reached end of path
-								else
-								{
-									// moving to next point
-									++zombie->pf_index;
-									move_pos = zombie->path[zombie->pf_index];
-									travel_dist -= dist;
-									required_rot = Vec3::Angle2d(zombie->node->pos, move_pos);
-									dif = AngleDiff(zombie->node->rot.y, required_rot);
-									if(dif < PI / 4)
-										dist = Vec3::Distance2d(zombie->node->pos, move_pos);
-									else
-										break;
-								}
+								// reached end of path
+								zombie->pf_state = PF_NOT_USED; 
+								break;
 							}
+
+							// moving to next point
+							++zombie->pf_index;
+							move_pos = zombie->path[zombie->pf_index];
+							travel_dist -= dist;
+							required_rot = Vec3::Angle2d(zombie->node->pos, move_pos);
+							dif = AngleDiff(zombie->node->rot.y, required_rot);
+							if(dif < PI / 4)
+								dist = Vec3::Distance2d(zombie->node->pos, move_pos);
+							else
+								break;
 						}
 						else
 						{
@@ -1369,7 +1367,6 @@ void Game::OnDebugDraw(DebugDrawer* debug_drawer)
 	if(draw_navmesh)
 		navmesh->Draw(debug_drawer);
 
-	// FIXME
 	for(Zombie* zombie : level->zombies)
 	{
 		if(zombie->IsAlive() && zombie->pf_state == PF_USED)
@@ -1420,10 +1417,7 @@ void Game::UpdateWorld(float dt)
 		}
 		return false;
 	});
-
-	// FIXME
-	return;
-
+	
 	// spawn new zombies
 	if(level->alive_zombies < 25)
 	{
