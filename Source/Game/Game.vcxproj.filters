@@ -25,6 +25,15 @@
     <Filter Include="Source Files\Stats">
       <UniqueIdentifier>{d43b783d-b93f-429d-99d8-8558e6715d68}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\External">
+      <UniqueIdentifier>{5bc31f08-487f-4303-8018-250d6b959ccb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\External\Recast">
+      <UniqueIdentifier>{2eef525d-a147-497b-af89-120c160a5f30}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\External\Detour">
+      <UniqueIdentifier>{c406362e-b892-47ed-92ea-880d5dca7034}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Game.h">
@@ -66,9 +75,6 @@
     <ClInclude Include="Source\GameState.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Pathfinding.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Building.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -96,6 +102,9 @@
     <ClInclude Include="Source\Perk.h">
       <Filter>Header Files\Stats</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Navmesh.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Main.cpp">
@@ -120,9 +129,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\ThirdPersonCamera.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Pathfinding.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Zombie.cpp">
@@ -154,6 +160,63 @@
     </ClCompile>
     <ClCompile Include="Source\Perk.cpp">
       <Filter>Source Files\Stats</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Navmesh.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\recastnavigation\Recast\Source\Recast.cpp">
+      <Filter>Source Files\External\Recast</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\recastnavigation\Recast\Source\RecastAlloc.cpp">
+      <Filter>Source Files\External\Recast</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\recastnavigation\Recast\Source\RecastArea.cpp">
+      <Filter>Source Files\External\Recast</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\recastnavigation\Recast\Source\RecastAssert.cpp">
+      <Filter>Source Files\External\Recast</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\recastnavigation\Recast\Source\RecastContour.cpp">
+      <Filter>Source Files\External\Recast</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\recastnavigation\Recast\Source\RecastFilter.cpp">
+      <Filter>Source Files\External\Recast</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\recastnavigation\Recast\Source\RecastLayers.cpp">
+      <Filter>Source Files\External\Recast</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\recastnavigation\Recast\Source\RecastMesh.cpp">
+      <Filter>Source Files\External\Recast</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\recastnavigation\Recast\Source\RecastMeshDetail.cpp">
+      <Filter>Source Files\External\Recast</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\recastnavigation\Recast\Source\RecastRasterization.cpp">
+      <Filter>Source Files\External\Recast</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\recastnavigation\Recast\Source\RecastRegion.cpp">
+      <Filter>Source Files\External\Recast</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\recastnavigation\Detour\Source\DetourAlloc.cpp">
+      <Filter>Source Files\External\Detour</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\recastnavigation\Detour\Source\DetourAssert.cpp">
+      <Filter>Source Files\External\Detour</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\recastnavigation\Detour\Source\DetourCommon.cpp">
+      <Filter>Source Files\External\Detour</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\recastnavigation\Detour\Source\DetourNavMesh.cpp">
+      <Filter>Source Files\External\Detour</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\recastnavigation\Detour\Source\DetourNavMeshBuilder.cpp">
+      <Filter>Source Files\External\Detour</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\recastnavigation\Detour\Source\DetourNavMeshQuery.cpp">
+      <Filter>Source Files\External\Detour</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\recastnavigation\Detour\Source\DetourNode.cpp">
+      <Filter>Source Files\External\Detour</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

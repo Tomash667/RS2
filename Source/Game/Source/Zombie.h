@@ -17,21 +17,28 @@ enum IdleAction
 	IDLE_ANIM
 };
 
+enum PathfindingState
+{
+	PF_NOT_USED,
+	PF_NOT_GENERATED,
+	PF_USED
+};
+
 struct Zombie : Unit
 {
-	Zombie() : Unit(true), state(AI_IDLE), idle(IDLE_NONE), timer(idle_timer.Random()), attacking(false), pf_used(false), pf_timer(0) {}
+	Zombie() : Unit(true), state(AI_IDLE), idle(IDLE_NONE), timer(idle_timer.Random()), attacking(false), pf_timer(0), pf_state(PF_NOT_USED) {}
 	void ChangeState(AiState new_state);
 	void Save(FileWriter& f);
 	void Load(FileReader& f);
 
 	AiState state;
 	IdleAction idle;
-	Vec3 target_pos, start_pos;
+	PathfindingState pf_state;
+	vector<Vec3> path;
+	Vec3 target_pos, start_pos, pf_target;
 	float timer, timer2, pf_timer;
-	vector<Int2> path;
-	Int2 pf_target;
-	int attack_index, death_timer;
-	bool attacking, pf_used;
+	int attack_index, death_timer, pf_index;
+	bool attacking;
 
 	static const float walk_speed;
 	static const float rot_speed;

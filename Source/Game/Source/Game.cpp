@@ -23,18 +23,18 @@
 #include "ThirdPersonCamera.h"
 #include "MainMenu.h"
 #include "GameState.h"
-#include "Pathfinding.h"
 #include <Gui.h>
 #include <Config.h>
 #include <Sky.h>
 #include "PickPerkDialog.h"
 #include "Perk.h"
+#include "Navmesh.h"
 
 
 const int level_size = 32;
 
 
-Game::Game() : camera(nullptr), quickstart(false), config(nullptr), pick_perk(nullptr)
+Game::Game() : camera(nullptr), quickstart(false), config(nullptr), pick_perk(nullptr), draw_navmesh(false)
 {
 }
 
@@ -148,7 +148,7 @@ void Game::InitGame()
 	game_state.engine = engine.get();
 	game_state.config = config;
 
-	pathfinding.reset(new Pathfinding);
+	navmesh.reset(new Navmesh);
 
 	// sky
 	sky = new Sky(scene);
@@ -171,7 +171,7 @@ void Game::InitGame()
 	LoadResources();
 
 	city_generator.reset(new CityGenerator);
-	city_generator->Init(scene, level.get(), pathfinding.get(), res_mgr, level_size, 3);
+	city_generator->Init(scene, level.get(), res_mgr, level_size, 3, navmesh.get());
 
 	main_menu = new MainMenu;
 	main_menu->Init(res_mgr, &game_state);
@@ -231,6 +231,7 @@ void Game::StartGame(bool load)
 
 void Game::ExitToMenu()
 {
+	city_generator->WaitForNavmeshThread();
 	main_menu->Show();
 	game_gui->visible = false;
 	city_generator->Reset();
@@ -243,8 +244,11 @@ bool Game::OnTick(float dt)
 
 	if((input->Down(Key::Alt) && input->Pressed(Key::F4))
 		|| change_state == GameState::QUIT)
+	{
+		city_generator->WaitForNavmeshThread();
 		return false;
-
+	}
+	
 	Window* window = engine->GetWindow();
 	if(input->Down(Key::Alt) && input->Pressed(Key::Enter))
 	{
@@ -287,6 +291,7 @@ void Game::UpdateGame(float dt)
 
 	allow_mouse = !game_gui->IsMouseRequired();
 
+	city_generator->CheckNavmeshGeneration();
 	UpdatePlayer(dt);
 	UpdateZombies(dt);
 	camera->Update(dt, allow_mouse);
@@ -299,6 +304,8 @@ void Game::UpdateGame(float dt)
 		SceneNode* node = level->player->node;
 		level->SpawnZombie(node->pos + Vec3(cos(node->rot.y) * 10, 0, sin(node->rot.y) * 10));
 	}
+	if(input->Pressed(Key::F8))
+		draw_navmesh = !draw_navmesh;
 #endif
 
 	game_state.hour += dt / 60;
@@ -331,6 +338,10 @@ void Game::UpdatePlayer(float dt)
 		return;
 	}
 
+#ifdef _DEBUG
+	UpdateTestPath(player->node->pos);
+#endif
+	
 	// show gick perk dialog when survived night
 	if(game_state.day != player->last_survived_day && game_state.hour >= 7.f)
 	{
@@ -806,6 +817,27 @@ void Game::UpdatePlayer(float dt)
 		Vec3(sin(-player->node->rot.y + PI / 2), 0, cos(-player->node->rot.y + PI / 2)));
 }
 
+#ifdef _DEBUG
+void Game::UpdateTestPath(const Vec3& player_pos)
+{
+	bool check = false;
+	if(input->Pressed(Key::F5))
+	{
+		pf_start = player_pos;
+		pf_start_set = true;
+		check = true;
+	}
+	if(input->Pressed(Key::F6))
+	{
+		pf_end = player_pos;
+		pf_end_set = true;
+		check = true;
+	}
+	if(check && pf_start_set && pf_end_set)
+		navmesh->FindTestPath(pf_start, pf_end, false);
+}
+#endif
+
 void Game::UpdateZombies(float dt)
 {
 	Player* player = level->player;
@@ -833,7 +865,6 @@ void Game::UpdateZombies(float dt)
 
 		Animation animation = ANI_STAND;
 		Move move = MOVE_NO;
-		Vec3 move_pos = Vec3::Zero;
 
 		if(zombie->state == AI_IDLE || zombie->state == AI_FALLOW)
 			SearchForTarget(zombie);
@@ -934,7 +965,7 @@ void Game::UpdateZombies(float dt)
 				}
 				else if(dist < 1.f)
 				{
-					// move away player
+					// move away from player
 					move = MOVE_BACK;
 				}
 				else
@@ -966,37 +997,43 @@ void Game::UpdateZombies(float dt)
 		}
 
 		// calculate path
+		Vec3 move_pos = Vec3::Zero;
+		static const float PF_USED_TIMER = 0.25f;
+		static const float PF_NOT_GENERATED_TIMER = 0.5f;
 		if(move == MOVE_FORWARD)
 		{
 			zombie->pf_timer -= dt;
-			Int2 my_pt = pathfinding->GetPt(zombie->node->pos);
-			Int2 target_pt = pathfinding->GetPt(zombie->target_pos);
-			if(my_pt == target_pt)
+
+			// calculate path if:
+			// + not used yet
+			// + generation failed and timer passed
+			// + is used and timer passed and target moved
+			if(zombie->pf_state == PF_NOT_USED
+				|| (zombie->pf_state == PF_NOT_GENERATED && zombie->pf_timer <= 0.f)
+				|| (zombie->pf_state == PF_USED && zombie->pf_timer <= 0.f && Vec3::Distance(zombie->target_pos, zombie->pf_target) > 0.1f))
 			{
-				// dont use pathfinding
-				zombie->pf_used = false;
-			}
-			else if(!zombie->pf_used || zombie->pf_target != target_pt || zombie->pf_timer <= 0)
-			{
-				// recalculate path
-				if(pathfinding->FindPath(zombie->node->pos, zombie->target_pos, zombie->path) == Pathfinding::FPR_FOUND)
+				if(navmesh->FindPath(zombie->node->pos, zombie->target_pos, zombie->path))
 				{
-					zombie->pf_used = true;
-					zombie->pf_target = target_pt;
+					zombie->pf_state = PF_USED;
+					zombie->pf_timer = PF_USED_TIMER;
+					zombie->pf_target = zombie->target_pos;
+					zombie->pf_index = 1;
 				}
 				else
-					zombie->pf_used = false;
-				zombie->pf_timer = 0.3f;
+				{
+					zombie->pf_state = PF_NOT_GENERATED;
+					zombie->pf_timer = PF_NOT_GENERATED_TIMER;
+				}
 			}
 
-			if(zombie->pf_used)
-				move_pos = pathfinding->GetPathNextTarget(zombie->target_pos, zombie->path);
+			if(zombie->pf_state == PF_USED)
+				move_pos = zombie->path[zombie->pf_index];
 			else
 				move_pos = zombie->target_pos;
 		}
 		else
 		{
-			zombie->pf_used = false;
+			zombie->pf_state = PF_NOT_USED;
 			move_pos = zombie->target_pos;
 		}
 
@@ -1013,11 +1050,45 @@ void Game::UpdateZombies(float dt)
 
 			if(dif < PI / 4)
 			{
+				float dist = Vec3::Distance2d(zombie->node->pos, move_pos);
 				if(move == MOVE_FORWARD)
 				{
 					// move forward
-					Vec3 move_dir = Vec3(cos(required_rot), 0, sin(required_rot)) * Zombie::walk_speed * dt;
-					if(CheckMove(*zombie, move_dir))
+					float travel_dist = Zombie::walk_speed * dt;
+					bool moved = false;
+					while(true)
+					{
+						if(travel_dist >= dist && CheckMovePos(*zombie, move_pos))
+						{
+							moved = true;
+							if(zombie->pf_state != PF_USED || zombie->pf_index + 1 >= (int)zombie->path.size())
+							{
+								// reached end of path
+								zombie->pf_state = PF_NOT_USED; 
+								break;
+							}
+
+							// moving to next point
+							++zombie->pf_index;
+							move_pos = zombie->path[zombie->pf_index];
+							travel_dist -= dist;
+							required_rot = Vec3::Angle2d(zombie->node->pos, move_pos);
+							dif = AngleDiff(zombie->node->rot.y, required_rot);
+							if(dif < PI / 4)
+								dist = Vec3::Distance2d(zombie->node->pos, move_pos);
+							else
+								break;
+						}
+						else
+						{
+							Vec3 move_dir = Vec3(cos(required_rot), 0, sin(required_rot)) * travel_dist;
+							if(CheckMove(*zombie, move_dir))
+								moved = true;
+							break;
+						}
+					}
+
+					if(moved)
 					{
 						zombie->node->pos.y = city_generator->GetY(zombie->node->pos);
 						animation = ANI_WALK;
@@ -1262,6 +1333,16 @@ bool Game::CheckMove(Unit& unit, const Vec3& dir)
 	return false;
 }
 
+bool Game::CheckMovePos(Unit& unit, const Vec3& pos)
+{
+	if(level->CheckCollision(unit, pos))
+	{
+		unit.node->pos = pos;
+		return true;
+	}
+	return false;
+}
+
 void Game::ZombieAlert(Zombie* zombie, bool first)
 {
 	if(first && zombie->state != AI_FALLOW)
@@ -1281,15 +1362,16 @@ bool Game::CanSee(Unit& unit, const Vec3& pos)
 	return !level->RayTest(from, ray, t, Level::COLLIDE_COLLIDERS | Level::COLLIDE_IGNORE_NO_BLOCK_VIEW, nullptr, nullptr);
 }
 
-void Game::OnDebugDraw(DebugDrawer* debug)
+void Game::OnDebugDraw(DebugDrawer* debug_drawer)
 {
-	/*for(Zombie* zombie : level->zombies)
-	{
-		if(zombie->hp > 0 && zombie->pf_used)
-			pathfinding->DrawPath(debug, zombie->node->pos, zombie->target_pos, zombie->path);
-	}*/
+	if(draw_navmesh)
+		navmesh->Draw(debug_drawer);
 
-	pathfinding->DrawBlocked(debug, level->player->node->pos);
+	for(Zombie* zombie : level->zombies)
+	{
+		if(zombie->IsAlive() && zombie->pf_state == PF_USED)
+			navmesh->DrawPath(debug_drawer, zombie->path, false);
+	}
 }
 
 void Game::UpdateWorld(float dt)
@@ -1335,7 +1417,7 @@ void Game::UpdateWorld(float dt)
 		}
 		return false;
 	});
-
+	
 	// spawn new zombies
 	if(level->alive_zombies < 25)
 	{
@@ -1369,6 +1451,8 @@ void Game::UpdateWorld(float dt)
 
 void Game::SaveAndExit()
 {
+	city_generator->WaitForNavmeshThread();
+
 	try
 	{
 		FileWriter f("save");

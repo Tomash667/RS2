@@ -15,3 +15,17 @@ Correct triangle order: clockwise
  /
 +----+
 2,3   5
+
+
+World space:
+	  ^YZ
+	  |
+	  |
+X-	  |
+<-----+------>X+
+      |
+	  |
+	  |
+	  -YZ
+	  
+So left top in screen space is (0,0) but in world space bottom...

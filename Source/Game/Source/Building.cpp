@@ -29,7 +29,28 @@ void Building::SetIsDoorMap()
 	Int2 s = size * 2;
 	is_door.resize(s.x * s.y, 0);
 	for(std::pair<Int2, DIR>& door : doors)
+	{
 		is_door[door.first.x + door.first.y * s.x] |= 1 << door.second;
+		switch(door.second)
+		{
+		case DIR_LEFT:
+			if(door.first.x != 0)
+				is_door[door.first.x - 1 + door.first.y * s.x] |= DIR_F_RIGHT;
+			break;
+		case DIR_RIGHT:
+			if(door.first.x != s.x - 1)
+				is_door[door.first.x + 1 + door.first.y * s.x] |= DIR_F_LEFT;
+			break;
+		case DIR_TOP:
+			if(door.first.y != 0)
+				is_door[door.first.x + (door.first.y - 1) * s.x] |= DIR_F_BOTTOM;
+			break;
+		case DIR_BOTTOM:
+			if(door.first.y != s.y - 1)
+				is_door[door.first.x + (door.first.y + 1) * s.x] |= DIR_F_TOP;
+			break;
+		}
+	}
 }
 
 bool Building::IsDoor(const Int2& pt, DIR dir) const

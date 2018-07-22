@@ -25,10 +25,11 @@ private:
 	bool CheckForHit(Unit& unit, MeshPoint& hitbox, MeshPoint* bone, Unit*& target, Vec3& hitpoint);
 	void HitUnit(Unit& unit, int dmg, const Vec3& hitpoint);
 	bool CheckMove(Unit& uint, const Vec3& dir);
+	bool CheckMovePos(Unit& unit, const Vec3& pos);
 	void ZombieAlert(Zombie* zombie, bool first = true);
 	void SearchForTarget(Zombie* zombie);
 	bool CanSee(Unit& unit, const Vec3& pos);
-	void OnDebugDraw(DebugDrawer* debug);
+	void OnDebugDraw(DebugDrawer* debug_drawer);
 	void UpdateWorld(float dt);
 	void SaveAndExit();
 	void Save(FileWriter& f);
@@ -51,9 +52,16 @@ private:
 	PickPerkDialog* pick_perk;
 	unique_ptr<Level> level;
 	unique_ptr<CityGenerator> city_generator;
-	unique_ptr<Pathfinding> pathfinding;
+	unique_ptr<Navmesh> navmesh;
 	vector<std::pair<Vec3, float>> alert_pos;
-	bool in_game, allow_mouse, quickstart;
+	bool in_game, allow_mouse, quickstart, draw_navmesh;
+
+	// debug pathfinding
+#ifdef _DEBUG
+	void UpdateTestPath(const Vec3& player_pos);
+	bool pf_start_set, pf_end_set;
+	Vec3 pf_start, pf_end;
+#endif
 
 	// resources
 	Texture* tex_blood, *tex_zombie_blood, *tex_hit_object;

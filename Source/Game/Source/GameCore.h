@@ -1,16 +1,17 @@
 #pragma once
 
 #include "EngineCore.h"
+#include <thread>
 
 class CityGenerator;
 class Game;
 class GameGui;
 class GameState;
-class MainMenu;
 class Inventory;
 class Level;
+class MainMenu;
+class Navmesh;
 class Options;
-class Pathfinding;
 class PickPerkDialog;
 class StatsPanel;
 
@@ -23,3 +24,15 @@ struct Unit;
 struct Zombie;
 
 enum class PerkId;
+
+// recastnavigation
+typedef uint dtPolyRef;
+class dtNavMesh;
+class dtNavMeshQuery;
+class dtQueryFilter;
+struct dtMeshTile;
+struct rcCompactHeightfield;
+struct rcContourSet;
+struct rcHeightfield;
+struct rcPolyMesh;
+struct rcPolyMeshDetail;

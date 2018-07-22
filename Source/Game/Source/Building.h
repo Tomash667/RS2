@@ -25,6 +25,7 @@ struct Building
 	struct Room
 	{
 		bool IsConnected(uint index) const;
+		Rect GetRect() const { return Rect::Create(pos, Int2(size.x - 1, size.y - 1)); }
 
 		Int2 pos, size;
 		int outside;
@@ -33,6 +34,12 @@ struct Building
 		vector<uint> connected, connected2;
 		int outside_used;
 		bool visited;
+	};
+
+	struct Table
+	{
+		Int2 pos;
+		bool rotated;
 	};
 
 	Building() : mesh(nullptr) {}
@@ -47,7 +54,7 @@ struct Building
 	Int2 pos, size;
 	vector<Room> rooms;
 	vector<std::pair<Int2, DIR>> doors;
-	vector<Int2> tables;
+	vector<Table> tables;
 	vector<int> is_door;
 	Mesh* mesh;
 };

@@ -19,6 +19,13 @@ public:
 		BLEND_MAX
 	};
 
+	enum RasterStateFlags
+	{
+		RASTER_NO_CULLING = 1 << 0,
+		RASTER_WIREFRAME = 1 << 1,
+		RASTER_MAX = 1 << 2
+	};
+
 	struct DisplayMode
 	{
 		Int2 size;
@@ -42,8 +49,10 @@ public:
 	void SetDepthState(DepthState state);
 	void SetCulling(bool enabled);
 	void SetVsync(bool vsync) { this->vsync = vsync; }
+	void SetWireframe(bool wireframe);
 
 	bool IsVsyncEnabled() { return vsync; }
+	bool IsWireframe() { return wireframe; }
 	ID3D11Device* GetDevice() { return device; }
 	ID3D11DeviceContext* GetDeviceContext() { return device_context; }
 	const Vec4& GetClearColor() { return clear_color; }
@@ -58,6 +67,7 @@ private:
 	void CreateDepthStencilStates();
 	void CreateRasterStates();
 	void CreateBlendStates();
+	void UpdateRasterState();
 
 	IDXGIFactory* factory;
 	IDXGIAdapter* adapter;
@@ -67,13 +77,14 @@ private:
 	ID3D11RenderTargetView* render_target;
 	ID3D11DepthStencilView* depth_stencil_view;
 	ID3D11DepthStencilState* depth_state[DEPTH_MAX];
-	ID3D11RasterizerState* raster_state, *no_cull_raster_state;
+	ID3D11RasterizerState* raster_state[RASTER_MAX];
 	ID3D11BlendState* blend_state[BLEND_MAX];
 	Vec4 clear_color;
 	Int2 wnd_size;
-	bool vsync, culling;
+	bool vsync, culling, wireframe;
 	DepthState current_depth_state;
 	BlendState current_blend_state;
+	int current_raster_state;
 	cstring vs_target_version, ps_target_version;
 	vector<Int2> resolutions;
 };

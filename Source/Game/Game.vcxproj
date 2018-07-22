@@ -95,7 +95,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)Engine\Include;$(SolutionDir)External\Visual Leak Detector\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Engine\Include;$(SolutionDir)External\Visual Leak Detector\include;$(SolutionDir)External\recastnavigation\Recast\Include;$(SolutionDir)External\recastnavigation\Detour\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(SolutionDir)Engine\Lib;$(SolutionDir)External\FMod\lib;$(SolutionDir)External\Visual Leak Detector\lib\Win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -131,7 +131,7 @@
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalIncludeDirectories>$(SolutionDir)Engine\Include;$(SolutionDir)External\Visual Leak Detector\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Engine\Include;$(SolutionDir)External\Visual Leak Detector\include;$(SolutionDir)External\recastnavigation\Recast\Include;$(SolutionDir)External\recastnavigation\Detour\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -176,8 +176,8 @@
     <ClInclude Include="Source\Item.h" />
     <ClInclude Include="Source\Level.h" />
     <ClInclude Include="Source\MainMenu.h" />
+    <ClInclude Include="Source\Navmesh.h" />
     <ClInclude Include="Source\Options.h" />
-    <ClInclude Include="Source\Pathfinding.h" />
     <ClInclude Include="Source\Perk.h" />
     <ClInclude Include="Source\PickPerkDialog.h" />
     <ClInclude Include="Source\Player.h" />
@@ -189,6 +189,24 @@
     <ClInclude Include="Source\Zombie.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\External\recastnavigation\Detour\Source\DetourAlloc.cpp" />
+    <ClCompile Include="..\External\recastnavigation\Detour\Source\DetourAssert.cpp" />
+    <ClCompile Include="..\External\recastnavigation\Detour\Source\DetourCommon.cpp" />
+    <ClCompile Include="..\External\recastnavigation\Detour\Source\DetourNavMesh.cpp" />
+    <ClCompile Include="..\External\recastnavigation\Detour\Source\DetourNavMeshBuilder.cpp" />
+    <ClCompile Include="..\External\recastnavigation\Detour\Source\DetourNavMeshQuery.cpp" />
+    <ClCompile Include="..\External\recastnavigation\Detour\Source\DetourNode.cpp" />
+    <ClCompile Include="..\External\recastnavigation\Recast\Source\Recast.cpp" />
+    <ClCompile Include="..\External\recastnavigation\Recast\Source\RecastAlloc.cpp" />
+    <ClCompile Include="..\External\recastnavigation\Recast\Source\RecastArea.cpp" />
+    <ClCompile Include="..\External\recastnavigation\Recast\Source\RecastAssert.cpp" />
+    <ClCompile Include="..\External\recastnavigation\Recast\Source\RecastContour.cpp" />
+    <ClCompile Include="..\External\recastnavigation\Recast\Source\RecastFilter.cpp" />
+    <ClCompile Include="..\External\recastnavigation\Recast\Source\RecastLayers.cpp" />
+    <ClCompile Include="..\External\recastnavigation\Recast\Source\RecastMesh.cpp" />
+    <ClCompile Include="..\External\recastnavigation\Recast\Source\RecastMeshDetail.cpp" />
+    <ClCompile Include="..\External\recastnavigation\Recast\Source\RecastRasterization.cpp" />
+    <ClCompile Include="..\External\recastnavigation\Recast\Source\RecastRegion.cpp" />
     <ClCompile Include="Source\Building.cpp" />
     <ClCompile Include="Source\CityGenerator.cpp" />
     <ClCompile Include="Source\Game.cpp" />
@@ -198,8 +216,8 @@
     <ClCompile Include="Source\Level.cpp" />
     <ClCompile Include="Source\Main.cpp" />
     <ClCompile Include="Source\MainMenu.cpp" />
+    <ClCompile Include="Source\Navmesh.cpp" />
     <ClCompile Include="Source\Options.cpp" />
-    <ClCompile Include="Source\Pathfinding.cpp" />
     <ClCompile Include="Source\Perk.cpp" />
     <ClCompile Include="Source\PickPerkDialog.cpp" />
     <ClCompile Include="Source\Player.cpp" />
