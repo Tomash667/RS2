@@ -5,8 +5,8 @@
 #include <DetourNavMesh.h>
 #include <DetourNavMeshBuilder.h>
 #include "Unit.h"
-// FIXME
-#include <Input.h>
+
+static_assert(std::is_same<dtPolyRef, PolyRef>::value, "PolyRef type mismatch.");
 
 const float CELL_SIZE = 0.25f;
 const float CELL_HEIGHT = 0.25f;
@@ -62,9 +62,7 @@ Navmesh::Navmesh() : solid(nullptr), chf(nullptr), cset(nullptr), pmesh(nullptr)
 	filter.setIncludeFlags(POLYFLAGS_WALK);
 	filter.setExcludeFlags(0);
 
-	have_path = false;
-	start_set = false;
-	end_set = false;
+	test_path.ok = false;
 }
 
 Navmesh::~Navmesh()
@@ -75,9 +73,7 @@ Navmesh::~Navmesh()
 
 void Navmesh::Reset()
 {
-	have_path = false;
-	start_set = false;
-	end_set = false;
+	test_path.ok = false;
 
 	Cleanup();
 	dtFreeNavMesh(navmesh);
@@ -160,7 +156,7 @@ bool Navmesh::Build(const NavmeshGeometry& geom)
 		ctx.log(RC_LOG_ERROR, "Could not init Detour navmesh query");
 		return false;
 	}
-	
+
 	return true;
 }
 
@@ -200,7 +196,7 @@ bool Navmesh::BuildTileMesh(const Int2& tile, const NavmeshGeometry& geom, byte*
 	cfg.walkableSlopeAngle = 45.f;
 	cfg.walkableHeight = (int)ceilf(AGENT_HEIGHT / cfg.ch);
 	cfg.walkableClimb = (int)ceilf(AGENT_CLIMB / cfg.ch); // in cells
-	cfg.walkableRadius = (int)(AGENT_RADIUS / cfg.cs);
+	cfg.walkableRadius = (int)ceilf(AGENT_RADIUS / cfg.cs);
 	cfg.maxEdgeLen = 80;
 	cfg.maxSimplificationError = 1.3f;
 	cfg.minRegionArea = rcSqr(10);
@@ -289,8 +285,8 @@ bool Navmesh::BuildTileMesh(const Int2& tile, const NavmeshGeometry& geom, byte*
 		return false;
 	}
 
+	/// Set area ids TODO
 	// (Optional) Mark areas.
-	/// Set area ids TODO FIXME
 	//const ConvexVolume* vols = m_geom->getConvexVolumes();
 	//for(int i = 0; i < m_geom->getConvexVolumeCount(); ++i)
 	//	rcMarkConvexPolyArea(m_ctx, vols[i].verts, vols[i].nverts, vols[i].hmin, vols[i].hmax, (unsigned char)vols[i].area, *m_chf);
@@ -407,7 +403,7 @@ bool Navmesh::BuildTileMesh(const Int2& tile, const NavmeshGeometry& geom, byte*
 		ctx.log(RC_LOG_ERROR, "Could not build Detour navmesh.");
 		return false;
 	}
-	
+
 	data = navData;
 	data_size = navDataSize;
 	return true;
@@ -423,59 +419,80 @@ Box2d Navmesh::GetBoxForTile(const Int2& tile)
 		tile_size * (tile.x + 1) + border, tile_size * (tile.y + 1) + border);
 }
 
-void Navmesh::SetPos(const Vec3& pos, bool start)
+PolyRef Navmesh::GetPolyRef(const Vec3& pos)
 {
-	if(start)
-	{
-		start_pos = pos;
-		start_set = true;
-	}
-	else
-	{
-		end_pos = pos;
-		end_set = true;
-	}
-	if(start_set && end_set)
-		FindPath(start_pos, end_pos);
+	static const float ext[] = { 2.f, 4.f, 2.f };
+	dtPolyRef ref;
+	nav_query->findNearestPoly(pos, ext, &filter, &ref, nullptr);
+	return (PolyRef)ref;
 }
 
-void Navmesh::FindPath(const Vec3& from, const Vec3& to)
+bool Navmesh::FindPath(const Vec3& from, const Vec3& to, vector<Vec3>& out_path)
 {
-	have_path = false;
-
 	const float ext[] = { 2.f, 4.f, 2.f };
 
+	dtPolyRef start_ref, end_ref;
 	nav_query->findNearestPoly(from, ext, &filter, &start_ref, nullptr);
 	nav_query->findNearestPoly(to, ext, &filter, &end_ref, nullptr);
 
-	if(start_ref != 0 && end_ref != 0)
-	{
-		nav_query->findPath(start_ref, end_ref, from, to, &filter, path, &path_length, MAX_POLYS);
-		if(path_length == 0)
-			return;
+	if(start_ref == 0 || end_ref == 0)
+		return false;
 
-		have_path = true;
+	nav_query->findPath(start_ref, end_ref, from, to, &filter, tmp_path, &tmp_path_length, MAX_POLYS);
+	if(tmp_path_length == 0)
+		return false;
 
-		//SmoothPath();
-		FindStraightPath();
-
-
-		// FIXME
-		Info("Path found, length:%d, smooth:%d, straight:%d", path_length, smooth_path.size(), straight_path_length);
-	}
+	FindStraightPath(end_ref, from, to, out_path);
+	return true;
 }
 
-void Navmesh::FindStraightPath()
+bool Navmesh::FindTestPath(const Vec3& from, const Vec3& to, bool smooth)
 {
-	straight_path_length = 0;
+	test_path.ok = false;
+	test_path.smooth = smooth;
+	test_path.start_pos = from;
+	test_path.end_pos = to;
 
+	const float ext[] = { 2.f, 4.f, 2.f };
+
+	nav_query->findNearestPoly(from, ext, &filter, &test_path.start_ref, nullptr);
+	nav_query->findNearestPoly(to, ext, &filter, &test_path.end_ref, nullptr);
+
+	if(test_path.start_ref == 0 || test_path.end_ref == 0)
+		return false;
+
+	nav_query->findPath(test_path.start_ref, test_path.end_ref, from, to, &filter, tmp_path, &tmp_path_length, MAX_POLYS);
+	if(tmp_path_length == 0)
+		return false;
+
+	test_path.ok = true;
+	if(smooth)
+	{
+		FindStraightPath(test_path.end_ref, from, test_path.end_pos, test_path.path);
+		Info("Path found, length:%d, straight:%d", tmp_path_length, test_path.path.size());
+	}
+	else
+	{
+		SmoothPath(test_path.start_ref, from, to, test_path.path);
+		Info("Path found, length:%d, smooth:%d", tmp_path_length, test_path.path.size());
+	}
+
+	return true;
+}
+
+void Navmesh::FindStraightPath(dtPolyRef end_ref, const Vec3& start_pos, const Vec3& end_pos, vector<Vec3>& out_path)
+{
 	// In case of partial path, make sure the end point is clamped to the last polygon.
 	Vec3 epos = end_pos;
-	if(path[path_length - 1] != end_ref)
-		nav_query->closestPointOnPoly(path[path_length - 1], end_pos, epos, nullptr);
+	if(tmp_path[tmp_path_length - 1] != end_ref)
+		nav_query->closestPointOnPoly(tmp_path[tmp_path_length - 1], end_pos, epos, nullptr);
 
-	nav_query->findStraightPath(start_pos, epos, path, path_length, (float*)straight_path, straight_path_flags,
-		straight_path_polys, &straight_path_length, MAX_POLYS, 0);
+	int length = 0;
+	nav_query->findStraightPath(start_pos, epos, tmp_path, tmp_path_length, (float*)tmp_straight_path, nullptr,
+		nullptr, &length, MAX_POLYS, 0);
+
+	out_path.resize(length);
+	memcpy(out_path.data(), tmp_straight_path, sizeof(Vec3) * length);
 }
 
 inline bool inRange(const Vec3& v1, const Vec3& v2, const float r, const float h)
@@ -629,13 +646,13 @@ static bool getSteerTarget(const dtNavMeshQuery& query, const Vec3& startPos, co
 	return true;
 }
 
-void Navmesh::SmoothPath()
+void Navmesh::SmoothPath(dtPolyRef start_ref, const Vec3& start_pos, const Vec3& end_pos, vector<Vec3>& out_path)
 {
-	smooth_path.clear();
+	test_path.path.clear();
 
 	dtPolyRef polys[MAX_POLYS];
-	memcpy(polys, path, sizeof(dtPolyRef)*path_length);
-	int npolys = path_length;
+	memcpy(polys, tmp_path, sizeof(dtPolyRef)*tmp_path_length);
+	int npolys = tmp_path_length;
 
 	Vec3 iterPos, targetPos;
 	nav_query->closestPointOnPoly(start_ref, start_pos, iterPos, nullptr);
@@ -644,11 +661,11 @@ void Navmesh::SmoothPath()
 	static const float STEP_SIZE = 0.5f;
 	static const float SLOP = 0.01f;
 
-	smooth_path.push_back(iterPos);
+	test_path.path.push_back(iterPos);
 
 	// Move towards target a small advancement at a time until target reached or
 	// when ran out of memory to store the path.
-	while(npolys && smooth_path.size() < MAX_SMOOTH)
+	while(npolys && test_path.path.size() < MAX_SMOOTH)
 	{
 		// Find location to steer towards.
 		Vec3 steerPos;
@@ -690,8 +707,8 @@ void Navmesh::SmoothPath()
 		{
 			// Reached end of path.
 			iterPos = targetPos;
-			if(smooth_path.size() < MAX_SMOOTH)
-				smooth_path.push_back(iterPos);
+			if(test_path.path.size() < MAX_SMOOTH)
+				test_path.path.push_back(iterPos);
 			break;
 		}
 		else if(offMeshConnection && inRange(iterPos, steerPos, SLOP, 1.0f))
@@ -716,12 +733,12 @@ void Navmesh::SmoothPath()
 			dtStatus status = navmesh->getOffMeshConnectionPolyEndPoints(prevRef, polyRef, startPos, endPos);
 			if(dtStatusSucceed(status))
 			{
-				if(smooth_path.size() < MAX_SMOOTH)
+				if(test_path.path.size() < MAX_SMOOTH)
 				{
-					smooth_path.push_back(startPos);
+					test_path.path.push_back(startPos);
 					// Hack to make the dotted path not visible during off-mesh connection.
-					if(smooth_path.size() & 1)
-						smooth_path.push_back(startPos);
+					if(test_path.path.size() & 1)
+						test_path.path.push_back(startPos);
 				}
 				// Move position at the other side of the off-mesh link.
 				iterPos = endPos;
@@ -732,8 +749,8 @@ void Navmesh::SmoothPath()
 		}
 
 		// Store results.
-		if(smooth_path.size() < MAX_SMOOTH)
-			smooth_path.push_back(iterPos);
+		if(test_path.path.size() < MAX_SMOOTH)
+			test_path.path.push_back(iterPos);
 	}
 }
 
@@ -743,59 +760,28 @@ void Navmesh::Draw(DebugDrawer* debug_drawer)
 		return;
 
 	debug_drawer->BeginBatch();
-	DrawNavmesh(debug_drawer, *navmesh, *nav_query);
+	DrawNavmesh(debug_drawer, *navmesh);
 	debug_drawer->EndBatch();
 
-	if(start_set)
-	{
-		debug_drawer->SetColor(Color(0, 0, 255, 200));
-		debug_drawer->DrawSphere(start_pos + Vec3(0, 0.1f, 0), 0.3f);
-	}
-
-	if(end_set)
-	{
-		debug_drawer->SetColor(Color(255, 0, 0, 200));
-		debug_drawer->DrawSphere(end_pos + Vec3(0, 0.1f, 0), 0.3f);
-	}
-
-	if(have_path)
-	{
-		debug_drawer->BeginBatch();
-		DrawPathPoly(debug_drawer, *navmesh);
-		DrawStraightPath(debug_drawer, *navmesh);
-		//DrawSmoothPath(debug_drawer, *navmesh);
-		debug_drawer->EndBatch();
-	}
+	if(test_path.ok)
+		DrawPath(debug_drawer, test_path.path, test_path.smooth);
 }
 
 // duDebugDrawNavMeshWithClosedList
-void Navmesh::DrawNavmesh(DebugDrawer* debug_drawer, const dtNavMesh& mesh, const dtNavMeshQuery& query)
+void Navmesh::DrawNavmesh(DebugDrawer* debug_drawer, const dtNavMesh& mesh)
 {
 	for(int i = 0, count = mesh.getMaxTiles(); i < count; ++i)
 	{
 		const dtMeshTile* tile = mesh.getTile(i);
 		if(tile->header)
-			DrawMeshTile(debug_drawer, mesh, query, tile);
+			DrawMeshTile(debug_drawer, mesh, tile);
 	}
 }
 
-int bit(int a, int b)
+// drawMeshTile (removed using query - can't use it for selected path)
+void Navmesh::DrawMeshTile(DebugDrawer* debug_drawer, const dtNavMesh& mesh, const dtMeshTile* tile)
 {
-	return (a & (1 << b)) >> b;
-}
-
-Color IntToCol(int i, int a)
-{
-	int	r = bit(i, 1) + bit(i, 3) * 2 + 1;
-	int	g = bit(i, 2) + bit(i, 4) * 2 + 1;
-	int	b = bit(i, 0) + bit(i, 5) * 2 + 1;
-	return Color(r * 63, g * 63, b * 63, a);
-}
-
-// drawMeshTile
-void Navmesh::DrawMeshTile(DebugDrawer* debug_drawer, const dtNavMesh& mesh, const dtNavMeshQuery& query, const dtMeshTile* tile)
-{
-	dtPolyRef base = mesh.getPolyRefBase(tile);
+	debug_drawer->SetColor(Color(0, 192, 255, 64));
 
 	for(int i = 0; i < tile->header->polyCount; ++i)
 	{
@@ -804,13 +790,6 @@ void Navmesh::DrawMeshTile(DebugDrawer* debug_drawer, const dtNavMesh& mesh, con
 			continue;
 
 		const dtPolyDetail* pd = &tile->detailMeshes[i];
-
-		Color col;
-		if(query.isInClosedList(base | (dtPolyRef)i))
-			col = Color(255, 196, 0, 64);
-		else
-			col = Color(0, 192, 255, 64);
-		debug_drawer->SetColor(col);
 
 		for(int j = 0; j < pd->triCount; ++j)
 		{
@@ -891,7 +870,7 @@ void Navmesh::DrawPolyBoundaries(DebugDrawer* debug_drawer, const dtMeshTile* ti
 				for(int m = 0, n = 2; m < 3; n = m++)
 				{
 					if(((t[3] >> (n * 2)) & 0x3) == 0)
-						continue;	// Skip inner detail edges.
+						continue; // Skip inner detail edges.
 					if(distancePtLine2d(tv[n], v0, v1) < thr && distancePtLine2d(tv[m], v0, v1) < thr)
 						debug_drawer->AddLine(Vec3(tv[n]), Vec3(tv[m]), line_width);
 				}
@@ -900,7 +879,7 @@ void Navmesh::DrawPolyBoundaries(DebugDrawer* debug_drawer, const dtMeshTile* ti
 	}
 }
 
-void Navmesh::DrawPathPoly(DebugDrawer* debug_drawer, const dtNavMesh& mesh)
+/*void Navmesh::DrawPathPoly(DebugDrawer* debug_drawer, const dtNavMesh& mesh)
 {
 	DrawPoly(debug_drawer, mesh, start_ref, Color(128, 25, 0, 64));
 	DrawPoly(debug_drawer, mesh, end_ref, Color(51, 102, 0, 64));
@@ -915,35 +894,41 @@ void Navmesh::DrawPathPoly(DebugDrawer* debug_drawer, const dtNavMesh& mesh)
 			DrawPoly(debug_drawer, mesh, poly, Color(0, 0, 0, 64));
 		}
 	}
-}
+}*/
 
-void Navmesh::DrawStraightPath(DebugDrawer* debug_drawer, const dtNavMesh& mesh)
+void Navmesh::DrawPath(DebugDrawer* debug_drawer, const vector<Vec3>& path, bool smooth)
 {
-	if(!straight_path_length)
+	if(path.size() < 2u)
 		return;
 
-	for(int i = 0; i < straight_path_length - 1; ++i)
-	{
-		Color col;
-		if(straight_path_flags[i] & DT_STRAIGHTPATH_OFFMESH_CONNECTION)
-			col = Color(128, 96, 0, 220);
-		else
-			col = Color(64, 16, 0, 220);
+	debug_drawer->SetColor(Color(0, 0, 255, 200));
+	debug_drawer->DrawSphere(path.front() + Vec3(0, 0.1f, 0), 0.3f);
 
-		debug_drawer->SetColor(col);
-		debug_drawer->AddLine(straight_path[i], straight_path[i + 1], 0.1f);
-	}
+	debug_drawer->SetColor(Color(255, 0, 0, 200));
+	debug_drawer->DrawSphere(path.back() + Vec3(0, 0.1f, 0), 0.3f);
+
+	debug_drawer->BeginBatch();
+	//DrawPathPoly(debug_drawer, *navmesh);
+	if(test_path.smooth)
+		DrawSmoothPath(debug_drawer, *navmesh, path);
+	else
+		DrawStraightPath(debug_drawer, *navmesh, path);
+	debug_drawer->EndBatch();
 }
 
-void Navmesh::DrawSmoothPath(DebugDrawer* debug_drawer, const dtNavMesh& mesh)
+void Navmesh::DrawStraightPath(DebugDrawer* debug_drawer, const dtNavMesh& mesh, const vector<Vec3>& path)
 {
-	if(smooth_path.empty())
-		return;
+	debug_drawer->SetColor(Color(64, 16, 0, 220));
+	for(int i = 0, length = (int)path.size() - 1; i < length; ++i)
+		debug_drawer->AddLine(path[i], path[i + 1], 0.1f);
+}
 
+void Navmesh::DrawSmoothPath(DebugDrawer* debug_drawer, const dtNavMesh& mesh, const vector<Vec3>& path)
+{
 	debug_drawer->SetColor(Color(0, 0, 0, 220));
 	Vec3 pts[2];
 	int index = 0;
-	for(const Vec3& pt : smooth_path)
+	for(const Vec3& pt : path)
 	{
 		pts[index] = pt;
 		++index;

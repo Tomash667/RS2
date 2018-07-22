@@ -76,7 +76,7 @@ void CityGenerator::Generate()
 	BuildBuildingsMesh();
 	CreateScene();
 	BuildNavmesh();
-	//level->SpawnBarriers(); FIXME
+	level->SpawnBarriers();
 	level->SpawnPlayer(player_start_pos);
 	SpawnItems();
 	//SpawnZombies(); FIXME
@@ -1002,12 +1002,15 @@ void CityGenerator::BuildNavmeshTile(const Int2& tile, bool is_tiled)
 #undef TRI
 	}
 
+	//geom.SaveObj("city.obj");
+
 	NavmeshGeometry nav_geom;
 	nav_geom.verts = geom.verts.data();
 	nav_geom.vert_count = geom.verts.size();
 	nav_geom.tris = geom.tris.data();
 	nav_geom.tri_count = geom.tris.size() / 3;
 	nav_geom.bounds = box.ToBoxXZ(0.f, 2.f);
+	
 	if(is_tiled)
 		navmesh->BuildTile(tile, nav_geom);
 	else

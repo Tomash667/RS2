@@ -25,3 +25,5 @@ struct Unit;
 struct Zombie;
 
 enum class PerkId;
+
+typedef uint PolyRef;

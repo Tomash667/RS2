@@ -151,7 +151,6 @@ void Game::InitGame()
 
 	pathfinding.reset(new Pathfinding);
 	navmesh.reset(new Navmesh);
-	navmesh->input = input;
 
 	// sky
 	sky = new Sky(scene);
@@ -252,9 +251,7 @@ bool Game::OnTick(float dt)
 		city_generator->WaitForNavmeshThread();
 		return false;
 	}
-
-	navmesh->dt = dt;
-
+	
 	Window* window = engine->GetWindow();
 	if(input->Down(Key::Alt) && input->Pressed(Key::Enter))
 	{
@@ -344,12 +341,10 @@ void Game::UpdatePlayer(float dt)
 		return;
 	}
 
-	// FIXME
-	if(input->Pressed(Key::F5))
-		navmesh->SetPos(player->node->pos, true);
-	if(input->Pressed(Key::F6))
-		navmesh->SetPos(player->node->pos, false);
-
+#ifdef _DEBUG
+	UpdateTestPath(player->node->pos);
+#endif
+	
 	// show gick perk dialog when survived night
 	if(game_state.day != player->last_survived_day && game_state.hour >= 7.f)
 	{
@@ -825,6 +820,27 @@ void Game::UpdatePlayer(float dt)
 		Vec3(sin(-player->node->rot.y + PI / 2), 0, cos(-player->node->rot.y + PI / 2)));
 }
 
+#ifdef _DEBUG
+void Game::UpdateTestPath(const Vec3& player_pos)
+{
+	bool check = false;
+	if(input->Pressed(Key::F5))
+	{
+		pf_start = player_pos;
+		pf_start_set = true;
+		check = true;
+	}
+	if(input->Pressed(Key::F6))
+	{
+		pf_end = player_pos;
+		pf_end_set = true;
+		check = true;
+	}
+	if(check && pf_start_set && pf_end_set)
+		navmesh->FindTestPath(pf_start, pf_end, false);
+}
+#endif
+
 void Game::UpdateZombies(float dt)
 {
 	Player* player = level->player;
@@ -852,7 +868,6 @@ void Game::UpdateZombies(float dt)
 
 		Animation animation = ANI_STAND;
 		Move move = MOVE_NO;
-		Vec3 move_pos = Vec3::Zero;
 
 		if(zombie->state == AI_IDLE || zombie->state == AI_FALLOW)
 			SearchForTarget(zombie);
@@ -953,7 +968,7 @@ void Game::UpdateZombies(float dt)
 				}
 				else if(dist < 1.f)
 				{
-					// move away player
+					// move away from player
 					move = MOVE_BACK;
 				}
 				else
@@ -985,37 +1000,43 @@ void Game::UpdateZombies(float dt)
 		}
 
 		// calculate path
+		Vec3 move_pos = Vec3::Zero;
+		static const float PF_USED_TIMER = 0.25f;
+		static const float PF_NOT_GENERATED_TIMER = 0.5f;
 		if(move == MOVE_FORWARD)
 		{
 			zombie->pf_timer -= dt;
-			Int2 my_pt = pathfinding->GetPt(zombie->node->pos);
-			Int2 target_pt = pathfinding->GetPt(zombie->target_pos);
-			if(my_pt == target_pt)
+
+			// calculate path if:
+			// + not used yet
+			// + generation failed and timer passed
+			// + is used and timer passed and target moved
+			if(zombie->pf_state == PF_NOT_USED
+				|| (zombie->pf_state == PF_NOT_GENERATED && zombie->pf_timer <= 0.f)
+				|| (zombie->pf_state == PF_USED && zombie->pf_timer <= 0.f && Vec3::Distance(zombie->target_pos, zombie->pf_target) > 0.1f))
 			{
-				// dont use pathfinding
-				zombie->pf_used = false;
-			}
-			else if(!zombie->pf_used || zombie->pf_target != target_pt || zombie->pf_timer <= 0)
-			{
-				// recalculate path
-				if(pathfinding->FindPath(zombie->node->pos, zombie->target_pos, zombie->path) == Pathfinding::FPR_FOUND)
+				if(navmesh->FindPath(zombie->node->pos, zombie->target_pos, zombie->path))
 				{
-					zombie->pf_used = true;
-					zombie->pf_target = target_pt;
+					zombie->pf_state = PF_USED;
+					zombie->pf_timer = PF_USED_TIMER;
+					zombie->pf_target = zombie->target_pos;
+					zombie->pf_index = 1;
 				}
 				else
-					zombie->pf_used = false;
-				zombie->pf_timer = 0.3f;
+				{
+					zombie->pf_state = PF_NOT_GENERATED;
+					zombie->pf_timer = PF_NOT_GENERATED_TIMER;
+				}
 			}
 
-			if(zombie->pf_used)
-				move_pos = pathfinding->GetPathNextTarget(zombie->target_pos, zombie->path);
+			if(zombie->pf_state == PF_USED)
+				move_pos = zombie->path[zombie->pf_index];
 			else
 				move_pos = zombie->target_pos;
 		}
 		else
 		{
-			zombie->pf_used = false;
+			zombie->pf_state = PF_NOT_USED;
 			move_pos = zombie->target_pos;
 		}
 
@@ -1032,11 +1053,46 @@ void Game::UpdateZombies(float dt)
 
 			if(dif < PI / 4)
 			{
+				float dist = Vec3::Distance2d(zombie->node->pos, move_pos);
 				if(move == MOVE_FORWARD)
 				{
 					// move forward
-					Vec3 move_dir = Vec3(cos(required_rot), 0, sin(required_rot)) * Zombie::walk_speed * dt;
-					if(CheckMove(*zombie, move_dir))
+					float travel_dist = Zombie::walk_speed * dt;
+					bool moved = false;
+					while(true)
+					{
+						if(travel_dist >= dist && CheckMovePos(*zombie, move_pos))
+						{
+							moved = true;
+							if(zombie->pf_state == PF_USED)
+							{
+								if(zombie->pf_index == (int)zombie->path.size())
+									zombie->pf_state = PF_NOT_USED; // reached end of path
+								else
+								{
+									// moving to next point
+									++zombie->pf_index;
+									move_pos = zombie->path[zombie->pf_index];
+									travel_dist -= dist;
+									required_rot = Vec3::Angle2d(zombie->node->pos, move_pos);
+									dif = AngleDiff(zombie->node->rot.y, required_rot);
+									if(dif < PI / 4)
+										dist = Vec3::Distance2d(zombie->node->pos, move_pos);
+									else
+										break;
+								}
+							}
+						}
+						else
+						{
+							Vec3 move_dir = Vec3(cos(required_rot), 0, sin(required_rot)) * travel_dist;
+							if(CheckMove(*zombie, move_dir))
+								moved = true;
+							break;
+						}
+					}
+
+					if(moved)
 					{
 						zombie->node->pos.y = city_generator->GetY(zombie->node->pos);
 						animation = ANI_WALK;
@@ -1281,6 +1337,16 @@ bool Game::CheckMove(Unit& unit, const Vec3& dir)
 	return false;
 }
 
+bool Game::CheckMovePos(Unit& unit, const Vec3& pos)
+{
+	if(level->CheckCollision(unit, pos))
+	{
+		unit.node->pos = pos;
+		return true;
+	}
+	return false;
+}
+
 void Game::ZombieAlert(Zombie* zombie, bool first)
 {
 	if(first && zombie->state != AI_FALLOW)
@@ -1304,6 +1370,13 @@ void Game::OnDebugDraw(DebugDrawer* debug_drawer)
 {
 	if(draw_navmesh)
 		navmesh->Draw(debug_drawer);
+
+	// FIXME
+	for(Zombie* zombie : level->zombies)
+	{
+		if(zombie->IsAlive() && zombie->pf_state == PF_USED)
+			navmesh->DrawPath(debug_drawer, zombie->path, false);
+	}
 }
 
 void Game::UpdateWorld(float dt)

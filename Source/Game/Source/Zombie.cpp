@@ -37,12 +37,12 @@ void Zombie::Save(FileWriter& f)
 		if(attacking)
 			f << attack_index;
 
-		f << pf_used;
+		/*f << pf_used;
 		if(pf_used)
 		{
 			f << pf_target;
 			f << path;
-		}
+		}*/
 	}
 	else
 		f << death_timer;
@@ -66,12 +66,12 @@ void Zombie::Load(FileReader& f)
 		if(attacking)
 			f >> attack_index;
 
-		f >> pf_used;
+		/*f >> pf_used;
 		if(pf_used)
 		{
 			f >> pf_target;
 			f >> path;
-		}
+		}*/
 	}
 	else
 		f >> death_timer;
