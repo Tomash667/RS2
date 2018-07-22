@@ -32,7 +32,7 @@ class CityGenerator
 public:
 	CityGenerator();
 	~CityGenerator();
-	void Init(Scene* scene, Level* level, Pathfinding* pathfinding, ResourceManager* res_mgr, uint size, uint splits, Navmesh* navmesh);
+	void Init(Scene* scene, Level* level, ResourceManager* res_mgr, uint size, uint splits, Navmesh* navmesh);
 	void Reset();
 	void Generate();
 	void DrawMap();
@@ -62,7 +62,6 @@ private:
 
 	ResourceManager* res_mgr;
 	Scene* scene;
-	Pathfinding* pathfinding;
 	Navmesh* navmesh;
 	Level* level;
 	vector<Tile> map;

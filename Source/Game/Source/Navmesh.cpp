@@ -3,10 +3,9 @@
 #include <DebugDrawer.h>
 #include <Recast.h>
 #include <DetourNavMesh.h>
+#include <DetourNavMeshQuery.h>
 #include <DetourNavMeshBuilder.h>
 #include "Unit.h"
-
-static_assert(std::is_same<dtPolyRef, PolyRef>::value, "PolyRef type mismatch.");
 
 const float CELL_SIZE = 0.25f;
 const float CELL_HEIGHT = 0.25f;
@@ -59,8 +58,9 @@ Navmesh::Navmesh() : solid(nullptr), chf(nullptr), cset(nullptr), pmesh(nullptr)
 {
 	nav_query = dtAllocNavMeshQuery();
 
-	filter.setIncludeFlags(POLYFLAGS_WALK);
-	filter.setExcludeFlags(0);
+	filter = new dtQueryFilter;
+	filter->setIncludeFlags(POLYFLAGS_WALK);
+	filter->setExcludeFlags(0);
 
 	test_path.ok = false;
 }
@@ -69,6 +69,7 @@ Navmesh::~Navmesh()
 {
 	Reset();
 	dtFreeNavMeshQuery(nav_query);
+	delete filter;
 }
 
 void Navmesh::Reset()
@@ -419,12 +420,12 @@ Box2d Navmesh::GetBoxForTile(const Int2& tile)
 		tile_size * (tile.x + 1) + border, tile_size * (tile.y + 1) + border);
 }
 
-PolyRef Navmesh::GetPolyRef(const Vec3& pos)
+dtPolyRef Navmesh::GetPolyRef(const Vec3& pos)
 {
 	static const float ext[] = { 2.f, 4.f, 2.f };
 	dtPolyRef ref;
-	nav_query->findNearestPoly(pos, ext, &filter, &ref, nullptr);
-	return (PolyRef)ref;
+	nav_query->findNearestPoly(pos, ext, filter, &ref, nullptr);
+	return ref;
 }
 
 bool Navmesh::FindPath(const Vec3& from, const Vec3& to, vector<Vec3>& out_path)
@@ -432,13 +433,13 @@ bool Navmesh::FindPath(const Vec3& from, const Vec3& to, vector<Vec3>& out_path)
 	const float ext[] = { 2.f, 4.f, 2.f };
 
 	dtPolyRef start_ref, end_ref;
-	nav_query->findNearestPoly(from, ext, &filter, &start_ref, nullptr);
-	nav_query->findNearestPoly(to, ext, &filter, &end_ref, nullptr);
+	nav_query->findNearestPoly(from, ext, filter, &start_ref, nullptr);
+	nav_query->findNearestPoly(to, ext, filter, &end_ref, nullptr);
 
 	if(start_ref == 0 || end_ref == 0)
 		return false;
 
-	nav_query->findPath(start_ref, end_ref, from, to, &filter, tmp_path, &tmp_path_length, MAX_POLYS);
+	nav_query->findPath(start_ref, end_ref, from, to, filter, tmp_path, &tmp_path_length, MAX_POLYS);
 	if(tmp_path_length == 0)
 		return false;
 
@@ -455,13 +456,13 @@ bool Navmesh::FindTestPath(const Vec3& from, const Vec3& to, bool smooth)
 
 	const float ext[] = { 2.f, 4.f, 2.f };
 
-	nav_query->findNearestPoly(from, ext, &filter, &test_path.start_ref, nullptr);
-	nav_query->findNearestPoly(to, ext, &filter, &test_path.end_ref, nullptr);
+	nav_query->findNearestPoly(from, ext, filter, &test_path.start_ref, nullptr);
+	nav_query->findNearestPoly(to, ext, filter, &test_path.end_ref, nullptr);
 
 	if(test_path.start_ref == 0 || test_path.end_ref == 0)
 		return false;
 
-	nav_query->findPath(test_path.start_ref, test_path.end_ref, from, to, &filter, tmp_path, &tmp_path_length, MAX_POLYS);
+	nav_query->findPath(test_path.start_ref, test_path.end_ref, from, to, filter, tmp_path, &tmp_path_length, MAX_POLYS);
 	if(tmp_path_length == 0)
 		return false;
 
@@ -692,7 +693,7 @@ void Navmesh::SmoothPath(dtPolyRef start_ref, const Vec3& start_pos, const Vec3&
 		Vec3 result;
 		dtPolyRef visited[16];
 		int nvisited = 0;
-		nav_query->moveAlongSurface(polys[0], iterPos, moveTgt, &filter, result, visited, &nvisited, 16);
+		nav_query->moveAlongSurface(polys[0], iterPos, moveTgt, filter, result, visited, &nvisited, 16);
 
 		npolys = fixupCorridor(polys, npolys, MAX_POLYS, visited, nvisited);
 		npolys = fixupShortcuts(polys, npolys, nav_query);

@@ -23,7 +23,6 @@
 #include "ThirdPersonCamera.h"
 #include "MainMenu.h"
 #include "GameState.h"
-#include "Pathfinding.h"
 #include <Gui.h>
 #include <Config.h>
 #include <Sky.h>
@@ -149,7 +148,6 @@ void Game::InitGame()
 	game_state.engine = engine.get();
 	game_state.config = config;
 
-	pathfinding.reset(new Pathfinding);
 	navmesh.reset(new Navmesh);
 
 	// sky
@@ -174,7 +172,7 @@ void Game::InitGame()
 	LoadResources();
 
 	city_generator.reset(new CityGenerator);
-	city_generator->Init(scene, level.get(), pathfinding.get(), res_mgr, level_size, 3, navmesh.get());
+	city_generator->Init(scene, level.get(), res_mgr, level_size, 3, navmesh.get());
 
 	main_menu = new MainMenu;
 	main_menu->Init(res_mgr, &game_state);

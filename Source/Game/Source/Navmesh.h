@@ -1,10 +1,5 @@
 #pragma once
 
-// FIXME - hide implementation details
-#include <Recast.h>
-#include <DetourNavMesh.h>
-#include <DetourNavMeshQuery.h>
-
 struct NavmeshGeometry
 {
 	Vec3* verts;
@@ -22,7 +17,7 @@ public:
 	bool Build(const NavmeshGeometry& geom);
 	bool BuildTile(const Int2& tile, const NavmeshGeometry& geom);
 	Box2d GetBoxForTile(const Int2& tile);
-	PolyRef GetPolyRef(const Vec3& pos);
+	dtPolyRef GetPolyRef(const Vec3& pos);
 	bool FindPath(const Vec3& from, const Vec3& to, vector<Vec3>& out_path);
 	bool FindTestPath(const Vec3& from, const Vec3& to, bool smooth);
 	void Draw(DebugDrawer* debug_drawer);
@@ -58,7 +53,7 @@ private:
 	vector<byte> triareas;
 	dtNavMeshQuery* nav_query;
 	dtNavMesh* navmesh;
-	dtQueryFilter filter;
+	dtQueryFilter* filter;
 	float tile_size;
 	uint tiles;
 	bool is_tiled;

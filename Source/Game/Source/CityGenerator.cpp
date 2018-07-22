@@ -7,7 +7,6 @@
 #include "Level.h"
 #include "Player.h"
 #include "Item.h"
-#include "Pathfinding.h"
 #include "Tree.h"
 #include <MeshBuilder.h>
 #include "Navmesh.h"
@@ -28,12 +27,11 @@ CityGenerator::~CityGenerator()
 	DeleteElements(buildings);
 }
 
-void CityGenerator::Init(Scene* scene, Level* level, Pathfinding* pathfinding, ResourceManager* res_mgr, uint size, uint splits, Navmesh* navmesh)
+void CityGenerator::Init(Scene* scene, Level* level, ResourceManager* res_mgr, uint size, uint splits, Navmesh* navmesh)
 {
 	this->res_mgr = res_mgr;
 	this->scene = scene;
 	this->level = level;
-	this->pathfinding = pathfinding;
 	this->size = size;
 	this->navmesh = navmesh;
 
@@ -80,7 +78,6 @@ void CityGenerator::Generate()
 	level->SpawnPlayer(player_start_pos);
 	SpawnItems();
 	//SpawnZombies(); FIXME
-	pathfinding->GenerateBlockedGrid(size, tile_size, buildings);
 }
 
 void CityGenerator::GenerateMap()
@@ -861,7 +858,6 @@ void CityGenerator::Load(FileReader& f)
 	BuildBuildingsMesh();
 	CreateScene();
 	level->SpawnBarriers();
-	pathfinding->GenerateBlockedGrid(size, tile_size, buildings);
 }
 
 void CityGenerator::NavmeshThreadLoop()

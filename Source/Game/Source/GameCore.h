@@ -12,7 +12,6 @@ class Level;
 class MainMenu;
 class Navmesh;
 class Options;
-class Pathfinding;
 class PickPerkDialog;
 class StatsPanel;
 
@@ -26,4 +25,14 @@ struct Zombie;
 
 enum class PerkId;
 
-typedef uint PolyRef;
+// recastnavigation
+typedef uint dtPolyRef;
+class dtNavMesh;
+class dtNavMeshQuery;
+class dtQueryFilter;
+struct dtMeshTile;
+struct rcCompactHeightfield;
+struct rcContourSet;
+struct rcHeightfield;
+struct rcPolyMesh;
+struct rcPolyMeshDetail;
