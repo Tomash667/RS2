@@ -14,6 +14,7 @@
 #include "GameGui.h"
 #include "Player.h"
 #include "Zombie.h"
+#include "Npc.h"
 #include "CityGenerator.h"
 #include "GroundItem.h"
 #include "Level.h"
@@ -547,7 +548,7 @@ void Game::UpdatePlayer(float dt)
 						int necrology_level = player->GetPerkLevel(PerkId::Necrology);
 						damage_mod += 0.1f * necrology_level;
 					}
-					HitUnit(*target, int(damage_mod * player->melee_weapon->RandomValue()), hitpoint);
+					HitUnit(*target, *player, int(damage_mod * player->melee_weapon->RandomValue()), hitpoint);
 				}
 				player->action_state = 1;
 			}
@@ -628,7 +629,7 @@ void Game::UpdatePlayer(float dt)
 								int necrology_level = player->GetPerkLevel(PerkId::Necrology);
 								damage_mod += 0.1f * necrology_level;
 							}
-							HitUnit(*target, int(damage_mod * player->ranged_weapon->RandomValue()), hitpoint);
+							HitUnit(*target, *player, int(damage_mod * player->ranged_weapon->RandomValue()), hitpoint);
 						}
 						else
 						{
@@ -1134,7 +1135,7 @@ void Game::UpdateUnits(float dt)
 			Vec3 hitpoint;
 			Unit* target;
 			if(CheckForHit(*zombie, *hitbox, nullptr, target, hitpoint))
-				HitUnit(*target, Random(10, 15), hitpoint);
+				HitUnit(*target, *zombie, Random(10, 15), hitpoint);
 			zombie->attacking = false;
 		}
 
@@ -1251,7 +1252,7 @@ bool Game::CheckForHit(Unit& unit, MeshPoint& mhitbox, MeshPoint* mbone, Unit*& 
 	return false;
 }
 
-void Game::HitUnit(Unit& unit, int dmg, const Vec3& hitpoint)
+void Game::HitUnit(Unit& unit, Unit& attacker, int dmg, const Vec3& hitpoint)
 {
 	sound_mgr->PlaySound3d(sound_hit, hitpoint, 2.f);
 
@@ -1276,6 +1277,8 @@ void Game::HitUnit(Unit& unit, int dmg, const Vec3& hitpoint)
 			if(zombie->state == AI_IDLE)
 				ZombieAlert(zombie);
 		}
+		else if(unit.type == UNIT_NPC && attacker.type == UNIT_PLAYER)
+			((Npc&)unit).attack_player = true;
 	}
 
 	// add blood particle

@@ -23,7 +23,7 @@ private:
 	void UpdateUnits(float dt);
 	float UnitRotateTo(float& rot, float expected_rot, float speed, int* dir = nullptr);
 	bool CheckForHit(Unit& unit, MeshPoint& hitbox, MeshPoint* bone, Unit*& target, Vec3& hitpoint);
-	void HitUnit(Unit& unit, int dmg, const Vec3& hitpoint);
+	void HitUnit(Unit& unit, Unit& attacker, int dmg, const Vec3& hitpoint);
 	bool CheckMove(Unit& uint, const Vec3& dir);
 	bool CheckMovePos(Unit& unit, const Vec3& pos);
 	void ZombieAlert(Zombie* zombie, bool first = true);

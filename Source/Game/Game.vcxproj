@@ -164,6 +164,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Ai.h" />
     <ClInclude Include="Source\Building.h" />
     <ClInclude Include="Source\CityGenerator.h" />
     <ClInclude Include="Source\Collider.h" />
@@ -186,6 +187,7 @@
     <ClInclude Include="Source\ThirdPersonCamera.h" />
     <ClInclude Include="Source\Tree.h" />
     <ClInclude Include="Source\Unit.h" />
+    <ClInclude Include="Source\UnitStats.h" />
     <ClInclude Include="Source\Version.h" />
     <ClInclude Include="Source\Zombie.h" />
   </ItemGroup>
@@ -208,6 +210,7 @@
     <ClCompile Include="..\External\recastnavigation\Recast\Source\RecastMeshDetail.cpp" />
     <ClCompile Include="..\External\recastnavigation\Recast\Source\RecastRasterization.cpp" />
     <ClCompile Include="..\External\recastnavigation\Recast\Source\RecastRegion.cpp" />
+    <ClCompile Include="Source\Ai.cpp" />
     <ClCompile Include="Source\Building.cpp" />
     <ClCompile Include="Source\CityGenerator.cpp" />
     <ClCompile Include="Source\Game.cpp" />
@@ -227,6 +230,7 @@
     <ClCompile Include="Source\ThirdPersonCamera.cpp" />
     <ClCompile Include="Source\Tree.cpp" />
     <ClCompile Include="Source\Unit.cpp" />
+    <ClCompile Include="Source\UnitStats.cpp" />
     <ClCompile Include="Source\Zombie.cpp" />
   </ItemGroup>
   <ItemGroup>

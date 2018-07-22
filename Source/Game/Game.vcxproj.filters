@@ -108,6 +108,12 @@
     <ClInclude Include="Source\Npc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Ai.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\UnitStats.h">
+      <Filter>Header Files\Stats</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Main.cpp">
@@ -223,6 +229,12 @@
     </ClCompile>
     <ClCompile Include="Source\Npc.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Ai.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\UnitStats.cpp">
+      <Filter>Source Files\Stats</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

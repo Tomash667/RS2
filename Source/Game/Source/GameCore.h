@@ -15,6 +15,7 @@ class Options;
 class PickPerkDialog;
 class StatsPanel;
 
+struct Ai;
 struct Collider;
 struct GroundItem;
 struct Item;

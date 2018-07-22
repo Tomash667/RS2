@@ -1,13 +1,30 @@
 #pragma once
 
-#include "Unit.h"
-
-
-
-struct Zombie : Unit
+enum AiState
 {
-	Zombie() : Unit(UNIT_ZOMBIE), state(AI_IDLE), idle(IDLE_NONE), timer(idle_timer.Random()), attacking(false), pf_timer(0),
-		pf_state(PF_NOT_USED) {}
+	AI_IDLE,
+	AI_COMBAT,
+	AI_FALLOW
+};
+
+enum IdleAction
+{
+	IDLE_NONE,
+	IDLE_ROTATE,
+	IDLE_WALK,
+	IDLE_ANIM
+};
+
+enum PathfindingState
+{
+	PF_NOT_USED,
+	PF_NOT_GENERATED,
+	PF_USED
+};
+
+struct Ai
+{
+	Ai() : state(AI_IDLE), idle(IDLE_NONE), timer(idle_timer.Random()), attacking(false), pf_timer(0), pf_state(PF_NOT_USED) {}
 	void ChangeState(AiState new_state);
 	void Save(FileWriter& f);
 	void Load(FileReader& f);
@@ -21,7 +38,5 @@ struct Zombie : Unit
 	int attack_index, pf_index;
 	bool attacking;
 
-	static const float walk_speed;
-	static const float rot_speed;
 	static const Vec2 idle_timer;
 };

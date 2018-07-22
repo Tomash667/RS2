@@ -1,5 +1,6 @@
 #include "GameCore.h"
 #include "Unit.h"
+#include "Ai.h"
 #include "SceneNode.h"
 #include "MeshInstance.h"
 
@@ -74,9 +75,15 @@ void Unit::Save(FileWriter& f)
 	f << hp;
 	f << maxhp;
 	if(!IsAlive())
+	{
 		f << dying;
+		f << death_timer;
+	}
 	f << last_damage;
 	f << animation;
+
+	if(IsAlive() && ai)
+		ai->Save(f);
 }
 
 void Unit::Load(FileReader& f)
@@ -90,7 +97,16 @@ void Unit::Load(FileReader& f)
 	f >> hp;
 	f >> maxhp;
 	if(!IsAlive())
+	{
 		f >> dying;
+		f >> death_timer;
+	}
 	f >> last_damage;
 	f >> animation;
+
+	if(IsAlive() && type != UNIT_PLAYER)
+	{
+		Ai* ai = new Ai;
+		ai->Load(f);
+	}
 }

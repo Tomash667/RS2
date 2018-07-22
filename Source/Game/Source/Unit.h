@@ -33,9 +33,10 @@ struct Unit
 	virtual void Save(FileWriter& f);
 	virtual void Load(FileReader& f);
 
+	Ai* ai;
 	SceneNode* node;
 	UnitType type;
-	int hp, maxhp, death_timer; // FIXME - moved death_timer
+	int hp, maxhp, death_timer;
 	float last_damage;
 	Animation animation;
 	bool dying;
