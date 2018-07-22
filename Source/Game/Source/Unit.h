@@ -13,9 +13,16 @@ enum Animation
 	ANI_IDLE
 };
 
+enum UnitType
+{
+	UNIT_PLAYER,
+	UNIT_ZOMBIE,
+	UNIT_NPC
+};
+
 struct Unit
 {
-	explicit Unit(bool is_zombie) : hp(100), maxhp(100), animation(ANI_STAND), is_zombie(is_zombie), last_damage(0), dying(false) {}
+	explicit Unit(UnitType type) : hp(100), maxhp(100), animation(ANI_STAND), type(type), last_damage(0), dying(false) {}
 	virtual ~Unit() {}
 	void Update(Animation new_animation);
 	float GetHpp() const { return float(hp) / maxhp; }
@@ -23,14 +30,15 @@ struct Unit
 	Vec3 GetSoundPos() const;
 	float GetAngleDiff(const Vec3& target) const;
 	bool IsAlive() const { return hp > 0; }
-	void Save(FileWriter& f);
-	void Load(FileReader& f);
+	virtual void Save(FileWriter& f);
+	virtual void Load(FileReader& f);
 
 	SceneNode* node;
-	int hp, maxhp;
+	UnitType type;
+	int hp, maxhp, death_timer; // FIXME - moved death_timer
 	float last_damage;
 	Animation animation;
-	bool is_zombie, dying;
+	bool dying;
 
 	static const float radius;
 	static const float height;

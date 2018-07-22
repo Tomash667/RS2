@@ -177,6 +177,7 @@
     <ClInclude Include="Source\Level.h" />
     <ClInclude Include="Source\MainMenu.h" />
     <ClInclude Include="Source\Navmesh.h" />
+    <ClInclude Include="Source\Npc.h" />
     <ClInclude Include="Source\Options.h" />
     <ClInclude Include="Source\Perk.h" />
     <ClInclude Include="Source\PickPerkDialog.h" />
@@ -217,6 +218,7 @@
     <ClCompile Include="Source\Main.cpp" />
     <ClCompile Include="Source\MainMenu.cpp" />
     <ClCompile Include="Source\Navmesh.cpp" />
+    <ClCompile Include="Source\Npc.cpp" />
     <ClCompile Include="Source\Options.cpp" />
     <ClCompile Include="Source\Perk.cpp" />
     <ClCompile Include="Source\PickPerkDialog.cpp" />

@@ -20,7 +20,7 @@ private:
 	bool OnTick(float dt) override;
 	void UpdateGame(float dt);
 	void UpdatePlayer(float dt);
-	void UpdateZombies(float dt);
+	void UpdateUnits(float dt);
 	float UnitRotateTo(float& rot, float expected_rot, float speed, int* dir = nullptr);
 	bool CheckForHit(Unit& unit, MeshPoint& hitbox, MeshPoint* bone, Unit*& target, Vec3& hitpoint);
 	void HitUnit(Unit& unit, int dmg, const Vec3& hitpoint);

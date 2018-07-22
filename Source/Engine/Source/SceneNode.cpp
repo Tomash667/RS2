@@ -14,7 +14,7 @@ SceneNode::~SceneNode()
 
 void SceneNode::Add(SceneNode* node, MeshPoint* point)
 {
-	assert(node && !node->parent && node->mesh);
+	assert(node && !node->parent);
 	if(point)
 	{
 		if(point == USE_PARENT_BONES)

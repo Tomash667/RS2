@@ -18,6 +18,7 @@ class StatsPanel;
 struct Collider;
 struct GroundItem;
 struct Item;
+struct Npc;
 struct Player;
 struct ThirdPersonCamera;
 struct Unit;

@@ -32,7 +32,7 @@ void Unit::Update(Animation new_animation)
 		node->mesh_inst->Play("biegnie", 0, 0);
 		break;
 	case ANI_IDLE:
-		node->mesh_inst->Play(is_zombie ? "idle" : "drapie", PLAY_ONCE | PLAY_CLEAR_FRAME_END_INFO, 0);
+		node->mesh_inst->Play(type == UNIT_ZOMBIE ? "idle" : "drapie", PLAY_ONCE | PLAY_CLEAR_FRAME_END_INFO, 0);
 		break;
 	}
 	animation = new_animation;

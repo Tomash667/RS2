@@ -12,9 +12,9 @@ const float Player::run_speed = 7.f;
 const float Player::rot_speed = 4.f;
 const float Player::hunger_timestep = 10.f;
 
-Player::Player(Level* level) : Unit(false), level(level), medkits(0), food_cans(0), action(A_NONE), item_before(nullptr), rot_buf(0), last_rot(0), food(80),
-maxfood(100), hungry_timer(hunger_timestep), ranged_weapon(nullptr), ammo(0), current_ammo(0), use_melee(true), idle_timer_max(Random(2.5f, 4.f)), aim(0),
-last_survived_day(0)
+Player::Player(Level* level) : Unit(UNIT_PLAYER), level(level), medkits(0), food_cans(0), action(A_NONE), item_before(nullptr), rot_buf(0),
+last_rot(0), food(80), maxfood(100), hungry_timer(hunger_timestep), ranged_weapon(nullptr), ammo(0), current_ammo(0), use_melee(true),
+idle_timer_max(Random(2.5f, 4.f)), aim(0), last_survived_day(0)
 {
 	melee_weapon = Item::Get("baseball_bat");
 	idle_timer = idle_timer_max;

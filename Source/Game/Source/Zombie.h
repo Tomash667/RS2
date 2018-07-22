@@ -26,7 +26,8 @@ enum PathfindingState
 
 struct Zombie : Unit
 {
-	Zombie() : Unit(true), state(AI_IDLE), idle(IDLE_NONE), timer(idle_timer.Random()), attacking(false), pf_timer(0), pf_state(PF_NOT_USED) {}
+	Zombie() : Unit(UNIT_ZOMBIE), state(AI_IDLE), idle(IDLE_NONE), timer(idle_timer.Random()), attacking(false), pf_timer(0),
+		pf_state(PF_NOT_USED) {}
 	void ChangeState(AiState new_state);
 	void Save(FileWriter& f);
 	void Load(FileReader& f);
@@ -37,7 +38,7 @@ struct Zombie : Unit
 	vector<Vec3> path;
 	Vec3 target_pos, start_pos, pf_target;
 	float timer, timer2, pf_timer;
-	int attack_index, death_timer, pf_index;
+	int attack_index, pf_index;
 	bool attacking;
 
 	static const float walk_speed;

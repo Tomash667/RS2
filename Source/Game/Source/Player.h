@@ -29,8 +29,8 @@ struct Player : Unit
 	void EatFood();
 	void SwitchWeapon(bool melee);
 	void Reload();
-	void Save(FileWriter& f);
-	void Load(FileReader& f);
+	void Save(FileWriter& f) override;
+	void Load(FileReader& f) override;
 	void AddPerk(PerkId id);
 	void UpdateAim(float mod);
 

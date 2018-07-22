@@ -7,6 +7,7 @@
 #include "GroundItem.h"
 #include "Zombie.h"
 #include "Player.h"
+#include "Npc.h"
 #include "Item.h"
 #include "GameState.h"
 #include <DebugDrawer.h>
@@ -17,8 +18,7 @@ Level::Level() : player(nullptr)
 
 Level::~Level()
 {
-	delete player;
-	DeleteElements(zombies);
+	DeleteElements(units);
 }
 
 void Level::Init(Scene* scene, ResourceManager* res_mgr, GameState* game_state, float level_size)
@@ -31,13 +31,13 @@ void Level::Init(Scene* scene, ResourceManager* res_mgr, GameState* game_state, 
 
 	colliders.resize(grids * grids);
 	alive_zombies = 0;
+	alive_npcs = 0;
 }
 
 void Level::Reset()
 {
-	delete player;
+	DeleteElements(units);
 	player = nullptr;
-	DeleteElements(zombies);
 	items.clear();
 	camera_colliders.clear();
 	for(vector<Collider>& cols : colliders)
@@ -46,6 +46,7 @@ void Level::Reset()
 	active_bloods.clear();
 	bloods.clear();
 	alive_zombies = 0;
+	alive_npcs = 0;
 }
 
 void Level::LoadResources()
@@ -79,38 +80,50 @@ void Level::SpawnItem(const Vec3& pos, Item* item)
 
 void Level::SpawnZombie(const Vec3& pos)
 {
-	Zombie* zombie = new Zombie;
-	zombie->node = new SceneNode;
+	Zombie* zombie = CreateZombie();
 	zombie->node->pos = pos;
 	zombie->node->rot = Vec3(0, Random(PI * 2), 0);
-	zombie->node->mesh = mesh_zombie;
-	zombie->node->mesh_inst = new MeshInstance(mesh_zombie);
 	zombie->node->mesh_inst->Play("stoi", 0, 0);
 	zombie->node->mesh_inst->SetToEnd();
-	zombies.push_back(zombie);
-
-	scene->Add(zombie->node);
+	units.push_back(zombie);
 	++alive_zombies;
+}
+
+Zombie* Level::CreateZombie()
+{
+	Zombie* zombie = new Zombie;
+	zombie->node = new SceneNode;
+	zombie->node->mesh = mesh_zombie;
+	zombie->node->mesh_inst = new MeshInstance(mesh_zombie);
+	scene->Add(zombie->node);
+	return zombie;
 }
 
 void Level::SpawnPlayer(const Vec3& pos)
 {
-	player = new Player(this);
-	player->node = new SceneNode;
-	player->node->mesh = mesh_human;
-	player->node->mesh_inst = new MeshInstance(player->node->mesh);
+	player = CreatePlayer();
 	player->node->mesh_inst->Play("stoi", 0, 0);
 	player->node->mesh_inst->SetToEnd();
 	player->node->pos = pos;
 	player->node->rot = Vec3(0, PI / 2, 0); // north
+	if(player->melee_weapon)
+		player->weapon->mesh = player->melee_weapon->mesh;
+	else
+		player->weapon->visible = false;
+	game_state->player = player;
+	units.push_back(player);
+}
+
+Player* Level::CreatePlayer()
+{
+	Player* player = new Player(this);
+	player->node = new SceneNode;
+	player->node->mesh = mesh_human;
+	player->node->mesh_inst = new MeshInstance(player->node->mesh);
 	CLEAR_BIT(player->node->subs, 1 << 0); // don't draw body under clothes
 	scene->Add(player->node);
 
 	SceneNode* weapon = new SceneNode;
-	if(player->melee_weapon)
-		weapon->mesh = player->melee_weapon->mesh;
-	else
-		weapon->visible = false;
 	weapon->pos = Vec3::Zero;
 	weapon->rot = Vec3::Zero;
 	player->node->Add(weapon, player->node->mesh->GetPoint("bron"));
@@ -130,7 +143,49 @@ void Level::SpawnPlayer(const Vec3& pos)
 	player->node->Add(hair, SceneNode::USE_PARENT_BONES);
 	player->hair = hair;
 
-	game_state->player = player;
+	return player;
+}
+
+void Level::SpawnNpc(const Vec3& pos)
+{
+	Npc* npc = CreateNpc();
+	npc->node->mesh_inst->Play("stoi", 0, 0);
+	npc->node->mesh_inst->SetToEnd();
+	npc->node->pos = pos;
+	npc->node->rot = Vec3(0, Random(PI * 2), 0);
+	units.push_back(npc);
+	++alive_npcs;
+}
+
+Npc* Level::CreateNpc()
+{
+	Npc* npc = new Npc;
+	npc->node = new SceneNode;
+	npc->node->mesh = mesh_human;
+	npc->node->mesh_inst = new MeshInstance(npc->node->mesh);
+	CLEAR_BIT(npc->node->subs, 1 << 0); // don't draw body under clothes
+	scene->Add(npc->node);
+
+	SceneNode* weapon = new SceneNode;
+	weapon->mesh = Item::Get("baseball_bat")->mesh;
+	weapon->pos = Vec3::Zero;
+	weapon->rot = Vec3::Zero;
+	npc->node->Add(weapon, npc->node->mesh->GetPoint("bron"));
+
+	SceneNode* clothes = new SceneNode;
+	clothes->mesh = mesh_clothes;
+	clothes->pos = Vec3::Zero;
+	clothes->rot = Vec3::Zero;
+	npc->node->Add(clothes, SceneNode::USE_PARENT_BONES);
+
+	SceneNode* hair = new SceneNode;
+	hair->mesh = mesh_hair;
+	hair->pos = Vec3::Zero;
+	hair->rot = Vec3::Zero;
+	hair->tint = Color(86, 34, 0, 255);
+	npc->node->Add(hair, SceneNode::USE_PARENT_BONES);
+
+	return npc;
 }
 
 void Level::RemoveItem(GroundItem* item)
@@ -149,19 +204,12 @@ void Level::RemoveItem(GroundItem* item)
 
 bool Level::CheckCollision(Unit* unit, const Vec2& pos)
 {
-	// player
-	if(unit != player && player->hp > 0)
+	// units
+	for(Unit* u : units)
 	{
-		if(Distance(pos.x, pos.y, player->node->pos.x, player->node->pos.z) <= Unit::radius * 2)
-			return false;
-	}
-
-	// zombies
-	for(Zombie* zombie : zombies)
-	{
-		if(zombie == unit || zombie->hp <= 0)
+		if(u == unit || u->hp <= 0)
 			continue;
-		if(Distance(pos.x, pos.y, zombie->node->pos.x, zombie->node->pos.z) <= Unit::radius * 2)
+		if(Distance(pos.x, pos.y, u->node->pos.x, u->node->pos.z) <= Unit::radius * 2)
 			return false;
 	}
 
@@ -258,24 +306,14 @@ bool Level::RayTest(const Vec3& pos, const Vec3& ray, float& out_t, int flags, U
 	if(IS_SET(flags, COLLIDE_UNITS))
 	{
 		Vec3 to = pos + ray;
-
-		if(excluded != player && player->hp > 0)
+		for(Unit* unit : units)
 		{
-			if(RayToCylinder(pos, to, player->node->pos, player->node->pos.ModY(Unit::height), Unit::radius, t) && t > 0.f && t < min_t)
+			if(excluded != unit && unit->hp > 0)
 			{
-				min_t = t;
-				hit = player;
-			}
-		}
-
-		for(Zombie* zombie : zombies)
-		{
-			if(excluded != zombie && zombie->hp > 0)
-			{
-				if(RayToCylinder(pos, to, zombie->node->pos, zombie->node->pos.ModY(Unit::height), Unit::radius, t) && t > 0.f && t < min_t)
+				if(RayToCylinder(pos, to, unit->node->pos, unit->node->pos.ModY(Unit::height), Unit::radius, t) && t > 0.f && t < min_t)
 				{
 					min_t = t;
-					hit = zombie;
+					hit = unit;
 				}
 			}
 		}
@@ -313,7 +351,7 @@ void Level::SpawnBlood(Unit& unit)
 	}
 
 	SceneNode* node = new SceneNode;
-	node->mesh = unit.is_zombie ? mesh_zombie_blood_pool : mesh_blood_pool;
+	node->mesh = unit.type == UNIT_ZOMBIE ? mesh_zombie_blood_pool : mesh_blood_pool;
 	node->pos = center;
 	node->rot = Vec3(0, Random(PI * 2), 0);
 	node->scale = 0.f;
@@ -362,14 +400,15 @@ void Level::GatherColliders(vector<Collider>& results, const Box2d& box)
 
 void Level::Save(FileWriter& f)
 {
-	// player
-	player->Save(f);
-
-	// zombies
-	f << zombies.size();
-	for(Zombie* zombie : zombies)
-		zombie->Save(f);
+	// units
+	f << units.size();
+	for(Unit* unit : units)
+	{
+		f << unit->type;
+		unit->Save(f);
+	}
 	f << alive_zombies;
+	f << alive_npcs;
 
 	// ground items
 	f << items.size();
@@ -402,25 +441,42 @@ void Level::Save(FileWriter& f)
 
 void Level::Load(FileReader& f)
 {
-	// player
-	SpawnPlayer(Vec3::Zero);
-	player->Load(f);
-
-	// zombies
+	// units
 	uint count;
 	f >> count;
-	zombies.reserve(count);
+	units.reserve(count);
 	for(uint i = 0; i < count; ++i)
 	{
-		Zombie* zombie = new Zombie;
-		zombie->node = new SceneNode;
-		zombie->node->mesh = mesh_zombie;
-		zombie->node->mesh_inst = new MeshInstance(mesh_zombie);
-		zombie->Load(f);
-		zombies.push_back(zombie);
-		scene->Add(zombie->node);
+		UnitType type;
+		f >> type;
+		switch(type)
+		{
+		case UNIT_PLAYER:
+			{
+				player = CreatePlayer();
+				player->Load(f);
+				game_state->player = player;
+				units[i] = player;
+			}
+			break;
+		case UNIT_ZOMBIE:
+			{
+				Zombie* zombie = CreateZombie();
+				zombie->Load(f);
+				units[i] = zombie;
+			}
+			break;
+		case UNIT_NPC:
+			{
+				Npc* npc = CreateNpc();
+				npc->Load(f);
+				units[i] = npc;
+			}
+			break;
+		}
 	}
 	f >> alive_zombies;
+	f >> alive_npcs;
 
 	// ground items
 	items.resize(f.Read<uint>());

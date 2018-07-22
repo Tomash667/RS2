@@ -28,12 +28,10 @@ public:
 	void SpawnItem(const Vec3& pos, Item* item);
 	void SpawnZombie(const Vec3& pos);
 	void SpawnPlayer(const Vec3& pos);
+	void SpawnNpc(const Vec3& pos);
 	void RemoveItem(GroundItem* item);
 	bool CheckCollision(Unit* unit, const Vec2& pos);
-	bool CheckCollision(Unit& unit, const Vec3& pos)
-	{
-		return CheckCollision(&unit, pos.XZ());
-	}
+	bool CheckCollision(Unit& unit, const Vec3& pos) { return CheckCollision(&unit, pos.XZ()); }
 	void AddCollider(const Collider& c);
 	void SpawnBarriers();
 	bool RayTest(const Vec3& pos, const Vec3& ray, float& t, int flags, Unit* excluded, Unit** target);
@@ -47,17 +45,20 @@ public:
 
 	Scene* scene;
 	Player* player;
-	vector<Zombie*> zombies;
+	vector<Unit*> units;
 	vector<GroundItem> items;
 	vector<Box> camera_colliders;
 	vector<Blood> bloods;
-	uint alive_zombies;
+	uint alive_zombies, alive_npcs;
 
 private:
 	Int2 PosToPt(const Vec2& pos)
 	{
 		return Int2(int(pos.x / tile_size), int(pos.y / tile_size));
 	}
+	Zombie* CreateZombie();
+	Player* CreatePlayer();
+	Npc* CreateNpc();
 
 	ResourceManager* res_mgr;
 	GameState* game_state;

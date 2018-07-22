@@ -292,8 +292,7 @@ void Game::UpdateGame(float dt)
 	allow_mouse = !game_gui->IsMouseRequired();
 
 	city_generator->CheckNavmeshGeneration();
-	UpdatePlayer(dt);
-	UpdateZombies(dt);
+	UpdateUnits(dt);
 	camera->Update(dt, allow_mouse);
 	level->Update(dt);
 	UpdateWorld(dt);
@@ -303,6 +302,11 @@ void Game::UpdateGame(float dt)
 	{
 		SceneNode* node = level->player->node;
 		level->SpawnZombie(node->pos + Vec3(cos(node->rot.y) * 10, 0, sin(node->rot.y) * 10));
+	}
+	if(input->Pressed(Key::N9))
+	{
+		SceneNode* node = level->player->node;
+		level->SpawnNpc(node->pos + Vec3(cos(node->rot.y) * 10, 0, sin(node->rot.y) * 10));
 	}
 	if(input->Pressed(Key::F8))
 		draw_navmesh = !draw_navmesh;
@@ -538,7 +542,7 @@ void Game::UpdatePlayer(float dt)
 					float damage_mod = 1.f;
 					int strong_level = player->GetPerkLevel(PerkId::Strong);
 					damage_mod += 0.2f * strong_level;
-					if(target->is_zombie)
+					if(target->type == UNIT_ZOMBIE)
 					{
 						int necrology_level = player->GetPerkLevel(PerkId::Necrology);
 						damage_mod += 0.1f * necrology_level;
@@ -619,7 +623,7 @@ void Game::UpdatePlayer(float dt)
 							float damage_mod = 1.f;
 							int firearms_level = player->GetPerkLevel(PerkId::Firearms);
 							damage_mod += 0.2f * firearms_level;
-							if(target->is_zombie)
+							if(target->type == UNIT_ZOMBIE)
 							{
 								int necrology_level = player->GetPerkLevel(PerkId::Necrology);
 								damage_mod += 0.1f * necrology_level;
@@ -838,22 +842,35 @@ void Game::UpdateTestPath(const Vec3& player_pos)
 }
 #endif
 
-void Game::UpdateZombies(float dt)
+void Game::UpdateUnits(float dt)
 {
 	Player* player = level->player;
-	for(Zombie* zombie : level->zombies)
+
+	for(Unit* unit : level->units)
 	{
-		if(zombie->hp <= 0)
+		if(unit->type == UNIT_PLAYER)
 		{
-			if(zombie->dying && zombie->node->mesh_inst->GetEndResult(0))
+			UpdatePlayer(dt);
+			continue;
+		}
+
+		if(unit->hp <= 0)
+		{
+			if(unit->dying && unit->node->mesh_inst->GetEndResult(0))
 			{
-				zombie->dying = false;
-				zombie->death_timer = 0;
-				level->SpawnBlood(*zombie);
-				--level->alive_zombies;
+				unit->dying = false;
+				unit->death_timer = 0;
+				level->SpawnBlood(*unit);
+				if(unit->type == UNIT_ZOMBIE)
+					--level->alive_zombies;
+				else
+					--level->alive_npcs;
 			}
 			continue;
 		}
+
+		if(unit->type == UNIT_NPC)
+			continue;
 
 		enum Move
 		{
@@ -863,6 +880,7 @@ void Game::UpdateZombies(float dt)
 			MOVE_BACK // no pf
 		};
 
+		Zombie* zombie = (Zombie*)unit;
 		Animation animation = ANI_STAND;
 		Move move = MOVE_NO;
 
@@ -1213,42 +1231,20 @@ bool Game::CheckForHit(Unit& unit, MeshPoint& mhitbox, MeshPoint* mbone, Unit*& 
 	b.u[1] = Vec3(0, 1, 0);
 	b.u[2] = Vec3(0, 0, 1);
 
-	if(!unit.is_zombie)
+	for(Unit* u : level->units)
 	{
-		// try hit zombie
-		for(Zombie* zombie : level->zombies)
+		if(u->hp <= 0 || u->type == unit.type || Vec3::Distance(unit.node->pos, u->node->pos) > 5.f)
+			continue;
+
+		Box box = u->GetBox();
+		b.c = box.Midpoint();
+		b.e = box.Size() / 2;
+
+		if(Oob::Collide(b, a))
 		{
-			if(zombie->hp <= 0 || Vec3::Distance(unit.node->pos, zombie->node->pos) > 5.f)
-				continue;
-
-			Box box = zombie->GetBox();
-			b.c = box.Midpoint();
-			b.e = box.Size() / 2;
-
-			if(Oob::Collide(b, a))
-			{
-				hitpoint = a.c;
-				target = zombie;
-				return true;
-			}
-		}
-	}
-	else
-	{
-		// try hit player
-		Player* player = level->player;
-		if(player->hp > 0 && Vec3::Distance(unit.node->pos, player->node->pos) <= 5.f)
-		{
-			Box box = player->GetBox();
-			b.c = box.Midpoint();
-			b.e = box.Size() / 2;
-
-			if(Oob::Collide(b, a))
-			{
-				hitpoint = a.c;
-				target = player;
-				return true;
-			}
+			hitpoint = a.c;
+			target = u;
+			return true;
 		}
 	}
 
@@ -1265,16 +1261,16 @@ void Game::HitUnit(Unit& unit, int dmg, const Vec3& hitpoint)
 		unit.animation = ANI_DIE;
 		unit.dying = true;
 		unit.node->mesh_inst->Play("umiera", PLAY_ONCE | PLAY_STOP_AT_END | PLAY_PRIO3 | PLAY_CLEAR_FRAME_END_INFO, 0);
-		sound_mgr->PlaySound3d(unit.is_zombie ? sound_zombie_die : sound_player_die, unit.GetSoundPos(), 2.f);
-		if(!unit.is_zombie)
+		sound_mgr->PlaySound3d(unit.type == UNIT_ZOMBIE ? sound_zombie_die : sound_player_die, unit.GetSoundPos(), 2.f);
+		if(unit.type == UNIT_PLAYER)
 			((Player&)unit).death_starved = false;
 	}
 	else
 	{
 		if(unit.last_damage <= 0.f && Rand() % 3 == 0)
-			sound_mgr->PlaySound3d(unit.is_zombie ? sound_zombie_hurt : sound_player_hurt, unit.GetSoundPos(), 2.f);
+			sound_mgr->PlaySound3d(unit.type == UNIT_ZOMBIE ? sound_zombie_hurt : sound_player_hurt, unit.GetSoundPos(), 2.f);
 
-		if(unit.is_zombie)
+		if(unit.type == UNIT_ZOMBIE)
 		{
 			Zombie* zombie = (Zombie*)&unit;
 			if(zombie->state == AI_IDLE)
@@ -1284,7 +1280,7 @@ void Game::HitUnit(Unit& unit, int dmg, const Vec3& hitpoint)
 
 	// add blood particle
 	ParticleEmitter* pe = ParticleEmitter::Get();
-	pe->tex = (unit.is_zombie ? tex_zombie_blood : tex_blood);
+	pe->tex = (unit.type == UNIT_ZOMBIE ? tex_zombie_blood : tex_blood);
 	pe->emision_interval = 0.01f;
 	pe->life = 5.f;
 	pe->particle_life = 0.5f;
@@ -1364,14 +1360,14 @@ bool Game::CanSee(Unit& unit, const Vec3& pos)
 
 void Game::OnDebugDraw(DebugDrawer* debug_drawer)
 {
-	if(draw_navmesh)
+	/*if(draw_navmesh)
 		navmesh->Draw(debug_drawer);
 
 	for(Zombie* zombie : level->zombies)
 	{
 		if(zombie->IsAlive() && zombie->pf_state == PF_USED)
 			navmesh->DrawPath(debug_drawer, zombie->path, false);
-	}
+	}*/
 }
 
 void Game::UpdateWorld(float dt)
@@ -1382,19 +1378,19 @@ void Game::UpdateWorld(float dt)
 
 	game_state.last_hour = hour;
 
-	// remove zombie corpses
-	LoopRemove(level->zombies, [this](Zombie* zombie)
+	// remove corpses
+	LoopRemove(level->units, [this](Unit* unit)
 	{
-		if(!zombie->IsAlive())
+		if(!unit->IsAlive())
 		{
-			++zombie->death_timer;
-			if(zombie->death_timer > 10)
+			++unit->death_timer;
+			if(unit->death_timer > 10)
 			{
-				zombie->node->pos.y -= 0.1f;
-				if(zombie->death_timer >= 15)
+				unit->node->pos.y -= 0.1f;
+				if(unit->death_timer >= 15)
 				{
-					scene->Remove(zombie->node);
-					delete zombie;
+					scene->Remove(unit->node);
+					delete unit;
 					return true;
 				}
 			}
