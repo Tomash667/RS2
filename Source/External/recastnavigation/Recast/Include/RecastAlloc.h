@@ -19,6 +19,9 @@
 #ifndef RECASTALLOC_H
 #define RECASTALLOC_H
 
+#pragma warning(push)
+#pragma warning(disable:4291)
+
 #include <stddef.h>
 #include <stdint.h>
 
@@ -331,11 +334,13 @@ public:
 	/// The root array pointer.
 	///  @return The root array pointer.
 	inline operator T*() { return ptr; }
-	
+
 private:
 	// Explicitly disabled copy constructor and copy assignment operator.
 	rcScopedDelete(const rcScopedDelete&);
 	rcScopedDelete& operator=(const rcScopedDelete&);
 };
+
+#pragma warning(pop)
 
 #endif

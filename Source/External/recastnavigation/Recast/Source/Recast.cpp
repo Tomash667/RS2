@@ -29,6 +29,9 @@
 
 namespace
 {
+#pragma warning(push)
+#pragma warning(disable:4291)
+
 /// Allocates and constructs an object of the given type, returning a pointer.
 /// TODO: Support constructor args.
 /// @param[in]		hint	Hint to the allocator.
@@ -38,6 +41,8 @@ T* rcNew(rcAllocHint hint) {
 	::new(rcNewTag(), (void*)ptr) T();
 	return ptr;
 }
+
+#pragma warning(pop)
 
 /// Destroys and frees an object allocated with rcNew.
 /// @param[in]     ptr    The object pointer to delete.

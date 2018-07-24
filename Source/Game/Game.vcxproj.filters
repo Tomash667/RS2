@@ -105,6 +105,9 @@
     <ClInclude Include="Source\Navmesh.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Source\ObjectType.h">
+      <Filter>Header Files\Stats</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Main.cpp">
@@ -217,6 +220,9 @@
     </ClCompile>
     <ClCompile Include="..\External\recastnavigation\Detour\Source\DetourNode.cpp">
       <Filter>Source Files\External\Detour</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ObjectType.cpp">
+      <Filter>Source Files\Stats</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
