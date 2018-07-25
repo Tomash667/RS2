@@ -20,6 +20,10 @@ void Ai::ChangeState(AiState new_state)
 
 void Ai::Save(FileWriter& f)
 {
+	Unit::Save(f);
+	if(!IsAlive())
+		return;
+
 	f << state;
 	f << idle;
 	f << target_pos;
@@ -40,8 +44,12 @@ void Ai::Save(FileWriter& f)
 		f << attack_index;
 }
 
-void Zombie::Load(FileReader& f)
+void Ai::Load(FileReader& f)
 {
+	Unit::Load(f);
+	if(!IsAlive())
+		return;
+
 	f >> state;
 	f >> idle;
 	f >> target_pos;
@@ -59,4 +67,5 @@ void Zombie::Load(FileReader& f)
 
 	f >> attacking;
 	if(attacking)
+		f >> attack_index;
 }

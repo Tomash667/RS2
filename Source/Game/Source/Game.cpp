@@ -293,6 +293,7 @@ void Game::UpdateGame(float dt)
 	allow_mouse = !game_gui->IsMouseRequired();
 
 	city_generator->CheckNavmeshGeneration();
+	UpdateAlertPos(dt);
 	UpdateUnits(dt);
 	camera->Update(dt, allow_mouse);
 	level->Update(dt);
@@ -845,8 +846,6 @@ void Game::UpdateTestPath(const Vec3& player_pos)
 
 void Game::UpdateUnits(float dt)
 {
-	Player* player = level->player;
-
 	for(Unit* unit : level->units)
 	{
 		if(unit->type == UNIT_PLAYER)
@@ -855,7 +854,7 @@ void Game::UpdateUnits(float dt)
 			continue;
 		}
 
-		if(unit->hp <= 0)
+		if(unit->IsAlive())
 		{
 			if(unit->dying && unit->node->mesh_inst->GetEndResult(0))
 			{
@@ -870,9 +869,6 @@ void Game::UpdateUnits(float dt)
 			continue;
 		}
 
-		if(unit->type == UNIT_NPC)
-			continue;
-
 		enum Move
 		{
 			MOVE_NO,
@@ -881,36 +877,37 @@ void Game::UpdateUnits(float dt)
 			MOVE_BACK // no pf
 		};
 
-		Zombie* zombie = (Zombie*)unit;
+		Ai& ai = *(Ai*)unit;
+		const UnitStats& stats = ai.GetStats();
 		Animation animation = ANI_STAND;
 		Move move = MOVE_NO;
 
-		if(zombie->state == AI_IDLE || zombie->state == AI_FALLOW)
-			SearchForTarget(zombie);
+		if(ai.state != AI_COMBAT)
+			SearchForTarget(ai);
 
-		if(zombie->state == AI_IDLE)
+		if(ai.state == AI_IDLE)
 		{
-			zombie->timer -= dt;
-			if(zombie->timer <= 0.f)
+			ai.timer -= dt;
+			if(ai.timer <= 0.f)
 			{
-				zombie->timer = Zombie::idle_timer.Random();
-				zombie->idle = (IdleAction)(Rand() % 4);
-				switch(zombie->idle)
+				ai.timer = Zombie::idle_timer.Random();
+				ai.idle = (IdleAction)(Rand() % 4);
+				switch(ai.idle)
 				{
 				case IDLE_NONE:
 					break;
 				case IDLE_ROTATE:
 					{
-						float angle = Clip(zombie->node->rot.y + Random(PI / 2, PI * 3 / 2));
-						zombie->target_pos = zombie->node->pos + Vec3(cos(angle), 0, sin(angle));
+						float angle = Clip(ai.node->rot.y + Random(PI / 2, PI * 3 / 2));
+						ai.target_pos = ai.node->pos + Vec3(cos(angle), 0, sin(angle));
 					}
 					break;
 				case IDLE_WALK:
 					{
 						float angle = Random(0.f, PI * 2);
 						float dist = Random(2.f, 5.f);
-						zombie->target_pos = zombie->node->pos + Vec3(cos(angle) * dist, 0, sin(angle) * dist);
-						zombie->start_pos = zombie->node->pos;
+						ai.target_pos = ai.node->pos + Vec3(cos(angle) * dist, 0, sin(angle) * dist);
+						ai.start_pos = ai.node->pos;
 					}
 					break;
 				case IDLE_ANIM:
@@ -920,7 +917,7 @@ void Game::UpdateUnits(float dt)
 			}
 			else
 			{
-				switch(zombie->idle)
+				switch(ai.idle)
 				{
 				case IDLE_NONE:
 					break;
@@ -928,17 +925,17 @@ void Game::UpdateUnits(float dt)
 					move = MOVE_ROTATE;
 					break;
 				case IDLE_WALK:
-					if(Vec3::Distance2d(zombie->target_pos, zombie->node->pos) < 0.1f
-						|| Vec3::Distance2d(zombie->start_pos, zombie->node->pos) >= 6.f)
-						zombie->idle = IDLE_NONE;
+					if(Vec3::Distance2d(ai.target_pos, ai.node->pos) < 0.1f
+						|| Vec3::Distance2d(ai.start_pos, ai.node->pos) >= 6.f)
+						ai.idle = IDLE_NONE;
 					else
 						move = MOVE_FORWARD;
 					break;
 				case IDLE_ANIM:
-					if(zombie->node->mesh_inst->GetEndResult(0))
+					if(ai.node->mesh_inst->GetEndResult(0))
 					{
 						animation = ANI_STAND;
-						zombie->idle = IDLE_NONE;
+						ai.idle = IDLE_NONE;
 					}
 					else
 						animation = ANI_IDLE;
@@ -946,36 +943,39 @@ void Game::UpdateUnits(float dt)
 				}
 			}
 		}
-		else if(zombie->state == AI_COMBAT)
+		else if(ai.state == AI_COMBAT)
 		{
-			if(player->hp <= 0.f)
+			if(!ai.target->IsAlive())
 			{
 				// target is dead
-				zombie->ChangeState(AI_IDLE);
-				continue;
+				ai.target = nullptr;
+				SearchForTarget(ai);
+				if(ai.target == nullptr)
+				{
+					ai.ChangeState(AI_IDLE);
+					continue;
+				}
 			}
 
-			zombie->timer -= dt; // attack delay
+			ai.timer -= dt; // attack delay
+			ai.target_pos = ai.target->node->pos;
 
-			float dist = Vec3::Distance2d(zombie->node->pos, player->node->pos);
-			if(dist >= 10.f || !CanSee(*zombie, player->node->pos))
+			float dist = Vec3::Distance2d(ai.node->pos, ai.target->node->pos);
+			if(dist >= stats.chase_range || !CanSee(ai, ai.target->node->pos))
 			{
-				zombie->timer2 += dt;
-				if(zombie->timer2 >= 0.5f)
+				ai.timer2 += dt;
+				if(ai.timer2 >= 0.5f)
 				{
 					// lost target, go to last known pos
-					zombie->ChangeState(AI_FALLOW);
+					ai.ChangeState(AI_FALLOW);
+					ai.target = nullptr;
 				}
 				else
-				{
-					zombie->target_pos = player->node->pos;
 					move = MOVE_FORWARD;
-				}
 			}
 			else
 			{
-				zombie->target_pos = player->node->pos;
-				zombie->timer2 = 0.f;
+				ai.timer2 = 0.f;
 
 				if(dist > 1.2f)
 				{
@@ -990,26 +990,26 @@ void Game::UpdateUnits(float dt)
 				else
 					move = MOVE_ROTATE;
 
-				if(!zombie->attacking && dist < 1.5f && zombie->timer <= 0 && zombie->GetAngleDiff(player->node->pos) < PI / 4)
+				if(!ai.attacking && dist < 1.5f && ai.timer <= 0 && ai.GetAngleDiff(ai.target->node->pos) < PI / 4)
 				{
 					// attack
-					zombie->attacking = true;
-					zombie->animation = ANI_ACTION;
-					zombie->timer = Random(1.5f, 2.5f);
-					zombie->attack_index = Rand() % 2 == 0 ? 0 : 1;
-					zombie->node->mesh_inst->Play(zombie->attack_index == 0 ? "atak1" : "atak2", PLAY_ONCE | PLAY_CLEAR_FRAME_END_INFO, 0);
-					if(Rand() % 4)
-						sound_mgr->PlaySound3d(sound_zombie_attack, zombie->GetSoundPos(), 2.f);
+					ai.attacking = true;
+					ai.animation = ANI_ACTION;
+					ai.timer = Random(1.5f, 2.5f);
+					ai.attack_index = Rand() % 2 == 0 ? 0 : 1;
+					ai.node->mesh_inst->Play(ai.attack_index == 0 ? "atak1" : "atak2", PLAY_ONCE | PLAY_CLEAR_FRAME_END_INFO, 0);
+					if(Rand() % 4 && ai.type == UNIT_ZOMBIE)
+						sound_mgr->PlaySound3d(sound_zombie_attack, ai.GetSoundPos(), 2.f);
 				}
 			}
 		}
 		else
 		{
-			float dist = Vec3::Distance2d(zombie->node->pos, zombie->target_pos);
+			float dist = Vec3::Distance2d(ai.node->pos, ai.target_pos);
 			if(dist < 0.1f)
 			{
 				// target lost
-				zombie->ChangeState(AI_IDLE);
+				ai.ChangeState(AI_IDLE);
 			}
 			else
 				move = MOVE_FORWARD;
@@ -1021,47 +1021,47 @@ void Game::UpdateUnits(float dt)
 		static const float PF_NOT_GENERATED_TIMER = 0.5f;
 		if(move == MOVE_FORWARD)
 		{
-			zombie->pf_timer -= dt;
+			ai.pf_timer -= dt;
 
 			// calculate path if:
 			// + not used yet
 			// + generation failed and timer passed
 			// + is used and timer passed and target moved
-			if(zombie->pf_state == PF_NOT_USED
-				|| (zombie->pf_state == PF_NOT_GENERATED && zombie->pf_timer <= 0.f)
-				|| (zombie->pf_state == PF_USED && zombie->pf_timer <= 0.f && Vec3::Distance(zombie->target_pos, zombie->pf_target) > 0.1f))
+			if(ai.pf_state == PF_NOT_USED
+				|| (ai.pf_state == PF_NOT_GENERATED && ai.pf_timer <= 0.f)
+				|| (ai.pf_state == PF_USED && ai.pf_timer <= 0.f && Vec3::Distance(ai.target_pos, ai.pf_target) > 0.1f))
 			{
-				if(navmesh->FindPath(zombie->node->pos, zombie->target_pos, zombie->path))
+				if(navmesh->FindPath(ai.node->pos, ai.target_pos, ai.path))
 				{
-					zombie->pf_state = PF_USED;
-					zombie->pf_timer = PF_USED_TIMER;
-					zombie->pf_target = zombie->target_pos;
-					zombie->pf_index = 1;
+					ai.pf_state = PF_USED;
+					ai.pf_timer = PF_USED_TIMER;
+					ai.pf_target = ai.target_pos;
+					ai.pf_index = 1;
 				}
 				else
 				{
-					zombie->pf_state = PF_NOT_GENERATED;
-					zombie->pf_timer = PF_NOT_GENERATED_TIMER;
+					ai.pf_state = PF_NOT_GENERATED;
+					ai.pf_timer = PF_NOT_GENERATED_TIMER;
 				}
 			}
 
-			if(zombie->pf_state == PF_USED)
-				move_pos = zombie->path[zombie->pf_index];
+			if(ai.pf_state == PF_USED)
+				move_pos = ai.path[ai.pf_index];
 			else
-				move_pos = zombie->target_pos;
+				move_pos = ai.target_pos;
 		}
 		else
 		{
-			zombie->pf_state = PF_NOT_USED;
-			move_pos = zombie->target_pos;
+			ai.pf_state = PF_NOT_USED;
+			move_pos = ai.target_pos;
 		}
 
 		if(move != MOVE_NO)
 		{
 			// rotate towards target
-			float required_rot = Vec3::Angle2d(zombie->node->pos, move_pos);
+			float required_rot = Vec3::Angle2d(ai.node->pos, move_pos);
 			int dir;
-			float dif = UnitRotateTo(zombie->node->rot.y, required_rot, dt * Zombie::rot_speed, &dir);
+			float dif = UnitRotateTo(ai.node->rot.y, required_rot, dt * stats.rot_speed, &dir);
 			if(dir == 1)
 				animation = ANI_ROTATE_LEFT;
 			else if(dir == -1)
@@ -1069,39 +1069,39 @@ void Game::UpdateUnits(float dt)
 
 			if(dif < PI / 4)
 			{
-				float dist = Vec3::Distance2d(zombie->node->pos, move_pos);
+				float dist = Vec3::Distance2d(ai.node->pos, move_pos);
 				if(move == MOVE_FORWARD)
 				{
 					// move forward
-					float travel_dist = Zombie::walk_speed * dt;
+					float travel_dist = stats.walk_speed * dt;
 					bool moved = false;
 					while(true)
 					{
-						if(travel_dist >= dist && CheckMovePos(*zombie, move_pos))
+						if(travel_dist >= dist && CheckMovePos(ai, move_pos))
 						{
 							moved = true;
-							if(zombie->pf_state != PF_USED || zombie->pf_index + 1 >= (int)zombie->path.size())
+							if(ai.pf_state != PF_USED || ai.pf_index + 1 >= (int)ai.path.size())
 							{
 								// reached end of path
-								zombie->pf_state = PF_NOT_USED; 
+								ai.pf_state = PF_NOT_USED;
 								break;
 							}
 
 							// moving to next point
-							++zombie->pf_index;
-							move_pos = zombie->path[zombie->pf_index];
+							++ai.pf_index;
+							move_pos = ai.path[ai.pf_index];
 							travel_dist -= dist;
-							required_rot = Vec3::Angle2d(zombie->node->pos, move_pos);
-							dif = AngleDiff(zombie->node->rot.y, required_rot);
+							required_rot = Vec3::Angle2d(ai.node->pos, move_pos);
+							dif = AngleDiff(ai.node->rot.y, required_rot);
 							if(dif < PI / 4)
-								dist = Vec3::Distance2d(zombie->node->pos, move_pos);
+								dist = Vec3::Distance2d(ai.node->pos, move_pos);
 							else
 								break;
 						}
 						else
 						{
 							Vec3 move_dir = Vec3(cos(required_rot), 0, sin(required_rot)) * travel_dist;
-							if(CheckMove(*zombie, move_dir))
+							if(CheckMove(ai, move_dir))
 								moved = true;
 							break;
 						}
@@ -1109,72 +1109,80 @@ void Game::UpdateUnits(float dt)
 
 					if(moved)
 					{
-						zombie->node->pos.y = city_generator->GetY(zombie->node->pos);
+						ai.node->pos.y = city_generator->GetY(ai.node->pos);
 						animation = ANI_WALK;
 					}
 				}
 				else if(move == MOVE_BACK)
 				{
 					// move backward
-					Vec3 move_dir = Vec3(cos(required_rot), 0, sin(required_rot)) * Zombie::walk_speed * dt * -0.66f;
-					if(CheckMove(*zombie, move_dir))
+					Vec3 move_dir = Vec3(cos(required_rot), 0, sin(required_rot)) * stats.walk_speed * dt * -0.66f;
+					if(CheckMove(ai, move_dir))
 					{
-						zombie->node->pos.y = city_generator->GetY(zombie->node->pos);
+						ai.node->pos.y = city_generator->GetY(ai.node->pos);
 						animation = ANI_WALK_BACK;
 					}
 				}
 			}
 		}
 
-		if(zombie->attacking && zombie->node->mesh_inst->GetEndResult(0))
+		if(ai.attacking && ai.node->mesh_inst->GetEndResult(0))
 		{
 			// end of attack, check for hit
-			Mesh::Point* hitbox = zombie->node->mesh->GetPoint(Format("hitbox%d", zombie->attack_index + 1));
+			Mesh::Point* hitbox = ai.node->mesh->GetPoint(Format("hitbox%d", ai.attack_index + 1));
 			if(!hitbox)
-				hitbox = zombie->node->mesh->FindPoint("hitbox");
+				hitbox = ai.node->mesh->FindPoint("hitbox");
 			Vec3 hitpoint;
 			Unit* target;
-			if(CheckForHit(*zombie, *hitbox, nullptr, target, hitpoint))
-				HitUnit(*target, *zombie, Random(10, 15), hitpoint);
-			zombie->attacking = false;
+			if(CheckForHit(ai, *hitbox, nullptr, target, hitpoint))
+				HitUnit(*target, ai, Random(10, 15), hitpoint);
+			ai.attacking = false;
 		}
 
-		zombie->last_damage -= dt;
-		if(zombie->attacking)
-			animation = zombie->animation;
-		zombie->Update(animation);
+		ai.last_damage -= dt;
+		if(ai.attacking)
+			animation = ai.animation;
+		ai.Update(animation);
 	}
+}
 
+void Game::UpdateAlertPos(float dt)
+{
 	LoopRemove(alert_pos, [dt](std::pair<Vec3, float>& alert)
 	{
 		return (alert.second -= dt) <= 0.f;
 	});
 }
 
-void Game::SearchForTarget(Zombie* zombie)
+void Game::SearchForTarget(Ai& ai)
 {
-	Player* player = level->player;
-	if(player->hp > 0.f)
+	const float alert_range = ai.GetStats().alert_range;
+
+	for(Unit* unit : level->units)
 	{
-		float dist = Vec3::Distance2d(zombie->node->pos, player->node->pos);
-		if(dist <= 5.f)
+		if(!unit->IsAlive() || !IsEnemy(ai, *unit))
+			continue;
+
+		float dist = Vec3::Distance2d(ai.node->pos, unit->node->pos);
+		if(dist <= alert_range)
 		{
-			float dif = zombie->GetAngleDiff(player->node->pos);
-			if((dist <= 2.5f || dif <= PI / 2) && CanSee(*zombie, player->node->pos))
+			float dif = ai.GetAngleDiff(unit->node->pos);
+			if((dist <= 2.5f || dif <= PI / 2) && CanSee(ai, unit->node->pos))
 			{
-				ZombieAlert(zombie);
-				zombie->target_pos = player->node->pos;
+				UnitAlert(ai, unit, nullptr);
 				return;
 			}
 		}
+	}
 
+	if(ai.state != AI_FALLOW)
+	{
 		for(auto& alert : alert_pos)
 		{
-			dist = Vec3::Distance2d(zombie->node->pos, alert.first);
-			if(dist <= 5.f && CanSee(*zombie, alert.first))
+			float dist = Vec3::Distance2d(ai.node->pos, alert.first);
+			if(dist <= alert_range && CanSee(ai, alert.first))
 			{
-				ZombieAlert(zombie, false);
-				zombie->target_pos = alert.first;
+				UnitAlert(ai, nullptr, &alert.first);
 				return;
 			}
 		}
@@ -1278,7 +1286,7 @@ void Game::HitUnit(Unit& unit, Unit& attacker, int dmg, const Vec3& hitpoint)
 				ZombieAlert(zombie);
 		}
 		else if(unit.type == UNIT_NPC && attacker.type == UNIT_PLAYER)
-			((Npc&)unit).attack_player = true;
+			((Npc&)unit).attack_player = true; // !!!! FIXME alert too
 	}
 
 	// add blood particle
@@ -1342,9 +1350,11 @@ bool Game::CheckMovePos(Unit& unit, const Vec3& pos)
 	return false;
 }
 
-void Game::ZombieAlert(Zombie* zombie, bool first)
+void Game::UnitAlert(Ai& ai, Unit* target, Vec3* target_pos)
 {
-	if(first && zombie->state != AI_FALLOW)
+	// FIXME
+	// ! obsluga AI_COMBAT
+	if(target && ai.state != AI_FALLOW) // !!!!!!!!!!
 	{
 		sound_mgr->PlaySound3d(sound_zombie_alert, zombie->GetSoundPos(), 2.f);
 		alert_pos.push_back({ zombie->node->pos, 1.f });
@@ -1615,4 +1625,19 @@ void Game::LoadConfig(cstring cmd_line)
 	int valid_volume = Clamp(volume, 0, 100);
 	if(volume != valid_volume)
 		config->SetInt("volume", valid_volume);
+}
+
+bool Game::IsEnemy(Unit& u1, Unit& u2)
+{
+	if(u1.type == u2.type)
+		return false;
+	if(u1.type == UNIT_ZOMBIE)
+		return true;
+	else if(u1.type == UNIT_NPC)
+	{
+		if(u2.type == UNIT_PLAYER && !((Npc&)u1).attack_player)
+			return false;
+		return true;
+	}
+	return false;
 }

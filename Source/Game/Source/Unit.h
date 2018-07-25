@@ -1,5 +1,7 @@
 #pragma once
 
+#include "UnitStats.h"
+
 enum Animation
 {
 	ANI_STAND,
@@ -25,13 +27,17 @@ struct Unit
 	explicit Unit(UnitType type) : hp(100), maxhp(100), animation(ANI_STAND), type(type), last_damage(0), dying(false) {}
 	virtual ~Unit() {}
 	void Update(Animation new_animation);
+	
+	virtual void Save(FileWriter& f);
+	virtual void Load(FileReader& f);
+
+	bool IsAlive() const { return hp > 0; }
+
 	float GetHpp() const { return float(hp) / maxhp; }
 	Box GetBox() const;
 	Vec3 GetSoundPos() const;
 	float GetAngleDiff(const Vec3& target) const;
-	bool IsAlive() const { return hp > 0; }
-	virtual void Save(FileWriter& f);
-	virtual void Load(FileReader& f);
+	const UnitStats& GetStats() const { return UnitStats::stats[type == UNIT_ZOMBIE ? 1 : 0]; }
 
 	Ai* ai;
 	SceneNode* node;

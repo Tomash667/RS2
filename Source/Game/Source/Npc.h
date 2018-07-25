@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Unit.h"
+#include "Ai.h"
 
-struct Npc : Unit
+struct Npc : Ai
 {
-	Npc() : Unit(UNIT_NPC), attack_player(false) {}
+	Npc() : Ai(UNIT_NPC), attack_player(false) {}
 	void Save(FileWriter& f) override;
 	void Load(FileReader& f) override;
 

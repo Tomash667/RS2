@@ -21,13 +21,14 @@ private:
 	void UpdateGame(float dt);
 	void UpdatePlayer(float dt);
 	void UpdateUnits(float dt);
+	void UpdateAlertPos(float dt);
 	float UnitRotateTo(float& rot, float expected_rot, float speed, int* dir = nullptr);
 	bool CheckForHit(Unit& unit, MeshPoint& hitbox, MeshPoint* bone, Unit*& target, Vec3& hitpoint);
 	void HitUnit(Unit& unit, Unit& attacker, int dmg, const Vec3& hitpoint);
 	bool CheckMove(Unit& uint, const Vec3& dir);
 	bool CheckMovePos(Unit& unit, const Vec3& pos);
-	void ZombieAlert(Zombie* zombie, bool first = true);
-	void SearchForTarget(Zombie* zombie);
+	void UnitAlert(Ai& ai, Unit* target, const Vec3* target_pos);
+	void SearchForTarget(Ai& ai);
 	bool CanSee(Unit& unit, const Vec3& pos);
 	void OnDebugDraw(DebugDrawer* debug_drawer);
 	void UpdateWorld(float dt);
@@ -37,6 +38,7 @@ private:
 	void Load(FileReader& f);
 	void ShowErrorMessage(cstring err);
 	void LoadConfig(cstring cmd_line);
+	bool IsEnemy(Unit& u1, Unit& u2);
 
 	unique_ptr<Engine> engine;
 	Scene* scene;
