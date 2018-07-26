@@ -333,49 +333,50 @@ void Game::UpdateGame(float dt)
 
 void Game::UpdatePlayer(float dt)
 {
-	Player* player = level->player;
-	if(player->hp <= 0)
+	Player& player = *level->player;
+	if(player.hp <= 0)
 	{
-		if(player->dying && player->node->mesh_inst->GetEndResult(0))
+		if(player.dying && player.node->mesh_inst->GetEndResult(0))
 		{
-			player->dying = false;
-			if(!player->death_starved)
-				level->SpawnBlood(*player);
+			player.dying = false;
+			if(!player.death_starved)
+				level->SpawnBlood(player);
 		}
 		return;
 	}
 
 #ifdef _DEBUG
-	UpdateTestPath(player->node->pos);
+	UpdateTestPath(player.node->pos);
 #endif
 	
 	// show gick perk dialog when survived night
-	if(game_state.day != player->last_survived_day && game_state.hour >= 7.f)
+	if(game_state.day != player.last_survived_day && game_state.hour >= 7.f)
 	{
-		pick_perk->Show(player);
-		player->last_survived_day = game_state.day;
+		pick_perk->Show(&player);
+		player.last_survived_day = game_state.day;
 	}
 #ifdef _DEBUG
 	if(input->Pressed(Key::P))
-		pick_perk->Show(player);
+		pick_perk->Show(&player);
 #endif
 
-	player->last_damage -= dt;
-	if((player->hungry_timer -= dt) <= 0.f)
+	const UnitStats& stats = player.GetStats();
+	player.last_damage -= dt;
+	if((player.hungry_timer -= dt) <= 0.f)
 	{
-		player->hungry_timer = Player::hunger_timestep;
-		FoodLevel prev_food_level = player->GetFoodLevel();
-		player->food = max(player->food - 1, -10);
-		FoodLevel new_food_level = player->GetFoodLevel();
+		player.hungry_timer = Player::hunger_timestep;
+		FoodLevel prev_food_level = player.GetFoodLevel();
+		player.food = max(player.food - 1, -10);
+		FoodLevel new_food_level = player.GetFoodLevel();
 		if(prev_food_level != new_food_level && new_food_level <= FL_HUNGRY)
-			sound_mgr->PlaySound3d(sound_hungry, player->GetSoundPos(), 1.f);
-		if(player->food < 0)
+			sound_mgr->PlaySound3d(sound_hungry, player.GetSoundPos(), 1.f);
+		if(player.food < 0)
 		{
-			player->hp -= 1;
-			if(player->hp <= 0)
+			player.hp -= 1;
+			if(player.hp <= 0)
 			{
-				player->animation = ANI_DIE;
-				player->node->mesh_inst->Play("umiera", PLAY_ONCE | PLAY_STOP_AT_END | PLAY_PRIO3, 0);
+				player.animation = ANI_DIE;
+				player.node->mesh_inst->Play("umiera", PLAY_ONCE | PLAY_STOP_AT_END | PLAY_PRIO3, 0);
 				return;
 			}
 		}
@@ -384,17 +385,17 @@ void Game::UpdatePlayer(float dt)
 	Animation animation = ANI_STAND;
 
 	// check items before player
-	if(player->action != A_PICKUP)
+	if(player.action != A_PICKUP)
 	{
 		const float pick_range = 2.f;
 		float best_range = pick_range;
 		GroundItem* best_item = nullptr;
 		for(GroundItem& item : level->items)
 		{
-			float dist = Vec3::Distance2d(player->node->pos, item.pos);
+			float dist = Vec3::Distance2d(player.node->pos, item.pos);
 			if(dist < best_range)
 			{
-				float angle = AngleDiff(player->node->rot.y, Vec3::Angle2d(player->node->pos, item.pos));
+				float angle = AngleDiff(player.node->rot.y, Vec3::Angle2d(player.node->pos, item.pos));
 				if(angle < PI / 4)
 				{
 					best_item = &item;
@@ -402,190 +403,190 @@ void Game::UpdatePlayer(float dt)
 				}
 			}
 		}
-		if(player->item_before && player->item_before != best_item)
+		if(player.item_before && player.item_before != best_item)
 		{
-			player->item_before->node->tint = Vec4::One;
-			player->item_before = nullptr;
+			player.item_before->node->tint = Vec4::One;
+			player.item_before = nullptr;
 		}
-		if(best_item && best_item != player->item_before)
+		if(best_item && best_item != player.item_before)
 		{
-			player->item_before = best_item;
+			player.item_before = best_item;
 			best_item->node->tint = Vec4(2, 2, 2, 1);
 		}
 
-		if(player->action == A_NONE && player->item_before && input->Pressed(Key::E))
+		if(player.action == A_NONE && player.item_before && input->Pressed(Key::E))
 		{
-			player->action = A_PICKUP;
-			player->action_state = 0;
+			player.action = A_PICKUP;
+			player.action_state = 0;
 			animation = ANI_ACTION;
-			player->node->mesh_inst->Play("podnosi", PLAY_ONCE | PLAY_CLEAR_FRAME_END_INFO, 0);
+			player.node->mesh_inst->Play("podnosi", PLAY_ONCE | PLAY_CLEAR_FRAME_END_INFO, 0);
 		}
 	}
 
 	if(input->Pressed(Key::H))
-		player->UseMedkit();
+		player.UseMedkit();
 	if(input->Pressed(Key::R))
-		player->Reload();
+		player.Reload();
 	if(input->Pressed(Key::N1))
-		player->SwitchWeapon(true);
+		player.SwitchWeapon(true);
 	if(input->Pressed(Key::N2))
-		player->SwitchWeapon(false);
+		player.SwitchWeapon(false);
 
-	if(player->action == A_NONE && allow_mouse && input->Down(Key::LeftButton) && player->use_melee)
+	if(player.action == A_NONE && allow_mouse && input->Down(Key::LeftButton) && player.use_melee)
 	{
 		// attack
-		player->action = A_ATTACK;
-		player->action_state = 0;
-		player->node->mesh_inst->Play(Rand() % 2 == 0 ? "atak1" : "atak2", PLAY_ONCE | PLAY_CLEAR_FRAME_END_INFO, 1);
+		player.action = A_ATTACK;
+		player.action_state = 0;
+		player.node->mesh_inst->Play(Rand() % 2 == 0 ? "atak1" : "atak2", PLAY_ONCE | PLAY_CLEAR_FRAME_END_INFO, 1);
 	}
-	if(player->action == A_NONE && allow_mouse && !player->use_melee && input->Down(Key::RightButton))
+	if(player.action == A_NONE && allow_mouse && !player.use_melee && input->Down(Key::RightButton))
 	{
-		player->action = A_AIM;
-		player->node->mesh_inst->Play("aim", PLAY_MANUAL, 1);
+		player.action = A_AIM;
+		player.node->mesh_inst->Play("aim", PLAY_MANUAL, 1);
 		camera->SetAim(true);
 	}
 
 	bool can_run = true, can_move = true;
-	switch(player->action)
+	switch(player.action)
 	{
 	case A_NONE:
 		break;
 	case A_USE_MEDKIT:
 		can_run = false;
-		if(player->action_state == 0)
+		if(player.action_state == 0)
 		{
-			sound_mgr->PlaySound3d(sound_medkit, player->GetSoundPos(), 2.f);
-			player->action_state = 1;
+			sound_mgr->PlaySound3d(sound_medkit, player.GetSoundPos(), 2.f);
+			player.action_state = 1;
 		}
-		if(player->node->mesh_inst->GetEndResult(1))
+		if(player.node->mesh_inst->GetEndResult(1))
 		{
-			int medic_level = player->GetPerkLevel(PerkId::Medic);
+			int medic_level = player.GetPerkLevel(PerkId::Medic);
 			float gain = 0.5f + 0.1f * medic_level;
-			player->hp = min(player->hp + int(gain * player->maxhp), player->maxhp);
-			--player->medkits;
-			player->action = A_NONE;
-			player->weapon->visible = true;
+			player.hp = min(player.hp + int(gain * player.maxhp), player.maxhp);
+			--player.medkits;
+			player.action = A_NONE;
+			player.weapon->visible = true;
 		}
 		break;
 	case A_EAT:
 		can_run = false;
-		if(player->action_state == 0 && player->node->mesh_inst->GetProgress(1) >= 19.f / 70)
+		if(player.action_state == 0 && player.node->mesh_inst->GetProgress(1) >= 19.f / 70)
 		{
-			player->action_state = 1;
-			sound_mgr->PlaySound3d(sound_eat, player->GetSoundPos(), 2.f);
+			player.action_state = 1;
+			sound_mgr->PlaySound3d(sound_eat, player.GetSoundPos(), 2.f);
 			float gain = 0.25f;
-			player->food = min(int(player->food + gain * player->maxfood), player->maxfood);
-			--player->food_cans;
+			player.food = min(int(player.food + gain * player.maxfood), player.maxfood);
+			--player.food_cans;
 		}
-		if(player->node->mesh_inst->GetEndResult(1))
+		if(player.node->mesh_inst->GetEndResult(1))
 		{
-			player->action = A_NONE;
-			player->weapon->visible = true;
+			player.action = A_NONE;
+			player.weapon->visible = true;
 		}
 		break;
 	case A_PICKUP:
-		if(player->action_state == 0)
+		if(player.action_state == 0)
 		{
 			// rotate towards item
-			float expected_rot = Vec3::Angle2d(player->node->pos, player->item_before->pos);
-			UnitRotateTo(player->node->rot.y, expected_rot, Player::rot_speed * dt);
+			float expected_rot = Vec3::Angle2d(player.node->pos, player.item_before->pos);
+			UnitRotateTo(player.node->rot.y, expected_rot, stats.rot_speed * dt);
 
-			if(player->node->mesh_inst->GetProgress(0) > 19.f / 34)
+			if(player.node->mesh_inst->GetProgress(0) > 19.f / 34)
 			{
 				// pickup item
-				switch(player->item_before->item->type)
+				switch(player.item_before->item->type)
 				{
 				case Item::MEDKIT:
-					++player->medkits;
+					++player.medkits;
 					break;
 				case Item::FOOD:
-					++player->food_cans;
+					++player.food_cans;
 					break;
 				case Item::RANGED_WEAPON:
-					if(!player->ranged_weapon)
+					if(!player.ranged_weapon)
 					{
-						player->ranged_weapon = player->item_before->item;
-						player->current_ammo = 10;
+						player.ranged_weapon = player.item_before->item;
+						player.current_ammo = 10;
 					}
 					else
-						player->ammo += 10;
+						player.ammo += 10;
 					break;
 				case Item::AMMO:
-					player->ammo += 20;
+					player.ammo += 20;
 					break;
 				case Item::MELEE_WEAPON:
-					if(player->melee_weapon != player->item_before->item)
+					if(player.melee_weapon != player.item_before->item)
 					{
-						player->melee_weapon = player->item_before->item;
-						player->weapon->mesh = player->melee_weapon->mesh;
+						player.melee_weapon = player.item_before->item;
+						player.weapon->mesh = player.melee_weapon->mesh;
 					}
 					break;
 				}
-				level->RemoveItem(player->item_before);
-				player->action_state = 1;
-				player->item_before = nullptr;
+				level->RemoveItem(player.item_before);
+				player.action_state = 1;
+				player.item_before = nullptr;
 			}
 		}
-		else if(player->node->mesh_inst->GetEndResult(0))
-			player->action = A_NONE;
+		else if(player.node->mesh_inst->GetEndResult(0))
+			player.action = A_NONE;
 		can_move = false;
 		break;
 	case A_ATTACK:
-		if(player->action_state == 0)
+		if(player.action_state == 0)
 		{
-			if(player->node->mesh_inst->GetProgress(1) > 14.f / 20)
+			if(player.node->mesh_inst->GetProgress(1) > 14.f / 20)
 			{
 				// check for hitted target
-				Mesh::Point* hitbox = player->weapon->mesh->FindPoint("hit");
-				Mesh::Point* bone = (Mesh::Point*)player->weapon->GetParentPoint();
+				Mesh::Point* hitbox = player.weapon->mesh->FindPoint("hit");
+				Mesh::Point* bone = (Mesh::Point*)player.weapon->GetParentPoint();
 				Vec3 hitpoint;
 				Unit* target;
-				if(CheckForHit(*player, *hitbox, bone, target, hitpoint))
+				if(CheckForHit(player, *hitbox, bone, target, hitpoint))
 				{
 					float damage_mod = 1.f;
-					int strong_level = player->GetPerkLevel(PerkId::Strong);
+					int strong_level = player.GetPerkLevel(PerkId::Strong);
 					damage_mod += 0.2f * strong_level;
 					if(target->type == UNIT_ZOMBIE)
 					{
-						int necrology_level = player->GetPerkLevel(PerkId::Necrology);
+						int necrology_level = player.GetPerkLevel(PerkId::Necrology);
 						damage_mod += 0.1f * necrology_level;
 					}
-					HitUnit(*target, *player, int(damage_mod * player->melee_weapon->RandomValue()), hitpoint);
+					HitUnit(*target, player, int(damage_mod * player.melee_weapon->RandomValue()), hitpoint);
 				}
-				player->action_state = 1;
+				player.action_state = 1;
 			}
 		}
-		else if(player->node->mesh_inst->GetEndResult(1))
-			player->action = A_NONE;
+		else if(player.node->mesh_inst->GetEndResult(1))
+			player.action = A_NONE;
 		can_run = false;
 		break;
 	case A_RELOAD:
 		can_run = false;
-		if(player->action_state == 0)
+		if(player.action_state == 0)
 		{
-			sound_mgr->PlaySound3d(sound_reload, player->GetSoundPos(), 2.f);
-			player->action_state = 1;
+			sound_mgr->PlaySound3d(sound_reload, player.GetSoundPos(), 2.f);
+			player.action_state = 1;
 		}
-		if(player->node->mesh_inst->GetEndResult(1))
+		if(player.node->mesh_inst->GetEndResult(1))
 		{
-			uint ammo = min(player->ammo, 10u - player->current_ammo);
-			player->current_ammo += ammo;
-			player->ammo -= ammo;
-			player->action = A_NONE;
-			player->weapon->visible = true;
+			uint ammo = min(player.ammo, 10u - player.current_ammo);
+			player.current_ammo += ammo;
+			player.ammo -= ammo;
+			player.action = A_NONE;
+			player.weapon->visible = true;
 		}
 		if(camera->aim && (!allow_mouse || !input->Down(Key::RightButton)))
 			camera->SetAim(false);
 		break;
 	case A_AIM:
 		can_run = false;
-		player->shot_delay -= dt;
+		player.shot_delay -= dt;
 		if(!allow_mouse || !input->Down(Key::RightButton))
 		{
-			if(player->shot_delay <= 0.f)
+			if(player.shot_delay <= 0.f)
 			{
-				player->action = A_NONE;
-				player->node->mesh_inst->Deactivate(1);
+				player.action = A_NONE;
+				player.node->mesh_inst->Deactivate(1);
 				camera->SetAim(false);
 			}
 		}
@@ -593,45 +594,45 @@ void Game::UpdatePlayer(float dt)
 		{
 			const Vec2 angle_limits = ThirdPersonCamera::c_angle_aim;
 			float ratio = (1.f - (camera->rot.y - angle_limits.x) / (angle_limits.y - angle_limits.x)) * 0.8f + 0.1f;
-			player->node->mesh_inst->SetProgress(1, Clamp(ratio, 0.f, 1.f));
+			player.node->mesh_inst->SetProgress(1, Clamp(ratio, 0.f, 1.f));
 
-			if(player->current_ammo == 0 && player->ammo != 0 && player->shot_delay <= 0.f)
-				player->Reload();
+			if(player.current_ammo == 0 && player.ammo != 0 && player.shot_delay <= 0.f)
+				player.Reload();
 			else if(input->Pressed(Key::LeftButton)
-				&& player->shot_delay <= 0
-				&& !player->node->mesh_inst->GetGroup(1).IsBlending())
+				&& player.shot_delay <= 0
+				&& !player.node->mesh_inst->GetGroup(1).IsBlending())
 			{
-				if(player->current_ammo == 0)
+				if(player.current_ammo == 0)
 				{
 					// try to shoot
-					player->shot_delay = 0.1f;
-					sound_mgr->PlaySound3d(sound_shoot_try, player->GetShootPos(), 1.f);
+					player.shot_delay = 0.1f;
+					sound_mgr->PlaySound3d(sound_shoot_try, player.GetShootPos(), 1.f);
 				}
 				else
 				{
-					Vec3 shoot_pos = player->GetShootPos();
+					Vec3 shoot_pos = player.GetShootPos();
 					Vec3 shoot_from = camera->cam->from;
 					Vec3 shoot_dir = (camera->cam->to - shoot_from).Normalize() * 100.f;
-					Vec3 target_pos = shoot_from + shoot_dir * 100.f + RandomPointInsideSphere(player->aim * 20);
+					Vec3 target_pos = shoot_from + shoot_dir * 100.f + RandomPointInsideSphere(player.aim * 20);
 					shoot_dir = (target_pos - shoot_from).Normalize() * 100.f;
 
 					Unit* target;
 					float t;
-					if(level->RayTest(shoot_from, shoot_dir, t, Level::COLLIDE_ALL, player, &target))
+					if(level->RayTest(shoot_from, shoot_dir, t, Level::COLLIDE_ALL, &player, &target))
 					{
 						Vec3 hitpoint = shoot_from + shoot_dir * t;
 						if(target)
 						{
 							// hit unit
 							float damage_mod = 1.f;
-							int firearms_level = player->GetPerkLevel(PerkId::Firearms);
+							int firearms_level = player.GetPerkLevel(PerkId::Firearms);
 							damage_mod += 0.2f * firearms_level;
 							if(target->type == UNIT_ZOMBIE)
 							{
-								int necrology_level = player->GetPerkLevel(PerkId::Necrology);
+								int necrology_level = player.GetPerkLevel(PerkId::Necrology);
 								damage_mod += 0.1f * necrology_level;
 							}
-							HitUnit(*target, *player, int(damage_mod * player->ranged_weapon->RandomValue()), hitpoint);
+							HitUnit(*target, player, int(damage_mod * player.ranged_weapon->RandomValue()), hitpoint);
 						}
 						else
 						{
@@ -661,11 +662,11 @@ void Game::UpdatePlayer(float dt)
 					}
 
 					sound_mgr->PlaySound3d(sound_shoot, shoot_pos, 4.f);
-					player->weapon->mesh_inst->Play("shoot", PLAY_NO_BLEND | PLAY_ONCE, 0);
+					player.weapon->mesh_inst->Play("shoot", PLAY_NO_BLEND | PLAY_ONCE, 0);
 
-					player->shot_delay = 0.1f;
-					player->UpdateAim(10.f);
-					--player->current_ammo;
+					player.shot_delay = 0.1f;
+					player.UpdateAim(10.f);
+					--player.current_ammo;
 				}
 			}
 		}
@@ -690,65 +691,65 @@ void Game::UpdatePlayer(float dt)
 		if(mouse_x != 0 && allow_mouse)
 		{
 			float value = float(mouse_x) / 400;
-			player->rot_buf -= value;
+			player.rot_buf -= value;
 		}
 		if(allow_mouse)
 		{
 			Int2 dif = input->GetMouseDif();
-			player->UpdateAim(float(max(abs(dif.x), abs(dif.y))) / 50);
+			player.UpdateAim(float(max(abs(dif.x), abs(dif.y))) / 50);
 		}
-		if(player->rot_buf != 0)
+		if(player.rot_buf != 0)
 		{
-			if(player->rot_buf > 0)
+			if(player.rot_buf > 0)
 			{
-				player->last_rot = 0.1f;
+				player.last_rot = 0.1f;
 				animation = ANI_ROTATE_LEFT;
-				float rot = Player::rot_speed * dt;
-				if(player->rot_buf > rot)
+				float rot = stats.rot_speed * dt;
+				if(player.rot_buf > rot)
 				{
-					player->node->rot.y += rot;
-					player->rot_buf -= rot;
+					player.node->rot.y += rot;
+					player.rot_buf -= rot;
 				}
 				else
 				{
-					player->node->rot.y += player->rot_buf;
-					player->rot_buf = 0;
+					player.node->rot.y += player.rot_buf;
+					player.rot_buf = 0;
 				}
 			}
-			else if(player->rot_buf < 0)
+			else if(player.rot_buf < 0)
 			{
-				player->last_rot = -0.1f;
+				player.last_rot = -0.1f;
 				animation = ANI_ROTATE_RIGHT;
-				float rot = Player::rot_speed * dt;
-				if(-player->rot_buf > rot)
+				float rot = stats.rot_speed * dt;
+				if(-player.rot_buf > rot)
 				{
-					player->node->rot.y -= rot;
-					player->rot_buf += rot;
+					player.node->rot.y -= rot;
+					player.rot_buf += rot;
 				}
 				else
 				{
-					player->node->rot.y += player->rot_buf;
-					player->rot_buf = 0;
+					player.node->rot.y += player.rot_buf;
+					player.rot_buf = 0;
 				}
 			}
-			player->node->rot.y = Clip(player->node->rot.y);
-			player->rot_buf *= (1.f - dt * 5);
+			player.node->rot.y = Clip(player.node->rot.y);
+			player.rot_buf *= (1.f - dt * 5);
 		}
-		else if(player->last_rot != 0)
+		else if(player.last_rot != 0)
 		{
-			if(player->last_rot > 0)
+			if(player.last_rot > 0)
 			{
 				animation = ANI_ROTATE_LEFT;
-				player->last_rot -= dt;
-				if(player->last_rot < 0)
-					player->last_rot = 0;
+				player.last_rot -= dt;
+				if(player.last_rot < 0)
+					player.last_rot = 0;
 			}
 			else
 			{
 				animation = ANI_ROTATE_RIGHT;
-				player->last_rot += dt;
-				if(player->last_rot > 0)
-					player->last_rot = 0;
+				player.last_rot += dt;
+				if(player.last_rot > 0)
+					player.last_rot = 0;
 			}
 		}
 	}
@@ -786,12 +787,12 @@ void Game::UpdatePlayer(float dt)
 			back = true;
 			break;
 		}
-		dir += player->node->rot.y - PI / 2;
+		dir += player.node->rot.y - PI / 2;
 		bool run = can_run && !back && !input->Down(Key::Shift);
 
-		const float speed = run ? player->GetRunSpeed() : Player::walk_speed;
-		if(CheckMove(*player, Vec3(cos(dir), 0, sin(dir)) * (speed * dt)))
-			player->node->pos.y = city_generator->GetY(player->node->pos);
+		const float speed = run ? player.GetRunSpeed() : stats.walk_speed;
+		if(CheckMove(player, Vec3(cos(dir), 0, sin(dir)) * (speed * dt)))
+			player.node->pos.y = city_generator->GetY(player.node->pos);
 		if(back)
 			animation = ANI_WALK_BACK;
 		else
@@ -800,28 +801,28 @@ void Game::UpdatePlayer(float dt)
 	}
 
 	float d = 1.0f - exp(log(0.5f) * 5.f *dt);
-	player->UpdateAim((expected_aim - player->aim) * d);
+	player.UpdateAim((expected_aim - player.aim) * d);
 
-	if(player->action == A_NONE && animation == ANI_STAND)
+	if(player.action == A_NONE && animation == ANI_STAND)
 	{
-		if((player->idle_timer -= dt) <= 0)
+		if((player.idle_timer -= dt) <= 0)
 		{
-			player->idle_timer_max = Random(2.5f, 4.f);
-			player->idle_timer = player->idle_timer_max + 1.5f;
+			player.idle_timer_max = Random(2.5f, 4.f);
+			player.idle_timer = player.idle_timer_max + 1.5f;
 			animation = ANI_IDLE;
 		}
 	}
 	else
-		player->idle_timer = player->idle_timer_max;
+		player.idle_timer = player.idle_timer_max;
 
-	if(player->action != A_NONE && player->animation == ANI_ACTION)
-		animation = player->animation;
-	if(player->animation == ANI_IDLE && animation == ANI_STAND && !player->node->mesh_inst->GetEndResult(0))
+	if(player.action != A_NONE && player.animation == ANI_ACTION)
+		animation = player.animation;
+	if(player.animation == ANI_IDLE && animation == ANI_STAND && !player.node->mesh_inst->GetEndResult(0))
 		animation = ANI_IDLE;
 
-	player->Update(animation);
-	engine->GetSoundManager()->SetListenerPosition(player->GetSoundPos(),
-		Vec3(sin(-player->node->rot.y + PI / 2), 0, cos(-player->node->rot.y + PI / 2)));
+	player.Update(animation);
+	engine->GetSoundManager()->SetListenerPosition(player.GetSoundPos(),
+		Vec3(sin(-player.node->rot.y + PI / 2), 0, cos(-player.node->rot.y + PI / 2)));
 }
 
 #ifdef _DEBUG
@@ -855,7 +856,7 @@ void Game::UpdateUnits(float dt)
 			continue;
 		}
 
-		if(unit->IsAlive())
+		if(!unit->IsAlive())
 		{
 			if(unit->dying && unit->node->mesh_inst->GetEndResult(0))
 			{
@@ -883,8 +884,15 @@ void Game::UpdateUnits(float dt)
 		Animation animation = ANI_STAND;
 		Move move = MOVE_NO;
 
-		if(ai.state != AI_COMBAT)
-			SearchForTarget(ai);
+		if(!ai.attacking)
+		{
+			ai.scan_timer -= dt;
+			if(ai.scan_timer <= 0.f)
+			{
+				ai.scan_timer = Random(0.1f, 0.2f);
+				SearchForTarget(ai);
+			}
+		}
 
 		if(ai.state == AI_IDLE)
 		{
@@ -995,12 +1003,20 @@ void Game::UpdateUnits(float dt)
 				{
 					// attack
 					ai.attacking = true;
-					ai.animation = ANI_ACTION;
 					ai.timer = Random(1.5f, 2.5f);
-					ai.attack_index = Rand() % 2 == 0 ? 0 : 1;
-					ai.node->mesh_inst->Play(ai.attack_index == 0 ? "atak1" : "atak2", PLAY_ONCE | PLAY_CLEAR_FRAME_END_INFO, 0);
-					if(Rand() % 4 && ai.type == UNIT_ZOMBIE)
-						sound_mgr->PlaySound3d(sound_zombie_attack, ai.GetSoundPos(), 2.f);
+					if(ai.type == UNIT_ZOMBIE)
+					{
+						ai.animation = ANI_ACTION;
+						ai.attack_index = Rand() % 2 == 0 ? 0 : 1;
+						ai.node->mesh_inst->Play(ai.attack_index == 0 ? "atak1" : "atak2", PLAY_ONCE | PLAY_CLEAR_FRAME_END_INFO, 0);
+						if(Rand() % 4)
+							sound_mgr->PlaySound3d(sound_zombie_attack, ai.GetSoundPos(), 2.f);
+					}
+					else
+					{
+						ai.attack_index = 0;
+						ai.node->mesh_inst->Play(Rand() % 2 == 0 ? "atak1" : "atak2", PLAY_ONCE | PLAY_CLEAR_FRAME_END_INFO, 1);
+					}
 				}
 			}
 		}
@@ -1127,17 +1143,43 @@ void Game::UpdateUnits(float dt)
 			}
 		}
 
-		if(ai.attacking && ai.node->mesh_inst->GetEndResult(0))
+		if(ai.attacking)
 		{
-			// end of attack, check for hit
-			Mesh::Point* hitbox = ai.node->mesh->GetPoint(Format("hitbox%d", ai.attack_index + 1));
-			if(!hitbox)
-				hitbox = ai.node->mesh->FindPoint("hitbox");
-			Vec3 hitpoint;
-			Unit* target;
-			if(CheckForHit(ai, *hitbox, nullptr, target, hitpoint))
-				HitUnit(*target, ai, Random(10, 15), hitpoint);
-			ai.attacking = false;
+			if(ai.type == UNIT_ZOMBIE)
+			{
+				if(ai.node->mesh_inst->GetEndResult(0))
+				{
+					// end of attack, check for hit
+					Mesh::Point* hitbox = ai.node->mesh->GetPoint(Format("hitbox%d", ai.attack_index + 1));
+					if(!hitbox)
+						hitbox = ai.node->mesh->FindPoint("hitbox");
+					Vec3 hitpoint;
+					Unit* target;
+					if(CheckForHit(ai, *hitbox, nullptr, target, hitpoint))
+						HitUnit(*target, ai, Random(10, 15), hitpoint);
+					ai.attacking = false;
+				}
+			}
+			else
+			{
+				if(ai.attack_index == 0)
+				{
+					if(ai.node->mesh_inst->GetProgress(1) > 14.f / 20)
+					{
+						// check for hitted target
+						Npc& npc = (Npc&)ai;
+						Mesh::Point* hitbox = npc.weapon->mesh->FindPoint("hit");
+						Mesh::Point* bone = (Mesh::Point*)npc.weapon->GetParentPoint();
+						Vec3 hitpoint;
+						Unit* target;
+						if(CheckForHit(npc, *hitbox, bone, target, hitpoint))
+							HitUnit(*target, ai, Random(20, 30), hitpoint);
+						ai.attack_index = 1;
+					}
+				}
+				else if(ai.node->mesh_inst->GetEndResult(1))
+					ai.attacking = false;
+			}
 		}
 
 		ai.last_damage -= dt;
@@ -1158,6 +1200,8 @@ void Game::UpdateAlertPos(float dt)
 void Game::SearchForTarget(Ai& ai)
 {
 	const float alert_range = ai.GetStats().alert_range;
+	Unit* best_target = nullptr;
+	float best_dist = alert_range + 1.f;
 
 	for(Unit* unit : level->units)
 	{
@@ -1170,11 +1214,23 @@ void Game::SearchForTarget(Ai& ai)
 			float dif = ai.GetAngleDiff(unit->node->pos);
 			if((dist <= 2.5f || dif <= PI / 2) && CanSee(ai, unit->node->pos))
 			{
-				UnitAlert(ai, unit, nullptr);
-				return;
+				if(dist < best_dist)
+				{
+					best_target = unit;
+					best_dist = dist;
+				}
 			}
 		}
 	}
+
+	if(best_target)
+	{
+		if(best_target != ai.target)
+			UnitAlert(ai, best_target, nullptr);
+		return;
+	}
+	if(ai.target)
+		return;
 
 	if(ai.state != AI_FALLOW)
 	{

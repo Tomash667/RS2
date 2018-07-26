@@ -171,6 +171,7 @@ Npc* Level::CreateNpc()
 	weapon->pos = Vec3::Zero;
 	weapon->rot = Vec3::Zero;
 	npc->node->Add(weapon, npc->node->mesh->GetPoint("bron"));
+	npc->weapon = weapon;
 
 	SceneNode* clothes = new SceneNode;
 	clothes->mesh = mesh_clothes;

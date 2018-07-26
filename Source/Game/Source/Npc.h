@@ -8,5 +8,6 @@ struct Npc : Ai
 	void Save(FileWriter& f) override;
 	void Load(FileReader& f) override;
 
+	SceneNode* weapon;
 	bool attack_player;
 };

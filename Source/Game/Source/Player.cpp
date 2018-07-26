@@ -7,9 +7,6 @@
 #include <Scene.h>
 #include "Perk.h"
 
-const float Player::walk_speed = 2.5f;
-const float Player::run_speed = 7.f;
-const float Player::rot_speed = 4.f;
 const float Player::hunger_timestep = 10.f;
 
 Player::Player(Level* level) : Unit(UNIT_PLAYER), level(level), medkits(0), food_cans(0), action(A_NONE), item_before(nullptr), rot_buf(0),
@@ -235,7 +232,7 @@ int Player::GetPerkLevel(PerkId id)
 float Player::GetRunSpeed()
 {
 	int level = GetPerkLevel(PerkId::Agile);
-	return run_speed + 0.5f * level;
+	return GetStats().run_speed + 0.5f * level;
 }
 
 void Player::UpdateAim(float mod)

@@ -5,6 +5,8 @@ const Vec2 Ai::idle_timer = Vec2(4.f, 6.f);
 
 void Ai::ChangeState(AiState new_state)
 {
+	if(new_state == state)
+		return;
 	if(new_state == AI_COMBAT)
 	{
 		timer = 0.f; // next attack

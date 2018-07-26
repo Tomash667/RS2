@@ -51,8 +51,5 @@ struct Player : Unit
 	vector<std::pair<PerkId, int>> perks;
 	bool use_melee, death_starved;
 
-	static const float walk_speed;
-	static const float run_speed;
-	static const float rot_speed;
 	static const float hunger_timestep;
 };
