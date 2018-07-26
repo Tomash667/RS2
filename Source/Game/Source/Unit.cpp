@@ -81,9 +81,6 @@ void Unit::Save(FileWriter& f)
 	}
 	f << last_damage;
 	f << animation;
-
-	if(IsAlive() && ai)
-		ai->Save(f);
 }
 
 void Unit::Load(FileReader& f)
@@ -103,10 +100,4 @@ void Unit::Load(FileReader& f)
 	}
 	f >> last_damage;
 	f >> animation;
-
-	if(IsAlive() && type != UNIT_PLAYER)
-	{
-		Ai* ai = new Ai;
-		ai->Load(f);
-	}
 }

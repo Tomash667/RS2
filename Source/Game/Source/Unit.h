@@ -27,7 +27,7 @@ struct Unit
 	explicit Unit(UnitType type) : hp(100), maxhp(100), animation(ANI_STAND), type(type), last_damage(0), dying(false) {}
 	virtual ~Unit() {}
 	void Update(Animation new_animation);
-	
+
 	virtual void Save(FileWriter& f);
 	virtual void Load(FileReader& f);
 
@@ -39,7 +39,6 @@ struct Unit
 	float GetAngleDiff(const Vec3& target) const;
 	const UnitStats& GetStats() const { return UnitStats::stats[type == UNIT_ZOMBIE ? 1 : 0]; }
 
-	Ai* ai;
 	SceneNode* node;
 	UnitType type;
 	int hp, maxhp, death_timer;

@@ -192,8 +192,9 @@ void Game::LoadResources()
 	tex_hit_object = res_mgr->GetTexture("particles/hit_object.png");
 
 	// sounds
-	sound_player_hurt = res_mgr->GetSound("sounds/player_hurt.mp3");
-	sound_player_die = res_mgr->GetSound("sounds/player_die.mp3");
+	sound_human_alert = res_mgr->GetSound("sounds/human_alert.mp3");
+	sound_human_hurt = res_mgr->GetSound("sounds/human_hurt.mp3");
+	sound_human_die = res_mgr->GetSound("sounds/human_die.mp3");
 	sound_zombie_hurt = res_mgr->GetSound("sounds/zombie_hurt.mp3");
 	sound_zombie_die = res_mgr->GetSound("sounds/zombie_die.mp3");
 	sound_zombie_attack = res_mgr->GetSound("sounds/zombie attack.wav");
@@ -1270,23 +1271,23 @@ void Game::HitUnit(Unit& unit, Unit& attacker, int dmg, const Vec3& hitpoint)
 		unit.animation = ANI_DIE;
 		unit.dying = true;
 		unit.node->mesh_inst->Play("umiera", PLAY_ONCE | PLAY_STOP_AT_END | PLAY_PRIO3 | PLAY_CLEAR_FRAME_END_INFO, 0);
-		sound_mgr->PlaySound3d(unit.type == UNIT_ZOMBIE ? sound_zombie_die : sound_player_die, unit.GetSoundPos(), 2.f);
+		sound_mgr->PlaySound3d(unit.type == UNIT_ZOMBIE ? sound_zombie_die : sound_human_die, unit.GetSoundPos(), 2.f);
 		if(unit.type == UNIT_PLAYER)
 			((Player&)unit).death_starved = false;
 	}
 	else
 	{
 		if(unit.last_damage <= 0.f && Rand() % 3 == 0)
-			sound_mgr->PlaySound3d(unit.type == UNIT_ZOMBIE ? sound_zombie_hurt : sound_player_hurt, unit.GetSoundPos(), 2.f);
+			sound_mgr->PlaySound3d(unit.type == UNIT_ZOMBIE ? sound_zombie_hurt : sound_human_hurt, unit.GetSoundPos(), 2.f);
 
-		if(unit.type == UNIT_ZOMBIE)
+		if(unit.type != UNIT_PLAYER)
 		{
-			Zombie* zombie = (Zombie*)&unit;
-			if(zombie->state == AI_IDLE)
-				ZombieAlert(zombie);
+			Ai& ai = (Ai&)unit;
+			if(ai.state != AI_COMBAT)
+				UnitAlert(ai, &attacker, nullptr);
+			if(ai.type == UNIT_NPC && attacker.type == UNIT_PLAYER)
+				((Npc&)ai).attack_player = true;
 		}
-		else if(unit.type == UNIT_NPC && attacker.type == UNIT_PLAYER)
-			((Npc&)unit).attack_player = true; // !!!! FIXME alert too
 	}
 
 	// add blood particle
@@ -1350,16 +1351,26 @@ bool Game::CheckMovePos(Unit& unit, const Vec3& pos)
 	return false;
 }
 
-void Game::UnitAlert(Ai& ai, Unit* target, Vec3* target_pos)
+void Game::UnitAlert(Ai& ai, Unit* target, const Vec3* target_pos)
 {
-	// FIXME
-	// ! obsluga AI_COMBAT
-	if(target && ai.state != AI_FALLOW) // !!!!!!!!!!
+	if(target)
 	{
-		sound_mgr->PlaySound3d(sound_zombie_alert, zombie->GetSoundPos(), 2.f);
-		alert_pos.push_back({ zombie->node->pos, 1.f });
+		if(ai.state == AI_IDLE)
+		{
+			sound_mgr->PlaySound3d(ai.type == UNIT_ZOMBIE ? sound_zombie_alert : sound_human_alert, ai.GetSoundPos(), 2.f);
+			alert_pos.push_back({ ai.node->pos, 1.f });
+		}
+		ai.target = target;
+		ai.target_pos = target->node->pos;
+		ai.ChangeState(AI_COMBAT);
 	}
-	zombie->ChangeState(AI_COMBAT);
+	else
+	{
+		assert(target_pos);
+		ai.target = nullptr;
+		ai.target_pos = *target_pos;
+		ai.ChangeState(AI_FALLOW);
+	}
 }
 
 bool Game::CanSee(Unit& unit, const Vec3& pos)
