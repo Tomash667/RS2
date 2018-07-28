@@ -39,6 +39,18 @@ struct Unit
 	float GetAngleDiff(const Vec3& target) const;
 	const UnitStats& GetStats() const { return UnitStats::stats[type == UNIT_ZOMBIE ? 1 : 0]; }
 
+	template<typename T>
+	T& To()
+	{
+		static_assert(false, "Not specialized type!");
+	}
+	template<>
+	Npc& To()
+	{
+		assert(type == UNIT_NPC);
+		return (Npc&)*this;
+	}
+
 	SceneNode* node;
 	UnitType type;
 	int hp, maxhp, death_timer;

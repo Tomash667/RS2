@@ -40,7 +40,7 @@ public:
 private:
 	void DrawSkybox();
 	void DrawNodes();
-	void DrawNodes(vector<SceneNode*>& nodes, const Matrix* parent_matrix);
+	void DrawNodes(vector<SceneNode*>& nodes, const Matrix* parent_matrix, const Vec4& parent_tint);
 	void DrawParticles();
 	void UpdateNodes(vector<SceneNode*>& nodes, float dt);
 	void ListVisibleNodes();

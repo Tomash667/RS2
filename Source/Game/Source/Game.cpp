@@ -383,44 +383,103 @@ void Game::UpdatePlayer(float dt)
 	}
 
 	Animation animation = ANI_STAND;
-
-	// check items before player
-	if(player.action != A_PICKUP)
+	
+	// update unit/item in front of player
+	if(player.action != A_PICKUP && player.action != A_TALK)
 	{
-		const float pick_range = 2.f;
-		float best_range = pick_range;
-		GroundItem* best_item = nullptr;
-		for(GroundItem& item : level->items)
+		if(player.action == A_NONE)
 		{
-			float dist = Vec3::Distance2d(player.node->pos, item.pos);
-			if(dist < best_range)
+			static const float range = 2.f;
+			static const Vec4 tint(1.1f, 1.25f, 1.1f, 1.f);
+
+			GroundItem* best_item = nullptr;
+			Unit* best_unit = nullptr;
+			float best_range = range + 0.01f;
+
+			// items
+			for(GroundItem& item : level->items)
 			{
-				float angle = AngleDiff(player.node->rot.y, Vec3::Angle2d(player.node->pos, item.pos));
-				if(angle < PI / 4)
+				float dist = Vec3::Distance2d(player.node->pos, item.pos);
+				if(dist < best_range)
 				{
-					best_item = &item;
-					best_range = dist;
+					float angle = AngleDiff(player.node->rot.y, Vec3::Angle2d(player.node->pos, item.pos));
+					if(angle < PI / 4)
+					{
+						best_item = &item;
+						best_range = dist;
+					}
 				}
 			}
-		}
-		if(player.item_before && player.item_before != best_item)
-		{
-			player.item_before->node->tint = Vec4::One;
-			player.item_before = nullptr;
-		}
-		if(best_item && best_item != player.item_before)
-		{
-			player.item_before = best_item;
-			best_item->node->tint = Vec4(2, 2, 2, 1);
-		}
 
-		if(player.action == A_NONE && player.item_before && input->Pressed(Key::E))
-		{
-			player.action = A_PICKUP;
-			player.action_state = 0;
-			animation = ANI_ACTION;
-			player.node->mesh_inst->Play("podnosi", PLAY_ONCE | PLAY_CLEAR_FRAME_END_INFO, 0);
+			// units
+			for(Unit* unit : level->units)
+			{
+				if(unit->IsAlive() && unit->type == UNIT_NPC && !unit->To<Npc>().attack_player && unit->To<Npc>().state == AI_IDLE)
+				{
+					float dist = Vec3::Distance2d(player.node->pos, unit->node->pos);
+					if(dist < best_range)
+					{
+						float angle = AngleDiff(player.node->rot.y, Vec3::Angle2d(player.node->pos, unit->node->pos));
+						if(angle < PI / 4)
+						{
+							best_unit = unit;
+							best_item = nullptr;
+							best_range = dist;
+						}
+					}
+				}
+			}
+
+			if(player.item_before != nullptr && player.item_before != best_item)
+			{
+				player.item_before->node->tint = Vec4::One;
+				player.item_before = nullptr;
+			}
+			if(player.unit_before != nullptr && player.unit_before != best_unit)
+			{
+				player.unit_before->node->tint = Vec4::One;
+				player.unit_before = nullptr;
+			}
+			if(best_item)
+			{
+				player.item_before = best_item;
+				player.item_before->node->tint = tint;
+			}
+			if(best_unit)
+			{
+				player.unit_before = best_unit;
+				player.unit_before->node->tint = tint;
+			}
 		}
+		else
+		{
+			if(player.item_before)
+			{
+				player.item_before->node->tint = Vec4::One;
+				player.item_before = nullptr;
+			}
+			if(player.unit_before)
+			{
+				player.unit_before->node->tint = Vec4::One;
+				player.unit_before = nullptr;
+			}
+		}
+	}
+
+	// pick up item
+	if(player.action == A_NONE && player.item_before && input->Pressed(Key::E))
+	{
+		player.action = A_PICKUP;
+		player.action_state = 0;
+		animation = ANI_ACTION;
+		player.node->mesh_inst->Play("podnosi", PLAY_ONCE | PLAY_CLEAR_FRAME_END_INFO, 0);
+	}
+
+	// talk with unit
+	if(player.action == A_NONE && player.unit_before && input->Pressed(Key::E))
+	{
+		player.action = A_TALK;
+		player.action_timer = 0.f;
 	}
 
 	if(input->Pressed(Key::H))
@@ -669,6 +728,16 @@ void Game::UpdatePlayer(float dt)
 					--player.current_ammo;
 				}
 			}
+		}
+		break;
+	case A_TALK:
+		{
+			// rotate towards unit
+			float expected_rot = Vec3::Angle2d(player.node->pos, player.unit_before->node->pos);
+			UnitRotateTo(player.node->rot.y, expected_rot, stats.rot_speed * dt);
+			player.action_timer += dt;
+			if(player.action_timer >= 0.5f)
+				player.action = A_NONE;
 		}
 		break;
 	}

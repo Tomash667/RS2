@@ -177,32 +177,20 @@ void GameGui::Draw()
 	Container::Draw();
 
 	Player* player = game_state->player;
-	GroundItem* item = player->item_before;
-	if(item)
+
+	if(player->item_before)
 	{
-		Vec3 item_pos = item->pos;
+		Vec3 item_pos = player->item_before->pos;
 		item_pos.y += 0.5f;
+		cstring text = Format("[E] %s", player->item_before->item->name);
+		DrawLabel(text, item_pos);
+	}
 
-		Int2 text_pos;
-		if(!gui->To2dPoint(item_pos, text_pos))
-			return;
-
-		cstring text = Format("[E] %s", item->item->name);
-
-		const Int2& wnd_size = gui->GetWindowSize();
-		Int2 text_size = gui->GetDefaultFont()->CalculateSize(text) + Int2(2, 2);
-		text_pos -= text_size / 2;
-		if(text_pos.x < 0)
-			text_pos.x = 0;
-		else if(text_pos.x + text_size.x >= wnd_size.x)
-			text_pos.x = wnd_size.x - text_size.x;
-		if(text_pos.y < 0)
-			text_pos.y = 0;
-		else if(text_pos.y + text_size.y >= wnd_size.y)
-			text_pos.y = wnd_size.y - text_size.y;
-
-		gui->DrawSprite(nullptr, text_pos, text_size, Color(0, 163, 33, 128));
-		gui->DrawText(text, nullptr, Color::Black, Font::Top | Font::Center, Rect::Create(text_pos, text_size));
+	if(player->unit_before)
+	{
+		Vec3 pos = player->unit_before->node->pos;
+		pos.y += Unit::height;
+		DrawLabel("[E] Talk", pos);
 	}
 
 	if(death_timer > 1.f)
@@ -239,6 +227,28 @@ void GameGui::Draw()
 				sprite_crosshair->Draw();
 		}
 	}
+}
+
+void GameGui::DrawLabel(cstring text, const Vec3& pos)
+{
+	Int2 text_pos;
+	if(!gui->To2dPoint(pos, text_pos))
+		return;
+
+	const Int2& wnd_size = gui->GetWindowSize();
+	Int2 text_size = gui->GetDefaultFont()->CalculateSize(text) + Int2(2, 2);
+	text_pos -= text_size / 2;
+	if(text_pos.x < 0)
+		text_pos.x = 0;
+	else if(text_pos.x + text_size.x >= wnd_size.x)
+		text_pos.x = wnd_size.x - text_size.x;
+	if(text_pos.y < 0)
+		text_pos.y = 0;
+	else if(text_pos.y + text_size.y >= wnd_size.y)
+		text_pos.y = wnd_size.y - text_size.y;
+
+	gui->DrawSprite(nullptr, text_pos, text_size, Color(0, 163, 33, 128));
+	gui->DrawText(text, nullptr, Color::Black, Font::Top | Font::Center, Rect::Create(text_pos, text_size));
 }
 
 void GameGui::Update(float dt)

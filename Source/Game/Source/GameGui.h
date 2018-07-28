@@ -16,6 +16,7 @@ public:
 
 private:
 	void PositionControls();
+	void DrawLabel(cstring text, const Vec3& pos);
 	void DrawCrosshair(int size, int dist, int length);
 
 	Engine* engine;

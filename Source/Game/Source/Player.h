@@ -10,7 +10,8 @@ enum Action
 	A_ATTACK,
 	A_EAT,
 	A_RELOAD,
-	A_AIM
+	A_AIM,
+	A_TALK
 };
 
 enum FoodLevel
@@ -46,7 +47,8 @@ struct Player : Unit
 	uint medkits, food_cans, ammo, current_ammo;
 	SceneNode* weapon, *hair;
 	GroundItem* item_before;
-	float rot_buf, last_rot, hungry_timer, shot_delay, idle_timer, idle_timer_max, aim;
+	Unit* unit_before;
+	float rot_buf, last_rot, hungry_timer, shot_delay, idle_timer, idle_timer_max, aim, action_timer;
 	Item* melee_weapon, *ranged_weapon;
 	vector<std::pair<PerkId, int>> perks;
 	bool use_melee, death_starved;

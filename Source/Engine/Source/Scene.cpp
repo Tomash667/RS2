@@ -110,17 +110,17 @@ void Scene::DrawNodes()
 	render->SetCulling(true);
 	mesh_shader->Prepare(fog_color, fog_params, light_dir, light_color, ambient_color);
 
-	DrawNodes(visible_nodes, nullptr);
+	DrawNodes(visible_nodes, nullptr, Vec4::One);
 
 	if(!visible_alpha_nodes.empty())
 	{
 		render->SetAlphaBlend(Render::BLEND_NORMAL);
 		render->SetDepthState(Render::DEPTH_READONLY);
-		DrawNodes(visible_alpha_nodes, nullptr);
+		DrawNodes(visible_alpha_nodes, nullptr, Vec4::One);
 	}
 }
 
-void Scene::DrawNodes(vector<SceneNode*>& nodes, const Matrix* parent_matrix)
+void Scene::DrawNodes(vector<SceneNode*>& nodes, const Matrix* parent_matrix, const Vec4& parent_tint)
 {
 	Matrix mat_world, mat_combined;
 
@@ -149,10 +149,10 @@ void Scene::DrawNodes(vector<SceneNode*>& nodes, const Matrix* parent_matrix)
 		mat_combined = mat_world * mat_view_proj;
 
 		if(node->visible)
-			mesh_shader->DrawMesh(node->mesh, node->GetMeshInstance(), mat_combined, mat_world, node->tint, node->subs);
+			mesh_shader->DrawMesh(node->mesh, node->GetMeshInstance(), mat_combined, mat_world, node->tint * parent_tint, node->subs);
 
 		if(!node->childs.empty())
-			DrawNodes(node->childs, &mat_world);
+			DrawNodes(node->childs, &mat_world, node->tint);
 	}
 }
 
