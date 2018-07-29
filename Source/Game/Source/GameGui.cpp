@@ -403,3 +403,12 @@ void GameGui::DrawCrosshair(int size, int dist, int length)
 	gui->DrawSprite(nullptr, Int2(center.x - size / 2, center.y - size / 2 - length - dist), Int2(size - 1, length - 1), col);
 	gui->DrawSprite(nullptr, Int2(center.x - size / 2, center.y + size / 2 + dist), Int2(size - 1, length - 1), col);
 }
+
+void GameGui::AddBubble(cstring text, Unit* unit)
+{
+	assert(text && unit);
+	SpeechBubble* bubble = new SpeechBubble;
+	bubble->text = text;
+	bubble->unit = unit;
+	bubbles.push_back(bubble);
+}

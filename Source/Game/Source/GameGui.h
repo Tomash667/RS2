@@ -2,6 +2,12 @@
 
 #include <Control.h>
 
+struct SpeechBubble
+{
+	Unit* unit;
+	string text;
+};
+
 class GameGui : public Container
 {
 public:
@@ -11,6 +17,7 @@ public:
 	void Draw() override;
 	void Update(float dt) override;
 	void Event(GuiEvent event) override;
+	void AddBubble(cstring text, Unit* unit);
 
 	bool IsMouseRequired();
 
@@ -31,4 +38,5 @@ private:
 	Texture* tex_background;
 	Font* font_big;
 	float death_timer;
+	vector<SpeechBubble*> bubbles; // FIXME - save/load/clear
 };

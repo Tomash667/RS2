@@ -14,7 +14,9 @@ enum IdleAction
 	IDLE_NONE,
 	IDLE_ROTATE,
 	IDLE_WALK,
-	IDLE_ANIM
+	IDLE_ANIM,
+	IDLE_TALK,
+	IDLE_TALK_ALONE
 };
 
 enum PathfindingState

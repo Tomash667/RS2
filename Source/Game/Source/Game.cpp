@@ -968,8 +968,8 @@ void Game::UpdateUnits(float dt)
 			ai.timer -= dt;
 			if(ai.timer <= 0.f)
 			{
-				ai.timer = Zombie::idle_timer.Random();
-				ai.idle = (IdleAction)(Rand() % 4);
+				ai.timer = Ai::idle_timer.Random();
+				ai.idle = (IdleAction)(Rand() % (ai.type == AI_ZOMBIE ? 4 : 6));
 				switch(ai.idle)
 				{
 				case IDLE_NONE:
@@ -990,6 +990,33 @@ void Game::UpdateUnits(float dt)
 					break;
 				case IDLE_ANIM:
 					animation = ANI_IDLE;
+					break;
+				case IDLE_TALK:
+					{
+						targets.clear();
+						for(Unit* unit : level->units)
+						{
+							if(!unit->IsAlive() || IsEnemy(ai, *unit))
+								continue;
+							float dist = Vec3::Distance2d(ai.node->pos, unit->node->pos);
+							if(dist <= 10.f && CanSee(ai, unit->node->pos))
+								targets.push_back(unit);
+						}
+						if(targets.empty())
+						{
+							ai.target = targets[Rand() % targets.size()];
+							ai.attack_index = 0;
+						}
+						else
+						{
+							ai.To<Npc>().Talk(TALK_ALONE);
+							ai.timer2 = 1.f;
+						}
+					}
+					break;
+				case IDLE_TALK_ALONE:
+					ai.To<Npc>().Talk(TALK_ALONE);
+					ai.timer2 = 1.f;
 					break;
 				}
 			}
@@ -1017,6 +1044,33 @@ void Game::UpdateUnits(float dt)
 					}
 					else
 						animation = ANI_IDLE;
+					break;
+				case IDLE_TALK:
+					ai.target_pos = ai.target->node->pos;
+					if(ai.attack_index == 0)
+					{
+						if(Vec3::Distance2d(ai.node->pos, ai.target->node->pos) < 2.f)
+						{
+							ai.To<Npc>().Talk(TALK_OTHER);
+							ai.attack_index = 1;
+							ai.timer2 = 1.f;
+							move = MOVE_ROTATE;
+						}
+						else
+							move = MOVE_FORWARD;
+					}
+					else
+					{
+						move = MOVE_ROTATE;
+						ai.timer -= dt;
+						if(ai.timer <= 0.f)
+							ai.idle = IDLE_NONE;
+					}
+					break;
+				case IDLE_TALK_ALONE:
+					ai.timer -= dt;
+					if(ai.timer <= 0.f)
+						ai.idle = IDLE_NONE;
 					break;
 				}
 			}
